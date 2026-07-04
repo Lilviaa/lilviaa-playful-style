@@ -1,109 +1,131 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowRight, Sparkles, Truck, ShieldCheck, RefreshCw, Star } from "lucide-react";
+import { useState, useEffect } from "react";
+import { ArrowRight, Sparkles, Truck, ShieldCheck, Ruler, Star, AlertCircle } from "lucide-react";
 import { featured, categories } from "@/lib/products";
 import { ProductCard } from "@/components/product-card";
+import { ScrollReveal } from "@/components/scroll-reveal";
 import logoAsset from "@/assets/lilviaa-logo.png.asset.json";
 
 export const Route = createFileRoute("/")({
   component: HomePage,
 });
 
+const heroImages = [
+  "/asset/Images/KVR00022-1-scaled-1-1-1.jpg",
+  "/asset/Images/KVR00026-1-scaled-1-1-1.jpg",
+  "/asset/Images/KVR00058-1-scaled-1-1-1.jpg",
+  "/asset/Images/KVR00114-1-scaled-1-1-1.jpg",
+  "/asset/Images/KVR00130-1-scaled-1-1-1.jpg",
+  "/asset/Images/KVR00145-1-scaled-1-1-1.jpg",
+  "/asset/Images/KVR00238-1-scaled-1-1-1.jpg",
+  "/asset/Images/KVR00248-1-scaled-1-1-1.jpg",
+  "/asset/Images/KVR00361-1-scaled-1-1-1.jpg",
+];
+
 function HomePage() {
+  const [currentHeroImage, setCurrentHeroImage] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentHeroImage((prev) => (prev + 1) % heroImages.length);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
   return (
-    <div>
+    <main>
       {/* HERO */}
       <section className="bg-hero relative overflow-hidden">
-        <div className="mx-auto grid max-w-7xl items-center gap-10 px-6 py-16 md:grid-cols-2 md:py-24">
-          <div className="relative z-10">
-            <span className="inline-flex items-center gap-2 rounded-full bg-cream/80 px-4 py-1.5 text-xs font-bold uppercase tracking-wider text-cocoa shadow-cute">
-              <Sparkles className="h-3.5 w-3.5 text-primary" /> New drop · Festive '26
-            </span>
-            <h1 className="mt-5 font-display text-5xl leading-[1.05] text-cocoa md:text-6xl lg:text-7xl">
-              Big smiles,{" "}
-              <span className="relative inline-block text-primary">
-                tiny outfits
-                <svg
-                  className="absolute -bottom-2 left-0 w-full text-butter"
-                  viewBox="0 0 200 12"
-                  fill="none"
-                >
-                  <path
-                    d="M2 8C50 2 150 2 198 8"
-                    stroke="currentColor"
-                    strokeWidth="5"
-                    strokeLinecap="round"
+        <div className="mx-auto flex flex-col-reverse md:flex-row-reverse items-stretch max-w-[1500px]">
+          
+          {/* IMAGE HALF */}
+          <div className="relative w-full md:w-1/2 h-[450px] md:h-auto min-h-[500px] lg:min-h-[700px]">
+            {/* The Arched Image Container */}
+            <ScrollReveal className="absolute bottom-0 inset-x-4 top-4 md:inset-x-auto md:right-0 md:left-6 lg:left-12 md:top-8 lg:top-12 overflow-hidden rounded-t-[3rem] md:rounded-t-none md:rounded-tl-[6rem] lg:rounded-tl-[10rem] shadow-2xl bg-sand">
+              <div 
+                className="flex h-full w-full transition-transform duration-1000 ease-in-out"
+                style={{ transform: `translateX(-${currentHeroImage * 100}%)` }}
+              >
+                {heroImages.map((src, index) => (
+                  <img
+                    key={src}
+                    src={src}
+                    alt="Lilviaa clothing"
+                    className="h-full w-full flex-shrink-0 object-cover object-top"
                   />
-                </svg>
-              </span>
-              .
-            </h1>
-            <p className="mt-5 max-w-md text-lg text-cocoa/80">
-              Soft, playful, high-quality clothing for the tiny humans who steal
-              every scene. Made in India, made to be lived in.
-            </p>
-            <div className="mt-8 flex flex-wrap gap-3">
-              <Link
-                to="/shop"
-                className="group inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-bold text-primary-foreground shadow-pop transition-transform hover:-translate-y-0.5"
-              >
-                Shop the collection
-                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-              </Link>
-              <Link
-                to="/about"
-                className="inline-flex items-center gap-2 rounded-full border-2 border-cocoa/15 bg-cream/60 px-6 py-3 text-sm font-bold text-cocoa hover:bg-cream"
-              >
-                Our story
-              </Link>
-            </div>
-            <div className="mt-8 flex items-center gap-5 text-sm text-cocoa/70">
-              <div className="flex items-center gap-1">
-                {[...Array(5)].map((_, i) => (
-                  <Star key={i} className="h-4 w-4 fill-butter text-butter" />
                 ))}
               </div>
-              <span>4.9 from 2,400+ happy parents</span>
+            </ScrollReveal>
+            
+            {/* Decorative Badges */}
+            <div className="absolute bottom-6 left-8 z-10 flex flex-col gap-3 md:bottom-8 md:left-8 lg:bottom-12 lg:left-12">
+              <span className="inline-flex w-fit items-center gap-2 rounded-full border border-cream/40 bg-cream/80 px-5 py-2.5 text-sm font-bold text-cocoa shadow-sm backdrop-blur-md transition-transform hover:scale-105 cursor-default">
+                ✨ Shop favourite
+              </span>
+              <span className="inline-flex w-fit items-center gap-2 rounded-full border border-cream/40 bg-cream/80 px-5 py-2.5 text-sm font-bold text-cocoa shadow-sm backdrop-blur-md transition-transform hover:scale-105 cursor-default">
+                💚 100% cotton
+              </span>
             </div>
           </div>
 
-          <div className="relative">
-            <div className="animate-float-slow relative mx-auto aspect-square max-w-md rounded-[3rem] bg-card p-4 shadow-pop rotate-2">
-              <img
-                src={featured[0].image}
-                alt={featured[0].name}
-                className="h-full w-full rounded-[2.4rem] object-cover"
-              />
-              <span className="absolute -left-4 top-6 rounded-full bg-mint px-4 py-2 text-xs font-bold text-cocoa shadow-cute -rotate-6">
-                💚 100% cotton
+          {/* TEXT HALF */}
+          <div className="relative z-10 flex w-full flex-col justify-center px-6 py-16 md:w-1/2 md:py-24 lg:px-16">
+            <ScrollReveal className="max-w-xl mx-auto md:mr-auto md:ml-0">
+              <span className="inline-flex items-center gap-2 rounded-full bg-cream/80 px-4 py-1.5 text-xs font-bold uppercase tracking-wider text-cocoa shadow-cute">
+                <Sparkles className="h-3.5 w-3.5 text-primary" /> New drop · Festive '26
               </span>
-              <span className="absolute -right-4 bottom-16 rounded-full bg-butter px-4 py-2 text-xs font-bold text-cocoa shadow-cute rotate-6">
-                ✨ Shop favourite
-              </span>
-            </div>
-            <div className="absolute -bottom-6 -left-6 hidden aspect-square w-40 rotate-[-8deg] rounded-3xl bg-card p-2 shadow-cute md:block">
-              <img
-                src={featured[7].image}
-                alt=""
-                className="h-full w-full rounded-2xl object-cover"
-              />
-            </div>
-            <img
-              src={logoAsset.url}
-              alt=""
-              aria-hidden
-              className="animate-wiggle absolute -right-2 -top-4 hidden w-28 opacity-90 md:block"
-            />
+              <h1 className="mt-8 font-display text-5xl leading-[1.05] text-cocoa md:text-6xl lg:text-7xl">
+                Big smiles,{" "}
+                <span className="relative inline-block text-primary">
+                  tiny outfits
+                  <svg
+                    className="absolute -bottom-2 left-0 w-full text-butter"
+                    viewBox="0 0 200 12"
+                    fill="none"
+                  >
+                    <path
+                      d="M2 8C50 2 150 2 198 8"
+                      stroke="currentColor"
+                      strokeWidth="5"
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                </span>
+                .
+              </h1>
+              <p className="mt-8 text-lg text-cocoa/80 leading-relaxed">
+                Soft, playful, high-quality clothing for the tiny humans who steal
+                every scene. Made in India, made to be lived in.
+              </p>
+              <div className="mt-10 flex flex-wrap gap-4">
+                <Link
+                  to="/shop"
+                  className="group inline-flex h-14 w-full items-center justify-center gap-2 rounded-full bg-primary px-8 text-base font-bold text-primary-foreground shadow-pop transition-all hover:-translate-y-1 hover:shadow-[0_12px_0_0_#d2546e] active:translate-y-1 active:shadow-none sm:w-auto"
+                >
+                  Shop the collection
+                  <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
+                </Link>
+                <Link
+                  to="/about"
+                  className="inline-flex items-center gap-2 rounded-full border-2 border-cocoa/15 bg-cream/60 px-8 py-3.5 text-sm font-bold text-cocoa hover:bg-cream transition-colors"
+                >
+                  Our story
+                </Link>
+              </div>
+            </ScrollReveal>
           </div>
+
         </div>
       </section>
 
       {/* TRUST BAR */}
-      <section className="border-y border-border/60 bg-card">
-        <div className="mx-auto grid max-w-7xl gap-6 px-6 py-6 sm:grid-cols-2 md:grid-cols-4">
+      <ScrollReveal className="border-y border-border/60 bg-card">
+        <div className="mx-auto grid max-w-7xl gap-6 px-6 py-6 sm:grid-cols-2 md:grid-cols-5">
           {[
             { icon: Truck, label: "Free shipping over ₹999" },
             { icon: ShieldCheck, label: "Skin-safe, tested fabrics" },
-            { icon: RefreshCw, label: "Easy 15-day returns" },
+            { icon: AlertCircle, label: "No return / exchange" },
+            { icon: Ruler, label: "Check the size guide" },
             { icon: Sparkles, label: "Handcrafted in India" },
           ].map(({ icon: Icon, label }) => (
             <div key={label} className="flex items-center gap-3 text-sm font-semibold text-cocoa">
@@ -114,47 +136,64 @@ function HomePage() {
             </div>
           ))}
         </div>
-      </section>
+      </ScrollReveal>
 
       {/* CATEGORIES */}
       <section className="mx-auto max-w-7xl px-6 py-16">
-        <div className="flex items-end justify-between">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <p className="text-xs font-bold uppercase tracking-widest text-primary">Shop by mood</p>
-            <h2 className="mt-2 font-display text-3xl text-cocoa md:text-4xl">
-              Little wardrobes, big personality.
+            <h2 className="mt-2 font-display text-3xl text-cocoa md:text-5xl">
+              Little wardrobes,<br />big personality.
             </h2>
           </div>
-          <Link to="/shop" className="hidden text-sm font-bold text-cocoa hover:text-primary sm:inline">
-            View all →
+          <Link to="/shop" className="group inline-flex items-center gap-2 self-start sm:self-end rounded-full border-2 border-cocoa/10 bg-transparent px-6 py-2.5 text-sm font-bold text-cocoa transition-all hover:border-cocoa hover:bg-cocoa hover:text-cream">
+            View all collections <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
           </Link>
         </div>
-        <div className="mt-8 grid grid-cols-2 gap-4 md:grid-cols-4">
+        <div className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {categories.map((c, i) => {
-            const bg = ["bg-blush", "bg-mint", "bg-butter", "bg-lilac"][i % 4];
             const p = featured[(i + 1) * 2] ?? featured[i];
             return (
-              <Link
-                key={c.slug}
-                to="/shop"
-                className={`group relative flex aspect-[4/5] flex-col overflow-hidden rounded-3xl ${bg} p-5 shadow-cute transition-transform hover:-translate-y-1`}
-              >
-                <span className="text-2xl">{c.emoji}</span>
-                <h3 className="mt-auto font-display text-2xl text-cocoa">{c.label}</h3>
-                <span className="text-xs font-semibold text-cocoa/70">Shop now →</span>
-                <img
-                  src={p.image}
-                  alt=""
-                  className="absolute -bottom-6 -right-6 h-32 w-32 rounded-2xl object-cover shadow-cute rotate-6 transition-transform group-hover:rotate-3 group-hover:scale-105"
-                />
-              </Link>
+              <ScrollReveal key={c.slug} direction="up" delay={i * 0.1}>
+                <Link
+                  to="/shop"
+                  className="group relative flex aspect-[4/5] w-full flex-col justify-between overflow-hidden rounded-[2.5rem] bg-card p-6 shadow-cute transition-all duration-500 ease-out hover:-translate-y-2 hover:shadow-pop"
+                >
+                  {/* Background Image */}
+                  <div className="absolute inset-0 z-0 bg-cocoa/20">
+                    <img
+                      src={p.image}
+                      alt={c.label}
+                      className="h-full w-full object-cover transition-transform duration-1000 ease-out group-hover:scale-110"
+                    />
+                  </div>
+                  {/* Gradient Overlay for Text Readability */}
+                  <div className="absolute inset-0 z-10 bg-gradient-to-b from-transparent via-transparent to-cocoa/90 opacity-80 transition-opacity duration-500 group-hover:opacity-100" />
+                  
+                  {/* Emoji / Tag */}
+                  <div className="relative z-20 self-start rounded-full bg-cream/95 px-4 py-2 text-xl shadow-sm backdrop-blur-md transition-transform duration-500 ease-out group-hover:rotate-[-8deg] group-hover:scale-110">
+                    {c.emoji}
+                  </div>
+
+                  {/* Content */}
+                  <div className="relative z-20 mt-auto translate-y-4 transition-transform duration-500 ease-out group-hover:translate-y-0">
+                    <h3 className="font-display text-3xl text-cream md:text-4xl">{c.label}</h3>
+                    <div className="mt-3 flex items-center gap-2 opacity-0 transition-opacity duration-500 ease-out group-hover:opacity-100">
+                      <span className="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2 text-xs font-bold text-primary-foreground shadow-pop">
+                        Explore {c.label.toLowerCase()} <ArrowRight className="h-3 w-3" />
+                      </span>
+                    </div>
+                  </div>
+                </Link>
+              </ScrollReveal>
             );
           })}
         </div>
       </section>
 
       {/* FEATURED PRODUCTS */}
-      <section className="mx-auto max-w-7xl px-6 py-8">
+      <ScrollReveal className="mx-auto max-w-7xl px-6 py-8">
         <div className="flex items-end justify-between">
           <div>
             <p className="text-xs font-bold uppercase tracking-widest text-primary">Loved by little ones</p>
@@ -169,10 +208,10 @@ function HomePage() {
             <ProductCard key={p.slug} product={p} />
           ))}
         </div>
-      </section>
+      </ScrollReveal>
 
       {/* PROMISE / EDITORIAL */}
-      <section className="mx-auto mt-20 max-w-7xl overflow-hidden rounded-[2.5rem] bg-cocoa px-6 py-16 text-cream md:px-16 md:py-24">
+      <ScrollReveal className="mx-auto mt-20 max-w-7xl overflow-hidden rounded-[2.5rem] bg-cocoa px-6 py-16 text-cream md:px-16 md:py-24 mb-16">
         <div className="grid gap-10 md:grid-cols-2 md:items-center">
           <div>
             <p className="text-xs font-bold uppercase tracking-widest text-butter">The lilviaa promise</p>
@@ -188,7 +227,7 @@ function HomePage() {
               {[
                 { n: "50+", l: "Playful prints" },
                 { n: "0", l: "Nasty chemicals" },
-                { n: "15d", l: "Free returns" },
+                { n: "100%", l: "Pure cotton" },
               ].map((s) => (
                 <div key={s.l} className="rounded-2xl bg-cream/5 p-4">
                   <div className="font-display text-3xl text-butter">{s.n}</div>
@@ -210,10 +249,10 @@ function HomePage() {
             />
           </div>
         </div>
-      </section>
+      </ScrollReveal>
 
       {/* TESTIMONIALS */}
-      <section className="mx-auto max-w-7xl px-6 py-20">
+      <ScrollReveal className="mx-auto max-w-7xl px-6 py-20">
         <h2 className="text-center font-display text-3xl text-cocoa md:text-4xl">
           Kind words from tiny critics (and their grown-ups)
         </h2>
@@ -248,7 +287,7 @@ function HomePage() {
             );
           })}
         </div>
-      </section>
-    </div>
+      </ScrollReveal>
+    </main>
   );
 }

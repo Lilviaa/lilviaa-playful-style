@@ -206,3 +206,14 @@
 @utility animate-float-slow {
   animation: float-slow 4s ease-in-out infinite;
 }
+
+/* Hide Lovable Watermark/Badge */
+#lovable-badge, 
+.lovable-badge,
+[id^="lovable-badge"],
+[class*="lovable-badge"] {
+  display: none !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}

@@ -1,10 +1,11 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Heart, Minus, Plus, ShieldCheck, Truck, RefreshCw } from "lucide-react";
+import { Heart, Minus, Plus, ShieldCheck, Truck, Ruler } from "lucide-react";
 import { findProduct, products, type Product } from "@/lib/products";
 import { formatINR, useCart } from "@/lib/cart";
 import { ProductCard } from "@/components/product-card";
+import { SizeGuide } from "@/components/size-guide";
 
 export const Route = createFileRoute("/products/$slug")({
   loader: ({ params }): { product: Product } => {
@@ -86,8 +87,39 @@ function PDPPage() {
 
       <div className="mx-auto grid max-w-7xl gap-10 px-6 py-8 md:grid-cols-2">
         <div>
-          <div className="overflow-hidden rounded-3xl bg-sand shadow-cute">
-            <img src={activeImg} alt={product.name} className="h-full w-full object-cover" />
+          <div
+            className="relative aspect-square overflow-hidden rounded-3xl bg-sand shadow-cute cursor-crosshair"
+            onMouseEnter={() => {
+              // Add a small flag to the window or state to handle hover
+              document.getElementById('zoom-layer')?.classList.remove('opacity-0');
+              document.getElementById('base-img')?.classList.add('opacity-0');
+            }}
+            onMouseLeave={() => {
+              document.getElementById('zoom-layer')?.classList.add('opacity-0');
+              document.getElementById('base-img')?.classList.remove('opacity-0');
+            }}
+            onMouseMove={(e) => {
+              const elem = e.currentTarget;
+              const { top, left, width, height } = elem.getBoundingClientRect();
+              const xPercent = ((e.clientX - left) / width) * 100;
+              const yPercent = ((e.clientY - top) / height) * 100;
+              const zoomLayer = document.getElementById('zoom-layer');
+              if (zoomLayer) {
+                zoomLayer.style.backgroundPosition = `${xPercent}% ${yPercent}%`;
+              }
+            }}
+          >
+            <img id="base-img" src={activeImg} alt={product.name} className="h-full w-full object-cover transition-opacity duration-200" />
+            <div 
+              id="zoom-layer"
+              className="pointer-events-none absolute inset-0 z-10 bg-sand opacity-0 transition-opacity duration-200"
+              style={{
+                backgroundImage: `url('${activeImg}')`,
+                backgroundPosition: '50% 50%',
+                backgroundSize: '250%',
+                backgroundRepeat: 'no-repeat'
+              }}
+            />
           </div>
           <div className="mt-4 flex gap-3">
             {product.gallery.map((g, i) => (
@@ -145,9 +177,11 @@ function PDPPage() {
           <div className="mt-6">
             <div className="mb-2 flex items-center justify-between">
               <div className="text-sm font-bold text-cocoa">Size (age)</div>
-              <button className="text-xs font-semibold text-primary hover:underline">
-                Size guide
-              </button>
+              <SizeGuide>
+                <button className="text-xs font-semibold text-primary hover:underline">
+                  Size guide
+                </button>
+              </SizeGuide>
             </div>
             <div className="flex flex-wrap gap-2">
               {product.sizes.map((s) => (
@@ -202,7 +236,7 @@ function PDPPage() {
             {[
               { i: Truck, t: "Free ship > ₹999" },
               { i: ShieldCheck, t: "Skin-safe fabric" },
-              { i: RefreshCw, t: "15-day returns" },
+              { i: Ruler, t: "Check size guide" },
             ].map(({ i: Icon, t }) => (
               <div key={t} className="rounded-2xl bg-sand p-3 text-center">
                 <Icon className="mx-auto h-4 w-4 text-primary" />

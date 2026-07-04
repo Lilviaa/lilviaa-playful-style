@@ -61,7 +61,7 @@ function ShopPage() {
       </section>
 
       <section className="mx-auto max-w-7xl px-6 py-8">
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex flex-col items-start gap-5 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3">
           <FilterGroup
             label="Category"
             options={[{ v: "all", l: "All" }, ...categories.map((c) => ({ v: c.slug, l: c.label }))]}
@@ -69,12 +69,12 @@ function ShopPage() {
             onChange={setCat}
           />
           <FilterGroup label="For" options={genders as any} value={gender} onChange={setGender} />
-          <div className="ml-auto">
+          <div className="mt-2 w-full sm:ml-auto sm:mt-0 sm:w-auto">
             <label className="mr-2 text-sm font-semibold text-cocoa">Sort</label>
             <select
               value={sort}
               onChange={(e) => setSort(e.target.value)}
-              className="rounded-full border-2 border-border bg-card px-4 py-2 text-sm font-semibold text-cocoa focus:border-primary focus:outline-none"
+              className="w-full sm:w-auto rounded-full border-2 border-border bg-card px-4 py-2 text-sm font-semibold text-cocoa focus:border-primary focus:outline-none"
             >
               <option value="featured">Featured</option>
               <option value="price-asc">Price: low to high</option>
@@ -83,7 +83,7 @@ function ShopPage() {
           </div>
         </div>
 
-        <p className="mt-4 text-sm text-muted-foreground">{items.length} products</p>
+        <p className="mt-6 text-sm text-muted-foreground">{items.length} products</p>
 
         <div className="mt-6 grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
           {items.map((p) => (
@@ -115,9 +115,9 @@ function FilterGroup({
   onChange: (v: string) => void;
 }) {
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
       <span className="text-sm font-semibold text-cocoa">{label}:</span>
-      <div className="flex flex-wrap gap-1.5 rounded-full bg-card p-1 shadow-cute">
+      <div className="flex flex-wrap gap-1.5 rounded-[1.25rem] bg-card p-1 shadow-cute">
         {options.map((o) => (
           <button
             key={o.v}
