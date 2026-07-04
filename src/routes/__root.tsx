@@ -96,6 +96,12 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: "lilviaa — Playful clothing for little ones" },
+      { name: "description", content: "lilviaa crafts soft, playful, high-quality clothing for babies and kids — kurtas, shirts, dresses and party sets made for real little adventures." },
+      { property: "og:description", content: "lilviaa crafts soft, playful, high-quality clothing for babies and kids — kurtas, shirts, dresses and party sets made for real little adventures." },
+      { name: "twitter:description", content: "lilviaa crafts soft, playful, high-quality clothing for babies and kids — kurtas, shirts, dresses and party sets made for real little adventures." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/add39253-8959-44df-b60c-40b73fb3cbfc/id-preview-b0bdd3f4--9503f460-e9c5-4311-bf3f-bb0e28e19588.lovable.app-1783151786481.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/add39253-8959-44df-b60c-40b73fb3cbfc/id-preview-b0bdd3f4--9503f460-e9c5-4311-bf3f-bb0e28e19588.lovable.app-1783151786481.png" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
