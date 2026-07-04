@@ -54,7 +54,7 @@ export const Route = createFileRoute("/products/$slug")({
 });
 
 function PDPPage() {
-  const { product } = Route.useLoaderData();
+  const { product } = Route.useLoaderData() as { product: Product };
   const { add } = useCart();
   const [activeImg, setActiveImg] = useState(product.image);
   const [size, setSize] = useState(product.sizes[2] ?? product.sizes[0]);
