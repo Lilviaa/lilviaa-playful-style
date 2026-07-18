@@ -75,9 +75,9 @@ function HomePage() {
                 <Sparkles className="h-3.5 w-3.5 text-primary" /> New drop · Festive '26
               </span>
               <h1 className="mt-8 font-display text-5xl leading-[1.05] text-cocoa md:text-6xl lg:text-7xl">
-                Big smiles,{" "}
+                Made for{" "}
                 <span className="relative inline-block text-primary">
-                  tiny outfits
+                  Little Gentlemen
                   <svg
                     className="absolute -bottom-2 left-0 w-full text-butter"
                     viewBox="0 0 200 12"
@@ -94,10 +94,9 @@ function HomePage() {
                 .
               </h1>
               <p className="mt-8 text-lg text-cocoa/80 leading-relaxed">
-                Soft, playful, high-quality clothing for the tiny humans who steal
-                every scene. Made in India, made to be lived in.
+                Every garment is thoughtfully crafted using premium-quality fabrics and timeless designs, ensuring your little ones stay comfortable all day.
               </p>
-              <div className="mt-10 flex flex-wrap gap-4">
+              <div className="mt-10 flex flex-wrap gap-3 sm:gap-4">
                 <Link
                   to="/shop"
                   className="group inline-flex h-14 w-full items-center justify-center gap-2 rounded-full bg-primary px-8 text-base font-bold text-primary-foreground shadow-pop transition-all hover:-translate-y-1 hover:shadow-[0_12px_0_0_#d2546e] active:translate-y-1 active:shadow-none sm:w-auto"
@@ -107,7 +106,7 @@ function HomePage() {
                 </Link>
                 <Link
                   to="/about"
-                  className="inline-flex items-center gap-2 rounded-full border-2 border-cocoa/15 bg-cream/60 px-8 py-3.5 text-sm font-bold text-cocoa hover:bg-cream transition-colors"
+                  className="inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-full border-2 border-cocoa/15 bg-cream/60 px-8 py-3.5 text-sm font-bold text-cocoa hover:bg-cream transition-colors"
                 >
                   Our story
                 </Link>
@@ -214,24 +213,22 @@ function HomePage() {
       <ScrollReveal className="mx-auto mt-20 max-w-7xl overflow-hidden rounded-[2.5rem] bg-cocoa px-6 py-16 text-cream md:px-16 md:py-24 mb-16">
         <div className="grid gap-10 md:grid-cols-2 md:items-center">
           <div>
-            <p className="text-xs font-bold uppercase tracking-widest text-butter">The lilviaa promise</p>
+            <p className="text-xs font-bold uppercase tracking-widest text-butter">The lilviaa philosophy</p>
             <h2 className="mt-3 font-display text-4xl leading-tight md:text-5xl">
-              Made soft.<br/>Made safe.<br/>Made to be twirled in.
+              All-day comfort.<br/>Timeless style.<br/>Lasting quality.
             </h2>
             <p className="mt-5 max-w-md text-cream/80">
-              Every stitch, every button, every print is chosen with tiny hands and
-              wiggly bodies in mind. Breathable fabrics, wash-tested colors, and coconut
-              buttons that won't nip.
+              We don't promise perfection—we promise thoughtfulness. Every collection is designed to be versatile, long-lasting, and made to be worn and loved repeatedly.
             </p>
-            <div className="mt-8 grid grid-cols-3 gap-4 text-center">
+            <div className="mt-8 grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-4 text-center">
               {[
-                { n: "50+", l: "Playful prints" },
-                { n: "0", l: "Nasty chemicals" },
-                { n: "100%", l: "Pure cotton" },
+                { n: "100%", l: "Premium quality" },
+                { n: "0", l: "Fast fashion" },
+                { n: "24/7", l: "All-day comfort" },
               ].map((s) => (
-                <div key={s.l} className="rounded-2xl bg-cream/5 p-4">
-                  <div className="font-display text-3xl text-butter">{s.n}</div>
-                  <div className="mt-1 text-xs text-cream/70">{s.l}</div>
+                <div key={s.l} className="rounded-2xl bg-cream/5 p-3 sm:p-4">
+                  <div className="font-display text-2xl sm:text-3xl text-butter">{s.n}</div>
+                  <div className="mt-1 text-[10px] sm:text-xs text-cream/70">{s.l}</div>
                 </div>
               ))}
             </div>

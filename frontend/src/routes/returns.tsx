@@ -16,33 +16,33 @@ function ReturnsPage() {
       
       <div className="prose prose-stone max-w-none text-muted-foreground prose-headings:text-cocoa prose-headings:font-display">
         <p>
-          At Lilviaa, we pour our heart into creating beautiful, high-quality garments for your children. We want you to be entirely satisfied with your purchase.
+          At <strong>Lil Viaa</strong>, every order is carefully inspected and packed to ensure that you receive products of the highest quality.
         </p>
 
-        <h2>Unboxing Video Requirement</h2>
+        <h2>No Return & No Refund Policy</h2>
         <p>
-          To process any claims for missing items, wrong items, or damages, an <strong>unboxing video is strictly mandatory</strong>. 
-          The video must clearly show the sealed package being opened from the start, without any cuts or edits. Without a continuous unboxing video, we will unfortunately not be able to entertain any claims.
+          We do <strong>not accept returns, exchanges, or offer refunds</strong> once an order has been placed, except in cases where you receive a <strong>damaged or incorrect product</strong>.
         </p>
 
-        <h2>Exchanges</h2>
+        <h2>Damaged or Incorrect Orders</h2>
         <p>
-          If you have an issue with sizing, we are happy to offer an exchange. 
+          If you receive a damaged item or a product different from what you ordered:
         </p>
         <ul>
-          <li>Exchange requests must be raised within <strong>48 hours</strong> of receiving the package.</li>
-          <li>The garment must be unused, unwashed, and returned in its original packaging with all tags attached.</li>
-          <li>Customers are responsible for the reverse shipping charges in the case of size exchanges.</li>
+          <li>Please contact us within <strong>48 hours</strong> of receiving your order.</li>
+          <li>Share your <strong>order details</strong>, along with an <strong>unboxing video</strong> and <strong>clear photographs</strong> of the product.</li>
+          <li>Our support team will review your request and guide you through the next steps.</li>
         </ul>
 
-        <h2>Refunds</h2>
-        <p>
-          We do not offer direct monetary refunds. In the rare event that a product is defective and an exchange is not possible, we will issue <strong>store credit</strong> equal to the value of the item, which can be used for future purchases on Lilviaa.
-        </p>
+        <h2>Important Notes</h2>
+        <ul>
+          <li>Slight variations in product colour may occur due to photography lighting, screen resolution, or display settings.</li>
+          <li>Please refer to the size chart carefully before placing your order.</li>
+          <li>Products that have been washed, used, altered, or damaged after delivery are not eligible for any return, exchange, or refund claim.</li>
+        </ul>
 
-        <h2>How to Initiate a Request</h2>
         <p>
-          To initiate an exchange or report a defect, please send us a Direct Message on Instagram at <strong>@lil_viaa</strong> with your order number and the unboxing video/photos of the issue. Our team will guide you through the process.
+          At <strong>Lil Viaa</strong>, every piece is created with care, quality, and attention to detail. We sincerely appreciate your trust, understanding, and continued support.
         </p>
       </div>
     </div>

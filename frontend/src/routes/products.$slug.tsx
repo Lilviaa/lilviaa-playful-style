@@ -138,12 +138,12 @@ function ProductPage() {
               }}
             />
           </div>
-          <div className="mt-4 flex gap-3">
+          <div className="mt-4 flex gap-3 overflow-x-auto pb-2 scrollbar-none">
             {product.gallery.map((g, i) => (
               <button
                 key={i}
                 onClick={() => setActiveImg(g)}
-                className={`h-20 w-20 overflow-hidden rounded-2xl border-2 transition-colors ${
+                className={`h-20 w-20 shrink-0 overflow-hidden rounded-2xl border-2 transition-colors ${
                   activeImg === g ? "border-primary" : "border-transparent"
                 }`}
               >
@@ -173,7 +173,16 @@ function ProductPage() {
               Inclusive of all taxes
             </span>
           </div>
-          <p className="mt-5 text-cocoa/80">{product.description}</p>
+          <p className="mt-5 text-cocoa/80">
+            Premium-quality fabric designed for comfort and durability. Perfect for festive occasions, family gatherings, and celebrations. Bright-colored Chinese / Ben Collar printed shirts with excellent finishing and a comfortable fit.
+          </p>
+          <div className="mt-4 rounded-xl bg-butter/20 p-4 text-sm text-cocoa/90 border border-butter/30">
+            <ul className="list-disc list-inside space-y-1.5">
+              <li>Price mentioned is for the <strong>shirt only</strong>. Dhoti or trousers are available at an additional cost.</li>
+              <li>We aim to display product colors as accurately as possible. However, slight variations may occur.</li>
+              <li>Manufactured in India and supplied directly from the manufacturer to the customer.</li>
+            </ul>
+          </div>
 
           <div className="mt-6">
             <div className="mb-2 text-sm font-bold text-cocoa">
@@ -267,16 +276,32 @@ function ProductPage() {
 
           <dl className="mt-8 divide-y divide-border rounded-2xl bg-card p-5 shadow-cute">
             <div className="flex justify-between py-2 text-sm">
-              <dt className="font-bold text-cocoa">Fabric</dt>
-              <dd className="text-cocoa/80">{product.fabric}</dd>
+              <dt className="font-bold text-cocoa">Material</dt>
+              <dd className="text-cocoa/80 text-right">Shimmer Silk with Inner Lining</dd>
             </div>
             <div className="flex justify-between py-2 text-sm">
-              <dt className="font-bold text-cocoa">Care</dt>
-              <dd className="text-cocoa/80">{product.care}</dd>
+              <dt className="font-bold text-cocoa">Fit</dt>
+              <dd className="text-cocoa/80 text-right">Regular Fit</dd>
             </div>
             <div className="flex justify-between py-2 text-sm">
-              <dt className="font-bold text-cocoa">Age</dt>
-              <dd className="text-cocoa/80">{product.ageRange}</dd>
+              <dt className="font-bold text-cocoa">Style</dt>
+              <dd className="text-cocoa/80 text-right">Chinese / Ben Collar</dd>
+            </div>
+            <div className="flex justify-between py-2 text-sm">
+              <dt className="font-bold text-cocoa">Closure Type</dt>
+              <dd className="text-cocoa/80 text-right">Button</dd>
+            </div>
+            <div className="flex justify-between py-2 text-sm">
+              <dt className="font-bold text-cocoa">Sleeve Type</dt>
+              <dd className="text-cocoa/80 text-right">Half Sleeve</dd>
+            </div>
+            <div className="flex justify-between py-2 text-sm">
+              <dt className="font-bold text-cocoa">Care Instructions</dt>
+              <dd className="text-cocoa/80 text-right">Machine Wash</dd>
+            </div>
+            <div className="flex justify-between py-2 text-sm">
+              <dt className="font-bold text-cocoa">Country of Origin</dt>
+              <dd className="text-cocoa/80 text-right">India</dd>
             </div>
           </dl>
         </div>

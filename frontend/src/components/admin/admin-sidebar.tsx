@@ -15,6 +15,8 @@ import {
   MonitorSmartphone,
 } from "lucide-react";
 
+import { usePendingReviewCount } from "@/lib/admin/reviews-api";
+
 export const ADMIN_LINKS = [
   { to: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/admin/products", label: "Products", icon: Package },
@@ -23,7 +25,7 @@ export const ADMIN_LINKS = [
   { to: "/admin/customers", label: "Customers", icon: Users },
   { to: "/admin/coupons", label: "Coupons", icon: Ticket },
   { to: "/admin/returns", label: "Returns", icon: Undo2 },
-  { to: "/admin/reviews", label: "Reviews", icon: Star },
+  { to: "/admin/reviews", label: "Reviews", icon: Star, hasBadge: true },
   { to: "/admin/banners", label: "Banners", icon: ImageIcon },
   { to: "/admin/pos-connect", label: "POS Connect", icon: MonitorSmartphone },
   { to: "/admin/settings", label: "Settings", icon: Settings },
@@ -31,6 +33,7 @@ export const ADMIN_LINKS = [
 
 export function AdminSidebar({ className }: { className?: string }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const { data: pendingReviewsCount = 0 } = usePendingReviewCount();
 
   return (
     <aside
@@ -60,14 +63,21 @@ export function AdminSidebar({ className }: { className?: string }) {
               key={link.to}
               to={link.to}
               className={cn(
-                "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                "flex items-center justify-between rounded-lg px-3 py-2 text-sm font-medium transition-colors",
                 isActive
                   ? "bg-primary/10 text-primary"
                   : "text-muted-foreground hover:bg-sand/50 hover:text-cocoa"
               )}
             >
-              <link.icon className="h-5 w-5" />
-              {link.label}
+              <div className="flex items-center gap-3">
+                <link.icon className="h-5 w-5" />
+                {link.label}
+              </div>
+              {link.hasBadge && pendingReviewsCount > 0 && (
+                <span className="rounded-full bg-amber-500 text-white px-2 py-0.5 text-xs font-bold shrink-0">
+                  {pendingReviewsCount}
+                </span>
+              )}
             </Link>
           );
         })}

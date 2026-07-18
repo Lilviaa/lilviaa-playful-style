@@ -6,6 +6,13 @@ import { useCart } from "@/lib/cart";
 import { useWishlist } from "@/lib/wishlist";
 import { useAuth } from "@/lib/auth";
 import { cn } from "@/lib/utils";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const nav = [
   { to: "/", label: "Home" },
@@ -18,7 +25,7 @@ const nav = [
 export function SiteHeader() {
   const { count } = useCart();
   const { count: wishlistCount } = useWishlist();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const [open, setOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const navigate = useNavigate();
@@ -26,7 +33,7 @@ export function SiteHeader() {
 
   return (
     <header className="sticky top-0 z-40 border-b border-border/60 bg-cream/85 backdrop-blur">
-      <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 md:px-6">
+      <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-3 py-3 sm:gap-4 md:px-6">
         <button
           onClick={() => setOpen((v) => !v)}
           className="rounded-full p-2 text-cocoa hover:bg-sand md:hidden"
@@ -67,7 +74,7 @@ export function SiteHeader() {
           <div
             className={cn(
               "flex items-center overflow-hidden transition-all duration-300 ease-in-out",
-              searchOpen ? "w-40 sm:w-64 opacity-100" : "w-0 opacity-0"
+              searchOpen ? "w-32 sm:w-64 opacity-100" : "w-0 opacity-0"
             )}
           >
             <input
@@ -107,13 +114,54 @@ export function SiteHeader() {
               </span>
             )}
           </Link>
-          <Link
-            to={user ? "/account" : "/login"}
-            className="rounded-full p-2 text-cocoa hover:bg-sand"
-            aria-label="Account"
-          >
-            <UserCircle className="h-5 w-5" />
-          </Link>
+          {user ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  className="rounded-full p-2 text-cocoa hover:bg-sand outline-none cursor-pointer"
+                  aria-label="Account Menu"
+                >
+                  <UserCircle className="h-5 w-5" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <div className="flex items-center gap-2 p-2">
+                  <div className="flex flex-col space-y-1 leading-none">
+                    <p className="font-medium text-sm text-cocoa">{user.name}</p>
+                    <p className="w-[150px] truncate text-xs text-muted-foreground">{user.email}</p>
+                  </div>
+                </div>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <Link to="/account" className="cursor-pointer w-full">
+                    Account
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/account/settings" className="cursor-pointer w-full">
+                    Settings
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/account/orders" className="cursor-pointer w-full">
+                    Orders
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={logout} className="cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50">
+                  Logout
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <Link
+              to="/login"
+              className="rounded-full p-2 text-cocoa hover:bg-sand"
+              aria-label="Account"
+            >
+              <UserCircle className="h-5 w-5" />
+            </Link>
+          )}
           <Link
             to="/cart"
             className="relative rounded-full p-2 text-cocoa hover:bg-sand"

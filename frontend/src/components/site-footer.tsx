@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { Instagram, AtSign } from "lucide-react";
+import { Instagram, Facebook, Youtube } from "lucide-react";
 import logoAsset from "@/assets/lilviaa-logo.png.asset.json";
 import { SizeGuide } from "@/components/size-guide";
 
@@ -21,12 +21,12 @@ export function SiteFooter() {
             Playful, high-quality clothing for the tiny humans who steal the show.
           </p>
           <div className="mt-5 space-y-1.5 text-base text-cream/90">
-            <p><strong>Store:</strong> Muthaiyan Layout, Vellaingadu, Tiruppur, TN 641604</p>
-            <p><strong>Phone:</strong> +91 8220127475</p>
+            <p><strong>Store:</strong> Lil Viaa, Mettupalayam Bus Stop, P.N. Road, Tiruppur, Tamil Nadu</p>
+            <p><strong>Phone:</strong> +91 82201 27481</p>
           </div>
           <div className="mt-5 relative group cursor-pointer overflow-hidden rounded-2xl">
             <a 
-              href="https://www.google.com/maps/search/Lilviaa+Store,+Muthaiyan+Layout,+Vellaingadu,+Tirupur-641604/@11.116339,77.344759,10z?hl=en-US&entry=ttu&g_ep=EgoyMDI2MDYyOS4wIKXMDSoASAFQAw%3D%3D" 
+              href="https://www.google.com/maps/search/Mettupalayam+Bus+Stop,+P.N.+Road,+Tiruppur" 
               target="_blank" 
               rel="noreferrer"
               className="absolute inset-0 z-10 flex items-center justify-center bg-cocoa/10 opacity-0 backdrop-blur-[1px] transition-opacity group-hover:opacity-100"
@@ -38,7 +38,7 @@ export function SiteFooter() {
             </a>
             <iframe
               title="Store Location"
-              src="https://www.google.com/maps?q=Lilviaa+Store,+Muthaiyan+Layout,+Vellaingadu,+Tirupur-641604&output=embed"
+              src="https://www.google.com/maps?q=Mettupalayam+Bus+Stop,+P.N.+Road,+Tiruppur&output=embed"
               width="100%"
               height="140"
               style={{ border: 0 }}
@@ -51,16 +51,19 @@ export function SiteFooter() {
             <a className="rounded-full bg-cream/10 p-3 transition-all hover:scale-105 hover:bg-cream/20" href="https://www.instagram.com/lil_viaa/" target="_blank" rel="noreferrer" aria-label="Instagram">
               <Instagram className="h-5 w-5" />
             </a>
-            <a className="rounded-full bg-cream/10 p-3 transition-all hover:scale-105 hover:bg-cream/20" href="https://api.whatsapp.com/message/UJG2PQ2RDW7BH1" target="_blank" rel="noreferrer" aria-label="WhatsApp">
+            <a className="rounded-full bg-cream/10 p-3 transition-all hover:scale-105 hover:bg-cream/20" href="https://api.whatsapp.com/send?phone=919843153154" target="_blank" rel="noreferrer" aria-label="WhatsApp">
               <WhatsAppIcon className="h-5 w-5" />
             </a>
-            <a className="rounded-full bg-cream/10 p-3 transition-all hover:scale-105 hover:bg-cream/20" href="https://www.threads.com/@lil_viaa" target="_blank" rel="noreferrer" aria-label="Threads">
-              <AtSign className="h-5 w-5" />
+            <a className="rounded-full bg-cream/10 p-3 transition-all hover:scale-105 hover:bg-cream/20" href="https://www.facebook.com/lilviaa" target="_blank" rel="noreferrer" aria-label="Facebook">
+              <Facebook className="h-5 w-5" />
+            </a>
+            <a className="rounded-full bg-cream/10 p-3 transition-all hover:scale-105 hover:bg-cream/20" href="https://www.youtube.com/@LilViaa-b4w" target="_blank" rel="noreferrer" aria-label="YouTube">
+              <Youtube className="h-5 w-5" />
             </a>
           </div>
         </div>
         
-        <div className="flex flex-wrap gap-12 md:gap-16 lg:gap-24">
+        <div className="grid grid-cols-2 gap-8 md:flex md:flex-wrap md:gap-16 lg:gap-24">
           <div>
             <h4 className="font-display text-xl tracking-wide text-cream">Shop</h4>
             <ul className="mt-5 space-y-4 text-base text-cream/80">
@@ -75,7 +78,7 @@ export function SiteFooter() {
             <ul className="mt-5 space-y-4 text-base text-cream/80">
               <li><Link to="/faq" className="transition-colors hover:text-cream">FAQ</Link></li>
               <li><Link to="/contact" className="transition-colors hover:text-cream">Contact us</Link></li>
-              <li><a href="tel:+918220127475" className="transition-colors hover:text-cream">+91 8220127475</a></li>
+              <li><a href="tel:+918220127481" className="transition-colors hover:text-cream">+91 82201 27481</a></li>
               <li><a href="mailto:lilviaa.byutsav@gmail.com" className="transition-colors hover:text-cream">lilviaa.byutsav@gmail.com</a></li>
               <li>
                 <SizeGuide>
@@ -84,7 +87,7 @@ export function SiteFooter() {
               </li>
             </ul>
           </div>
-          <div>
+          <div className="col-span-2 md:col-span-1">
             <h4 className="font-display text-xl tracking-wide text-cream">Policies</h4>
             <ul className="mt-5 space-y-4 text-base text-cream/80">
               <li><Link to="/shipping" className="transition-colors hover:text-cream">Shipping Policy</Link></li>

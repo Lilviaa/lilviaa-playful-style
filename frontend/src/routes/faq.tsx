@@ -17,28 +17,36 @@ export const Route = createFileRoute("/faq")({
 
 const faqs = [
   {
-    q: "How long does shipping take?",
-    a: "Orders are typically processed within 2-3 working days. Once dispatched, deliveries through DTDC generally reach customers within 2 to 4 working days, depending on the delivery location.",
+    q: "What age group do you offer clothing for?",
+    a: "We offer premium kidswear for little boys aged 6 months to 6 years. Please refer to our size chart to choose the perfect fit for your child.",
   },
   {
-    q: "Do you offer international shipping?",
-    a: "Currently, we only ship within India. We hope to expand our shipping destinations in the future!",
+    q: "How do I choose the right size?",
+    a: "We recommend referring to our size chart before placing your order. If your child falls between two sizes, we suggest choosing the next size for a more comfortable fit.",
   },
   {
-    q: "What is your return policy?",
-    a: "We accept exchanges for sizing issues within 48 hours of delivery. Please note that an unboxing video without cuts is strictly mandatory to process any claims for missing items, wrong items, or damages. We do not offer direct monetary refunds, but provide store credit for defective items when an exchange isn't possible.",
+    q: "What fabrics do you use?",
+    a: "We carefully select soft, comfortable, and child-friendly fabrics suitable for everyday wear. All our ethnic wear includes a soft cotton inner lining for enhanced comfort.",
   },
   {
-    q: "How do I know what size to order?",
-    a: "Each product page features a Size Guide button. We recommend measuring your child and comparing it to our size chart to ensure the perfect fit.",
+    q: "How long will my order take to arrive?",
+    a: "Estimated delivery timelines are: Tamil Nadu: 2–4 business days, Rest of India: 3–7 business days. Delivery times may vary depending on your location and courier service availability.",
   },
   {
-    q: "How should I wash the clothes?",
-    a: "Our garments are made from delicate, high-quality fabrics like mul cotton. We recommend gentle hand washing in cold water with mild detergent, and drying in the shade to preserve the colors and fabric integrity.",
+    q: "How can I track my order?",
+    a: "Once your order has been shipped, you will receive tracking details via SMS, WhatsApp, or email, based on the contact information provided during checkout.",
   },
   {
-    q: "Can I cancel my order?",
-    a: "You can request an order cancellation before the item is dispatched by messaging us on WhatsApp or Instagram DM. Once an order has been shipped, it cannot be canceled.",
+    q: "Do you accept returns or exchanges?",
+    a: "Lil Viaa follows a No Return & No Refund Policy. However, if you receive a damaged or incorrect product, please contact us within 48 hours of delivery with your order details, an unboxing video, and clear product photographs. Our team will review your request and assist you accordingly.",
+  },
+  {
+    q: "Do you offer bulk or wholesale orders?",
+    a: "Yes, we do offer bulk and wholesale orders. Please contact our team for more information regarding wholesale pricing and order requirements.",
+  },
+  {
+    q: "How should I care for Lil Viaa garments?",
+    a: "To maintain the quality, comfort, and longevity of your Lil Viaa garments, please follow the wash care instructions provided on the product label.",
   }
 ];
 
@@ -48,7 +56,7 @@ function FAQPage() {
       <div className="mb-12 text-center">
         <h1 className="font-display text-4xl text-cocoa md:text-5xl">Frequently Asked Questions</h1>
         <p className="mt-4 text-lg text-muted-foreground">
-          Find answers to common questions about our products, shipping, and returns.
+          Find answers to common questions about our products, sizing, and shipping.
         </p>
       </div>
 
@@ -70,7 +78,7 @@ function FAQPage() {
       <div className="mt-12 text-center">
         <p className="text-muted-foreground">Still have questions?</p>
         <a 
-          href="https://api.whatsapp.com/message/UJG2PQ2RDW7BH1" 
+          href="https://api.whatsapp.com/send?phone=919843153154" 
           target="_blank" 
           rel="noreferrer"
           className="mt-2 inline-block font-bold text-primary hover:underline"

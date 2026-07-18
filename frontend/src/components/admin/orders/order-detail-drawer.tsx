@@ -11,14 +11,33 @@ import { formatINR } from "@/lib/cart";
 import { OrderStatusBadge } from "./order-status-badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Printer, RefreshCcw, XCircle } from "lucide-react";
+import { Printer, RefreshCcw, XCircle, RotateCcw } from "lucide-react";
 import {
   useUpdateOrderStatus,
   useUpdateTracking,
   useUpdateCallConfirmed,
 } from "@/lib/admin/orders-api";
+import { useCreateReturn, ReturnReason, RefundMethod } from "@/lib/admin/returns-api";
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox as CheckboxUI } from "@/components/ui/checkbox";
 
 interface OrderDetailDrawerProps {
   order: Order | null;
@@ -31,8 +50,13 @@ export function OrderDetailDrawer({ order, isOpen, onClose, onPrint }: OrderDeta
   const { mutate: updateStatus } = useUpdateOrderStatus();
   const { mutate: updateTracking } = useUpdateTracking();
   const { mutate: updateCallConfirmed } = useUpdateCallConfirmed();
+  const { mutate: createReturn, isPending: creatingReturn } = useCreateReturn();
 
   const [trackingNumber, setTrackingNumber] = useState(order?.tracking_number || "");
+  const [showReturnModal, setShowReturnModal] = useState(false);
+  const [returnReason, setReturnReason] = useState<ReturnReason>("size_issue");
+  const [returnNote, setReturnNote] = useState("");
+  const [hasVideo, setHasVideo] = useState(false);
 
   // Sync tracking input when order changes
   if (
@@ -215,7 +239,7 @@ export function OrderDetailDrawer({ order, isOpen, onClose, onPrint }: OrderDeta
 
           {/* Danger Zone */}
           {order.status !== "cancelled" && order.status !== "returned" && (
-            <section className="flex gap-3 pt-4 border-t border-cocoa/10">
+            <section className="flex flex-wrap gap-3 pt-4 border-t border-cocoa/10">
               <Button
                 variant="outline"
                 className="flex-1 gap-2 text-rose-600 hover:text-rose-700 hover:bg-rose-50 border-rose-200"
@@ -234,8 +258,93 @@ export function OrderDetailDrawer({ order, isOpen, onClose, onPrint }: OrderDeta
                   Mark Returned
                 </Button>
               )}
+              <Button
+                variant="outline"
+                className="flex-1 gap-2 text-purple-600 hover:text-purple-700 hover:bg-purple-50 border-purple-200"
+                onClick={() => setShowReturnModal(true)}
+              >
+                <RotateCcw className="h-4 w-4" />
+                New Return
+              </Button>
             </section>
           )}
+
+          {/* New Return Modal */}
+          <Dialog open={showReturnModal} onOpenChange={setShowReturnModal}>
+            <DialogContent className="max-w-lg">
+              <DialogHeader>
+                <DialogTitle>Create Return Request</DialogTitle>
+                <DialogDescription>
+                  Manually create a return for <strong>{order.id}</strong>. Use this for phone or WhatsApp requests.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 py-2">
+                <div className="space-y-1.5">
+                  <Label>Reason</Label>
+                  <Select value={returnReason} onValueChange={(v) => setReturnReason(v as ReturnReason)}>
+                    <SelectTrigger className="rounded-xl">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="size_issue">Size Issue</SelectItem>
+                      <SelectItem value="damaged">Damaged / Defective</SelectItem>
+                      <SelectItem value="wrong_item">Wrong Item</SelectItem>
+                      <SelectItem value="quality">Quality Issue</SelectItem>
+                      <SelectItem value="changed_mind">Changed Mind</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Note (Optional)</Label>
+                  <Textarea
+                    placeholder="Customer's description of the issue..."
+                    value={returnNote}
+                    onChange={(e) => setReturnNote(e.target.value)}
+                    className="rounded-xl"
+                    rows={3}
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <CheckboxUI
+                    id="hasVideo"
+                    checked={hasVideo}
+                    onCheckedChange={(v) => setHasVideo(Boolean(v))}
+                  />
+                  <Label htmlFor="hasVideo">Customer provided unboxing video</Label>
+                </div>
+                <div className="p-3 bg-amber-50 rounded-xl border border-amber-200 text-xs text-amber-800">
+                  Items for return will default to all items in this order. Refund amount defaults to order total.
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="ghost" onClick={() => setShowReturnModal(false)}>Cancel</Button>
+                <Button
+                  disabled={creatingReturn}
+                  onClick={() => {
+                    createReturn({
+                      order_id: order.id,
+                      customer_name: order.shipping_address.fullName,
+                      customer_email: order.shipping_address.email,
+                      status: "requested",
+                      reason: returnReason,
+                      reason_note: returnNote,
+                      unboxing_video_provided: hasVideo,
+                      refund_method: order.payment_method === "cod" ? "bank_transfer" : "original_payment",
+                      refund_amount: order.total,
+                      items: (order.items || []).map((item, i) => ({
+                        id: `RI-new-${i}`,
+                        return_id: "",
+                        order_item_id: item.id,
+                        quantity: item.quantity,
+                      })),
+                    }, { onSuccess: () => setShowReturnModal(false) });
+                  }}
+                >
+                  {creatingReturn ? "Creating..." : "Create Return"}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </div>
       </SheetContent>
     </Sheet>

@@ -80,14 +80,14 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "lilviaa — Playful clothing for little ones" },
+      { title: "lilviaa" },
       {
         name: "description",
         content:
           "lilviaa crafts soft, playful, high-quality clothing for babies and kids — kurtas, shirts, dresses and party sets made for real little adventures.",
       },
       { name: "theme-color", content: "#f7ecd9" },
-      { property: "og:title", content: "lilviaa — Playful clothing for little ones" },
+      { property: "og:title", content: "lilviaa" },
       {
         property: "og:description",
         content:
@@ -95,7 +95,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:title", content: "lilviaa — Playful clothing for little ones" },
+      { name: "twitter:title", content: "lilviaa" },
       { name: "description", content: "lilviaa crafts soft, playful, high-quality clothing for babies and kids — kurtas, shirts, dresses and party sets made for real little adventures." },
       { property: "og:description", content: "lilviaa crafts soft, playful, high-quality clothing for babies and kids — kurtas, shirts, dresses and party sets made for real little adventures." },
       { name: "twitter:description", content: "lilviaa crafts soft, playful, high-quality clothing for babies and kids — kurtas, shirts, dresses and party sets made for real little adventures." },
@@ -104,7 +104,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     ],
     links: [
       { rel: "stylesheet", href: appCss },
-      { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
+      { rel: "icon", href: "/favicon.png", type: "image/png" },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       {

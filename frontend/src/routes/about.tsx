@@ -8,11 +8,10 @@ export const Route = createFileRoute("/about")({
       { title: "Our story — lilviaa" },
       {
         name: "description",
-        content:
-          "lilviaa is a little clothing label with a big heart — playful, thoughtful, and made for the way kids actually live.",
+        content: "What makes Lil Viaa different from other brands? Comfort is the first language of love.",
       },
       { property: "og:title", content: "Our story — lilviaa" },
-      { property: "og:description", content: "A little clothing label with a big heart." },
+      { property: "og:description", content: "Comfort is the first language of love." },
     ],
   }),
   component: AboutPage,
@@ -25,13 +24,10 @@ function AboutPage() {
         <div className="mx-auto max-w-3xl text-center">
           <p className="text-xs font-bold uppercase tracking-widest text-primary">Our story</p>
           <h1 className="mt-3 font-display text-5xl leading-tight text-cocoa md:text-6xl">
-            A little brand with a very big heart.
+            What makes Lil Viaa different?
           </h1>
-          <p className="mt-5 text-lg text-cocoa/80">
-            lilviaa started at a kitchen table, cutting fabric for a niece who
-            refused to wear anything scratchy. Three years later, we make clothes
-            for thousands of tiny critics across India — and the rule is still the
-            same: if it isn't soft enough for our own kids, it isn't good enough.
+          <p className="mt-5 text-lg text-cocoa/80 leading-relaxed">
+            At Lil Viaa, we believe that <strong>comfort is the first language of love</strong>. Every garment is thoughtfully crafted using premium-quality fabrics, careful stitching, and timeless designs, ensuring little boys can move freely, feel confident, and stay comfortable throughout the day.
           </p>
         </div>
       </section>
@@ -53,23 +49,45 @@ function AboutPage() {
 
       <section className="mx-auto max-w-6xl px-6 py-16">
         <h2 className="text-center font-display text-3xl text-cocoa md:text-4xl">
-          What we care about
+          Our Philosophy
         </h2>
         <div className="mt-10 grid gap-6 md:grid-cols-4">
           {[
-            { i: Heart, t: "Soft on skin", d: "Only breathable, tested fabrics that pass the 'nap-test'." },
-            { i: Leaf, t: "Kind by design", d: "Coconut buttons, low-waste cutting, natural dyes wherever we can." },
-            { i: Sparkles, t: "Playful always", d: "Prints and colors that look like childhood feels." },
-            { i: Users, t: "Made with makers", d: "Partnered with small units in India who we know by name." },
+            {
+              i: Heart,
+              t: "Thoughtful Design",
+              d: "Unlike brands that focus on fast-changing trends, we create timeless pieces that parents can trust for their quality, durability, and everyday comfort.",
+            },
+            {
+              i: Sparkles,
+              t: "Quiet Luxury",
+              d: "Rather than bold statements, we focus on exceptional craftsmanship, premium materials, and refined details that make every outfit feel special.",
+            },
+            {
+              i: Leaf,
+              t: "Lasting Value",
+              d: "We believe in buying better, not more. Every collection is designed to be versatile, long-lasting, and made to be worn and loved repeatedly.",
+            },
+            {
+              i: Users,
+              t: "Built on Trust",
+              d: "We don't promise perfection—we promise thoughtfulness. From selecting the right fabric to perfecting the fit, we create clothing children genuinely enjoy wearing.",
+            },
           ].map(({ i: Icon, t, d }) => (
-            <div key={t} className="rounded-3xl bg-card p-6 shadow-cute">
+            <div key={t} className="rounded-3xl bg-card p-6 shadow-cute flex flex-col">
               <span className="flex h-10 w-10 items-center justify-center rounded-full bg-butter text-cocoa">
                 <Icon className="h-5 w-5" />
               </span>
               <h3 className="mt-4 font-display text-xl text-cocoa">{t}</h3>
-              <p className="mt-2 text-sm text-cocoa/70">{d}</p>
+              <p className="mt-2 text-sm text-cocoa/70 flex-1">{d}</p>
             </div>
           ))}
+        </div>
+        
+        <div className="mt-16 text-center">
+          <p className="inline-block rounded-full bg-primary/10 px-6 py-3 text-lg font-bold text-primary">
+            Every Lil Viaa garment is designed for all-day comfort, timeless style, and lasting quality.
+          </p>
         </div>
       </section>
     </div>

@@ -1,12 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Mail, MessageCircle, Instagram, MapPin } from "lucide-react";
+import { Mail, MessageCircle, Instagram, MapPin, Facebook, Youtube, Phone } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/contact")({
   head: () => ({
     meta: [
       { title: "Contact us — lilviaa" },
-      { name: "description", content: "Get in touch with the lilviaa team — we love hearing from little humans and their grown-ups." },
+      { name: "description", content: "Get in touch with the lilviaa team." },
       { property: "og:title", content: "Contact us — lilviaa" },
       { property: "og:description", content: "Get in touch with the lilviaa team." },
     ],
@@ -31,10 +31,13 @@ function ContactPage() {
       <section className="mx-auto grid max-w-6xl gap-10 px-6 py-16 lg:grid-cols-2 lg:gap-16">
         <div className="space-y-4">
           {[
-            { i: Mail, t: "Email us", d: "lilviaa.byutsav@gmail.com", href: "mailto:lilviaa.byutsav@gmail.com" },
-            { i: MessageCircle, t: "WhatsApp", d: "+91 8220127475", href: "https://api.whatsapp.com/message/UJG2PQ2RDW7BH1" },
+            { i: Mail, t: "Business & Support Email", d: "lilviaa.byutsav@gmail.com", href: "mailto:lilviaa.byutsav@gmail.com" },
+            { i: Phone, t: "Phone Numbers", d: "+91 82201 27481, +91 82201 27170", href: "tel:+918220127481" },
+            { i: MessageCircle, t: "WhatsApp", d: "+91 98431 53154", href: "https://api.whatsapp.com/send?phone=919843153154" },
             { i: Instagram, t: "Instagram", d: "@lil_viaa", href: "https://www.instagram.com/lil_viaa/" },
-            { i: MapPin, t: "Store", d: "Muthaiyan Layout, Vellaingadu, Tiruppur, TN 641604", href: "https://www.google.com/maps/search/Lilviaa+Store,+Muthaiyan+Layout,+Vellaingadu,+Tirupur-641604/@11.116339,77.344759,10z?hl=en-US&entry=ttu&g_ep=EgoyMDI2MDYyOS4wIKXMDSoASAFQAw%3D%3D" },
+            { i: Facebook, t: "Facebook", d: "lilviaa", href: "https://www.facebook.com/lilviaa" },
+            { i: Youtube, t: "YouTube", d: "@LilViaa-b4w", href: "https://www.youtube.com/@LilViaa-b4w" },
+            { i: MapPin, t: "Business Address", d: "Lil Viaa, Mettupalayam Bus Stop, P.N. Road, Tiruppur, Tamil Nadu, India", href: "https://www.google.com/maps/search/Mettupalayam+Bus+Stop,+P.N.+Road,+Tiruppur" },
           ].map(({ i: Icon, t, d, href }) => (
             <a key={t} href={href} target={href.startsWith("http") ? "_blank" : "_self"} rel="noreferrer" className="group flex items-center gap-5 rounded-3xl bg-card p-6 shadow-cute transition-all hover:-translate-y-1 hover:bg-cream/80 hover:shadow-pop">
               <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-mint text-cocoa shadow-sm transition-transform group-hover:scale-110">
@@ -42,7 +45,7 @@ function ContactPage() {
               </span>
               <div>
                 <div className="text-xs font-bold uppercase tracking-widest text-cocoa/50">{t}</div>
-                <div className="mt-1 font-display text-lg text-cocoa md:text-xl">{d}</div>
+                <div className="mt-1 font-display text-lg text-cocoa">{d}</div>
               </div>
             </a>
           ))}
@@ -54,7 +57,7 @@ function ContactPage() {
             toast.success("Message sent!", { description: "We will respond promptly." });
             (e.target as HTMLFormElement).reset();
           }}
-          className="rounded-[2rem] bg-card p-8 shadow-cute md:p-10"
+          className="rounded-[2rem] bg-card p-8 shadow-cute md:p-10 h-fit sticky top-24"
         >
           <div className="text-center mb-8">
             <h2 className="font-display text-3xl text-cocoa md:text-4xl">Send Message</h2>
@@ -82,8 +85,8 @@ function ContactPage() {
               />
               <input
                 required
-                type="email"
-                placeholder="Confirm Email"
+                type="tel"
+                placeholder="Phone Number"
                 className="w-full rounded-md border border-cocoa/10 bg-cream/50 px-4 py-3.5 text-sm text-cocoa placeholder:text-cocoa/50 focus:border-primary focus:bg-cream focus:outline-none"
               />
             </div>
@@ -93,7 +96,6 @@ function ContactPage() {
                 placeholder="Subject"
                 className="w-full rounded-md border border-cocoa/10 bg-cream/50 px-4 py-3.5 text-sm text-cocoa placeholder:text-cocoa/50 focus:border-primary focus:bg-cream focus:outline-none"
               />
-              <p className="mt-1.5 text-xs text-cocoa/60">0 of 24 max words.</p>
             </div>
             <div>
               <textarea
@@ -102,7 +104,6 @@ function ContactPage() {
                 placeholder="Drop Us a Line"
                 className="w-full resize-none rounded-md border border-cocoa/10 bg-cream/50 px-4 py-3.5 text-sm text-cocoa placeholder:text-cocoa/50 focus:border-primary focus:bg-cream focus:outline-none"
               />
-              <p className="mt-1.5 text-xs text-cocoa/60">0 of 500 max words.</p>
             </div>
             <div className="mt-2 text-left">
               <button
