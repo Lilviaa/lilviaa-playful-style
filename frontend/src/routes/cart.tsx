@@ -138,12 +138,12 @@ function CartPage() {
             <span>Total</span>
             <span>{formatINR(total)}</span>
           </div>
-          <button
-            onClick={() => toast.success("Checkout coming soon", { description: "This demo doesn't process payments yet." })}
+          <Link
+            to="/checkout"
             className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-bold text-primary-foreground shadow-pop"
           >
             Checkout <ArrowRight className="h-4 w-4" />
-          </button>
+          </Link>
           <Link
             to="/shop"
             className="mt-2 block text-center text-xs font-semibold text-muted-foreground hover:text-cocoa"

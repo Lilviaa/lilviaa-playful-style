@@ -1,8 +1,10 @@
-import { Link, useRouterState } from "@tanstack/react-router";
-import { Heart, Menu, Search, ShoppingBag, X } from "lucide-react";
+import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
+import { Heart, Menu, Search, ShoppingBag, X, UserCircle } from "lucide-react";
 import { useState } from "react";
 import logoAsset from "@/assets/lilviaa-logo.png.asset.json";
 import { useCart } from "@/lib/cart";
+import { useWishlist } from "@/lib/wishlist";
+import { useAuth } from "@/lib/auth";
 import { cn } from "@/lib/utils";
 
 const nav = [
@@ -15,7 +17,11 @@ const nav = [
 
 export function SiteHeader() {
   const { count } = useCart();
+  const { count: wishlistCount } = useWishlist();
+  const { user } = useAuth();
   const [open, setOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
   return (
@@ -58,18 +64,56 @@ export function SiteHeader() {
         </nav>
 
         <div className="flex items-center gap-1">
+          <div
+            className={cn(
+              "flex items-center overflow-hidden transition-all duration-300 ease-in-out",
+              searchOpen ? "w-40 sm:w-64 opacity-100" : "w-0 opacity-0"
+            )}
+          >
+            <input
+              type="search"
+              placeholder="Search..."
+              autoFocus={searchOpen}
+              className="w-full rounded-full border-2 border-border bg-card py-1.5 pl-4 pr-3 text-sm text-cocoa placeholder:text-muted-foreground focus:border-primary focus:outline-none"
+              onChange={(e) => {
+                const val = e.target.value;
+                if (val) {
+                  navigate({ to: "/search", search: { q: val }, replace: true });
+                } else if (pathname === "/search") {
+                  navigate({ to: "/search", search: { q: "" }, replace: true });
+                }
+              }}
+            />
+          </div>
           <button
-            className="rounded-full p-2 text-cocoa hover:bg-sand"
+            onClick={() => setSearchOpen(!searchOpen)}
+            className={cn(
+              "rounded-full p-2 transition-colors hover:bg-sand",
+              searchOpen ? "bg-sand text-primary" : "text-cocoa"
+            )}
             aria-label="Search"
           >
             <Search className="h-5 w-5" />
           </button>
-          <button
-            className="hidden rounded-full p-2 text-cocoa hover:bg-sand sm:inline-flex"
+          <Link
+            to="/wishlist"
+            className="hidden relative rounded-full p-2 text-cocoa hover:bg-sand sm:inline-flex"
             aria-label="Wishlist"
           >
             <Heart className="h-5 w-5" />
-          </button>
+            {wishlistCount > 0 && (
+              <span className="absolute -right-0.5 -top-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1 text-[11px] font-bold text-primary-foreground shadow-cute">
+                {wishlistCount}
+              </span>
+            )}
+          </Link>
+          <Link
+            to={user ? "/account" : "/login"}
+            className="rounded-full p-2 text-cocoa hover:bg-sand"
+            aria-label="Account"
+          >
+            <UserCircle className="h-5 w-5" />
+          </Link>
           <Link
             to="/cart"
             className="relative rounded-full p-2 text-cocoa hover:bg-sand"

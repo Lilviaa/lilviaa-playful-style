@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { Heart, Minus, Plus, ShieldCheck, Truck, Ruler } from "lucide-react";
 import { findProduct, products, type Product } from "@/lib/products";
 import { formatINR, useCart } from "@/lib/cart";
+import { useWishlist } from "@/lib/wishlist";
 import { ProductCard } from "@/components/product-card";
 import { SizeGuide } from "@/components/size-guide";
 
@@ -34,7 +35,7 @@ export const Route = createFileRoute("/products/$slug")({
       ],
     };
   },
-  component: PDPPage,
+  component: ProductPage,
   notFoundComponent: () => (
     <div className="mx-auto max-w-lg px-6 py-24 text-center">
       <h1 className="font-display text-3xl text-cocoa">We can't find that piece.</h1>
@@ -54,12 +55,28 @@ export const Route = createFileRoute("/products/$slug")({
   ),
 });
 
-function PDPPage() {
+function ProductPage() {
   const { product } = Route.useLoaderData() as { product: Product };
   const { add } = useCart();
+  const { add: addToWishlist, remove: removeFromWishlist, has: inWishlistCheck } = useWishlist();
   const [activeImg, setActiveImg] = useState(product.image);
   const [size, setSize] = useState(product.sizes[2] ?? product.sizes[0]);
   const [qty, setQty] = useState(1);
+  
+  const inWishlist = inWishlistCheck(product.slug);
+
+  const toggleWishlist = () => {
+    if (inWishlist) {
+      removeFromWishlist(product.slug);
+    } else {
+      addToWishlist({
+        slug: product.slug,
+        name: product.name,
+        price: product.price,
+        image: product.image,
+      });
+    }
+  };
 
   const related = products.filter((p) => p.slug !== product.slug).slice(0, 4);
 
@@ -225,10 +242,13 @@ function PDPPage() {
               Add to cart · {formatINR(product.price * qty)}
             </button>
             <button
-              className="rounded-full border-2 border-border bg-card p-3 text-cocoa hover:text-primary"
-              aria-label="Wishlist"
+              onClick={toggleWishlist}
+              className={`rounded-full border-2 border-border p-3 transition-colors ${
+                inWishlist ? "bg-primary/10 text-primary border-primary/20" : "bg-card text-cocoa hover:text-primary"
+              }`}
+              aria-label={inWishlist ? "Remove from wishlist" : "Add to wishlist"}
             >
-              <Heart className="h-5 w-5" />
+              <Heart className="h-5 w-5" fill={inWishlist ? "currentColor" : "none"} />
             </button>
           </div>
 

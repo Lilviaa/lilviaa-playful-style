@@ -2,6 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { Heart } from "lucide-react";
 import type { Product } from "@/lib/products";
 import { formatINR } from "@/lib/cart";
+import { useWishlist } from "@/lib/wishlist";
 import { cn } from "@/lib/utils";
 import { ScrollReveal } from "@/components/scroll-reveal";
 
@@ -12,6 +13,23 @@ const tagStyles: Record<string, string> = {
 };
 
 export function ProductCard({ product }: { product: Product }) {
+  const { add, remove, has } = useWishlist();
+  const inWishlist = has(product.slug);
+
+  const toggleWishlist = (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (inWishlist) {
+      remove(product.slug);
+    } else {
+      add({
+        slug: product.slug,
+        name: product.name,
+        price: product.price,
+        image: product.image,
+      });
+    }
+  };
+
   return (
     <ScrollReveal>
       <Link
@@ -37,11 +55,14 @@ export function ProductCard({ product }: { product: Product }) {
             </span>
           )}
           <button
-            onClick={(e) => e.preventDefault()}
-            className="absolute right-3 top-3 rounded-full bg-cream/90 p-2 text-cocoa opacity-0 shadow-cute transition-opacity group-hover:opacity-100"
-            aria-label="Wishlist"
+            onClick={toggleWishlist}
+            className={cn(
+              "absolute right-3 top-3 rounded-full bg-cream/90 p-2 text-cocoa shadow-cute transition-all",
+              inWishlist ? "opacity-100 text-primary" : "opacity-0 group-hover:opacity-100"
+            )}
+            aria-label={inWishlist ? "Remove from wishlist" : "Add to wishlist"}
           >
-            <Heart className="h-4 w-4" />
+            <Heart className="h-4 w-4" fill={inWishlist ? "currentColor" : "none"} />
           </button>
         </div>
         <div className="flex flex-1 flex-col gap-1 p-4">

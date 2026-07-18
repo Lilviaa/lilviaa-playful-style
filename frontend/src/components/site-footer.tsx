@@ -60,7 +60,7 @@ export function SiteFooter() {
           </div>
         </div>
         
-        <div className="flex gap-16 md:gap-24">
+        <div className="flex flex-wrap gap-12 md:gap-16 lg:gap-24">
           <div>
             <h4 className="font-display text-xl tracking-wide text-cream">Shop</h4>
             <ul className="mt-5 space-y-4 text-base text-cream/80">
@@ -73,6 +73,7 @@ export function SiteFooter() {
           <div>
             <h4 className="font-display text-xl tracking-wide text-cream">Help</h4>
             <ul className="mt-5 space-y-4 text-base text-cream/80">
+              <li><Link to="/faq" className="transition-colors hover:text-cream">FAQ</Link></li>
               <li><Link to="/contact" className="transition-colors hover:text-cream">Contact us</Link></li>
               <li><a href="tel:+918220127475" className="transition-colors hover:text-cream">+91 8220127475</a></li>
               <li><a href="mailto:lilviaa.byutsav@gmail.com" className="transition-colors hover:text-cream">lilviaa.byutsav@gmail.com</a></li>
@@ -81,6 +82,15 @@ export function SiteFooter() {
                   <button className="text-left transition-colors hover:text-cream">Size Guide</button>
                 </SizeGuide>
               </li>
+            </ul>
+          </div>
+          <div>
+            <h4 className="font-display text-xl tracking-wide text-cream">Policies</h4>
+            <ul className="mt-5 space-y-4 text-base text-cream/80">
+              <li><Link to="/shipping" className="transition-colors hover:text-cream">Shipping Policy</Link></li>
+              <li><Link to="/returns" className="transition-colors hover:text-cream">Return & Refund</Link></li>
+              <li><Link to="/terms" className="transition-colors hover:text-cream">Terms & Conditions</Link></li>
+              <li><Link to="/privacy" className="transition-colors hover:text-cream">Privacy Policy</Link></li>
             </ul>
           </div>
         </div>

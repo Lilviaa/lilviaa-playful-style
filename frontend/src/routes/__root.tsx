@@ -4,6 +4,7 @@ import {
   Link,
   createRootRouteWithContext,
   useRouter,
+  useRouterState,
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
@@ -11,6 +12,8 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { CartProvider } from "@/lib/cart";
+import { WishlistProvider } from "@/lib/wishlist";
+import { AuthProvider } from "@/lib/auth";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { Toaster } from "@/components/ui/sonner";
@@ -130,21 +133,31 @@ function RootShell({ children }: { children: ReactNode }) {
   );
 }
 
+import { AdminAuthProvider } from "@/lib/admin/admin-auth";
+
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const isAdmin = pathname.startsWith("/admin");
 
   return (
     <QueryClientProvider client={queryClient}>
-      <CartProvider>
-        <div className="flex min-h-screen flex-col bg-background text-foreground">
-          <SiteHeader />
-          <main className="flex-1">
-            <Outlet />
-          </main>
-          <SiteFooter />
-        </div>
-        <Toaster richColors position="top-center" />
-      </CartProvider>
+      <AuthProvider>
+        <AdminAuthProvider>
+          <CartProvider>
+            <WishlistProvider>
+              <div className="flex min-h-screen flex-col bg-background text-foreground">
+                {!isAdmin && <SiteHeader />}
+                <main className="flex-1">
+                  <Outlet />
+                </main>
+                {!isAdmin && <SiteFooter />}
+              </div>
+              <Toaster richColors position="top-center" />
+            </WishlistProvider>
+          </CartProvider>
+        </AdminAuthProvider>
+      </AuthProvider>
     </QueryClientProvider>
   );
 }
