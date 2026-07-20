@@ -1,46 +1,100 @@
-import { createContext, useContext, useState, ReactNode, useEffect } from "react";
+import { createContext, useContext, useState, ReactNode, useEffect, useCallback } from "react";
+import { apiFetch } from "./api";
+import { z } from "zod";
 
 export interface User {
-  name: string;
+  id: string;
   email: string;
+  role: string;
+  full_name: string;
   phone?: string;
 }
 
 interface AuthContextType {
   user: User | null;
-  login: (user: User) => void;
-  logout: () => void;
+  isLoading: boolean;
+  login: (credentials: Record<string, string>) => Promise<void>;
+  registerUser: (userData: Record<string, string>) => Promise<void>;
+  logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    // Check local storage on mount
-    const storedUser = localStorage.getItem("lilviaa_user");
-    if (storedUser) {
-      try {
-        setUser(JSON.parse(storedUser));
-      } catch (e) {
-        console.error("Failed to parse user from local storage");
+  const checkSession = useCallback(async () => {
+    try {
+      // If we don't have cookies, this will fail with 401. That's fine.
+      const res = await apiFetch("/auth/me");
+      if (res.ok) {
+        const data = await res.json();
+        setUser(data);
+      } else {
+        setUser(null);
       }
+    } catch (e) {
+      setUser(null);
+    } finally {
+      setIsLoading(false);
     }
   }, []);
 
-  const login = (userData: User) => {
-    setUser(userData);
-    localStorage.setItem("lilviaa_user", JSON.stringify(userData));
+  useEffect(() => {
+    checkSession();
+  }, [checkSession]);
+
+  const login = async (credentials: Record<string, string>) => {
+    // We send form data because OAuth2PasswordRequestForm expects it
+    const formData = new URLSearchParams();
+    formData.append("username", credentials.email);
+    formData.append("password", credentials.password);
+
+    const res = await apiFetch("/auth/login", {
+      method: "POST",
+      body: formData,
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+      }
+    });
+
+    if (!res.ok) {
+      const errData = await res.json();
+      throw new Error(errData.detail || "Login failed");
+    }
+
+    // Now fetch the profile
+    await checkSession();
   };
 
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem("lilviaa_user");
+  const registerUser = async (userData: Record<string, string>) => {
+    const res = await apiFetch("/auth/register", {
+      method: "POST",
+      body: JSON.stringify(userData)
+    });
+
+    if (!res.ok) {
+      const errData = await res.json();
+      throw new Error(errData.detail || "Registration failed");
+    }
+
+    // Registration also logs us in, so fetch profile
+    await checkSession();
+  };
+
+  const logout = async () => {
+    try {
+      await apiFetch("/auth/logout", { method: "POST" });
+    } catch (e) {
+      console.error("Logout error", e);
+    } finally {
+      setUser(null);
+    }
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout }}>
+    <AuthContext.Provider value={{ user, isLoading, login, registerUser, logout }}>
       {children}
     </AuthContext.Provider>
   );

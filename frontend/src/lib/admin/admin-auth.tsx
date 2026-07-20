@@ -15,33 +15,32 @@ const AdminAuthContext = createContext<AdminAuthContextType | undefined>(undefin
 const OWNER_EMAILS = ["admin1@lilviaa.com", "admin2@lilviaa.com"];
 
 export function AdminAuthProvider({ children }: { children: ReactNode }) {
-  const { user } = useAuth();
+  const { user, isLoading: isLoadingAuth } = useAuth();
   const [adminUser, setAdminUser] = useState<AdminUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Simulate a network request to Supabase to fetch user role
-    setIsLoading(true);
-    
-    const timeout = setTimeout(() => {
-      if (user) {
-        // Mock authorization logic
-        // For development, we'll allow any @lilviaa.com email to be an owner as well.
-        const isOwner = OWNER_EMAILS.includes(user.email.toLowerCase()) || user.email.endsWith("@lilviaa.com");
-        
-        if (isOwner) {
-          setAdminUser({ user, role: "owner" });
-        } else {
-          setAdminUser(null);
-        }
+    if (isLoadingAuth) {
+      setIsLoading(true);
+      return;
+    }
+
+    if (user) {
+      // Real authorization logic using the role returned from the backend
+      const role = user.role;
+      const isOwner = role === "owner";
+      const isAdminUser = role === "admin" || role === "owner";
+
+      if (isAdminUser) {
+        setAdminUser({ user, role });
       } else {
         setAdminUser(null);
       }
-      setIsLoading(false);
-    }, 400); // Slight delay to mock network
-
-    return () => clearTimeout(timeout);
-  }, [user]);
+    } else {
+      setAdminUser(null);
+    }
+    setIsLoading(false);
+  }, [user, isLoadingAuth]);
 
   const isOwner = adminUser?.role === "owner";
   const isAdminUser = adminUser !== null;

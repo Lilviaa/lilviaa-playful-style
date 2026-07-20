@@ -43,7 +43,7 @@ function AccountLayout() {
         <div>
           <h1 className="font-display text-4xl text-cocoa md:text-5xl">My Account</h1>
           <p className="mt-2 text-lg text-muted-foreground">
-            Welcome back, {user.name}!
+            Welcome back, {user.full_name}!
           </p>
         </div>
         <button
