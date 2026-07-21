@@ -1,8 +1,11 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { formatINR, useCart } from "@/lib/cart";
+import { useAuth } from "@/lib/auth";
+import { useAddresses } from "@/lib/addresses-api";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
+import { useEffect } from "react";
 import { ArrowRight, CreditCard, Landmark, Banknote, SmartphoneNfc } from "lucide-react";
 import {
   Form,
@@ -42,15 +45,17 @@ const formSchema = z.object({
 function CheckoutPage() {
   const { items, subtotal } = useCart();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const { data: addresses } = useAddresses();
   const shipping = subtotal === 0 ? 0 : subtotal >= 999 ? 0 : 79;
   const total = subtotal + shipping;
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      fullName: "",
-      email: "",
-      phone: "",
+      fullName: user?.name || "",
+      email: user?.email || "",
+      phone: user?.phone || "",
       address: "",
       city: "",
       state: "",
@@ -58,6 +63,21 @@ function CheckoutPage() {
       paymentMethod: "upi",
     },
   });
+
+  useEffect(() => {
+    if (addresses && addresses.length > 0) {
+      const defaultAddress = addresses.find(a => a.is_default) || addresses[0];
+      form.reset({
+        ...form.getValues(),
+        fullName: defaultAddress.full_name,
+        phone: defaultAddress.phone,
+        address: defaultAddress.address,
+        city: defaultAddress.city,
+        state: defaultAddress.state,
+        zip: defaultAddress.zip,
+      });
+    }
+  }, [addresses, form]);
 
   function onSubmit(values: z.infer<typeof formSchema>) {
     // In a real app, this is where we'd hit Razorpay API or our backend

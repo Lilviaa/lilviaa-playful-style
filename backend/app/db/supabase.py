@@ -17,3 +17,8 @@ def get_fresh_supabase() -> Client:
     """Create a fresh Supabase client — used for sign_in_with_password so the 
     user session doesn't pollute the admin client."""
     return create_client(settings.SUPABASE_URL, settings.SUPABASE_SERVICE_ROLE_KEY)
+
+def get_anon_supabase() -> Client:
+    """Create a fresh anon Supabase client for user-facing auth flows to avoid
+    exposing service role privileges if abused."""
+    return create_client(settings.SUPABASE_URL, settings.SUPABASE_ANON_KEY)

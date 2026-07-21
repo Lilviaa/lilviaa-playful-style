@@ -11,8 +11,6 @@ interface AdminAuthContextType {
 
 const AdminAuthContext = createContext<AdminAuthContextType | undefined>(undefined);
 
-// In a real app, this would be fetched from Supabase `profiles` table.
-const OWNER_EMAILS = ["admin1@lilviaa.com", "admin2@lilviaa.com"];
 
 export function AdminAuthProvider({ children }: { children: ReactNode }) {
   const { user, isLoading: isLoadingAuth } = useAuth();

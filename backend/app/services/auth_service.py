@@ -1,7 +1,7 @@
 from supabase import Client
 from app.models.auth import UserCreate, UserLogin, Token, UserResponse, UserProfileUpdate
 from app.core.exceptions import AppError, UnauthorizedError
-from app.db.supabase import get_supabase, get_fresh_supabase
+from app.db.supabase import get_supabase, get_fresh_supabase, get_anon_supabase
 
 class AuthService:
     @property
@@ -45,12 +45,19 @@ class AuthService:
 
     def login_user(self, user_in: UserLogin) -> Token:
         try:
-            # Use a FRESH client so sign_in doesn't pollute the admin singleton
-            fresh_client = get_fresh_supabase()
-            auth_response = fresh_client.auth.sign_in_with_password({
+            # Use ANON client so sign_in doesn't pollute admin singleton and uses safe privileges
+            anon_client = get_anon_supabase()
+            auth_response = anon_client.auth.sign_in_with_password({
                 "email": user_in.email,
                 "password": user_in.password
             })
+            
+            user_id = auth_response.user.id
+            self.supabase.table("audit_logs").insert({
+                "user_id": user_id,
+                "action": "login_success",
+                "details": {"email": user_in.email}
+            }).execute()
             
             return Token(
                 access_token=auth_response.session.access_token,
@@ -58,6 +65,16 @@ class AuthService:
                 token_type="bearer"
             )
         except Exception as e:
+            # Try to find the user by email to log the failed attempt against their user_id
+            user_data = self.supabase.table("users").select("id").eq("email", user_in.email).execute()
+            user_id = user_data.data[0]["id"] if user_data.data else None
+            
+            self.supabase.table("audit_logs").insert({
+                "user_id": user_id,
+                "action": "login_failed",
+                "details": {"email": user_in.email, "error": str(e)}
+            }).execute()
+            
             raise UnauthorizedError("Invalid email or password")
 
     def refresh_token(self, refresh_token: str) -> Token:
@@ -92,7 +109,9 @@ class AuthService:
             raise AppError(f"Failed to fetch profile: {str(e)}")
 
     def update_profile(self, user_id: str, updates: UserProfileUpdate) -> UserResponse:
-        """Update editable profile fields: full_name, phone, email."""
+        """Update editable profile fields: full_name and phone only.
+        Email changes require a verified email-change flow and are not permitted here.
+        """
         try:
             profile_updates = {}
             if updates.full_name is not None:
@@ -104,10 +123,15 @@ class AuthService:
                 self.supabase.table("user_profiles").update(profile_updates).eq("user_id", user_id).execute()
 
             if updates.email is not None:
-                self.supabase.auth.admin.update_user_by_id(user_id, {"email": updates.email})
-                self.supabase.table("users").update({"email": updates.email}).eq("id", user_id).execute()
+                raise AppError(
+                    "Email changes are not supported via this endpoint. "
+                    "A verified email-change flow (confirmation to the new address) is required.",
+                    status_code=400
+                )
 
             return self.get_user_profile(user_id)
+        except AppError:
+            raise
         except Exception as e:
             raise AppError(f"Failed to update profile: {str(e)}")
 
@@ -120,15 +144,21 @@ class AuthService:
                 raise AppError("User not found")
             email = user_data.data["email"]
 
-            # 2. Verify current password by attempting to sign in
-            fresh_client = get_fresh_supabase()
+            # 2. Verify current password by attempting to sign in (with anon client)
+            anon_client = get_anon_supabase()
             try:
-                fresh_client.auth.sign_in_with_password({"email": email, "password": current_password})
+                anon_client.auth.sign_in_with_password({"email": email, "password": current_password})
             except Exception:
                 raise UnauthorizedError("Incorrect current password")
 
             # 3. Update password via Admin API
             self.supabase.auth.admin.update_user_by_id(user_id, {"password": new_password})
+            
+            self.supabase.table("audit_logs").insert({
+                "user_id": user_id,
+                "action": "password_change",
+                "details": {"email": email}
+            }).execute()
             
             return {"message": "Password updated successfully. Please log in again with your new password."}
         except UnauthorizedError:
@@ -139,7 +169,18 @@ class AuthService:
     def logout_user(self, access_token: str) -> dict:
         """Sign out user — invalidates the Supabase session."""
         try:
+            # Get user info before invalidating to log it
+            user_response = self.supabase.auth.get_user(access_token)
+            user_id = user_response.user.id if user_response and user_response.user else None
+            
             self.supabase.auth.admin.sign_out(access_token)
+            
+            if user_id:
+                self.supabase.table("audit_logs").insert({
+                    "user_id": user_id,
+                    "action": "logout"
+                }).execute()
+                
             return {"message": "Logged out successfully"}
         except Exception:
             return {"message": "Logged out successfully"}

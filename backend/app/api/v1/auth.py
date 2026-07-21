@@ -4,20 +4,28 @@ from pydantic import ValidationError
 import secrets
 from app.models.auth import UserCreate, UserLogin, Token, UserResponse, UserProfileUpdate, ChangePassword
 from app.services.auth_service import auth_service
-from app.api.dependencies import get_current_user_id, get_current_user_token, get_token_from_cookie
+from app.api.dependencies import get_current_user_id, get_current_user_token, get_token_from_cookie, verify_csrf_token
+from app.core.config import settings
+from app.core.limiter import limiter
 
 router = APIRouter()
 
 def set_auth_cookies(response: Response, token: Token):
-    """Set secure httpOnly cookies for access and refresh tokens, plus a readable CSRF cookie."""
+    """Set secure httpOnly cookies for access and refresh tokens, plus a readable CSRF cookie.
+    SameSite=Strict prevents cross-site form/fetch submissions for login and register
+    (pre-auth endpoints that don't have a CSRF token yet).
+    """
+    is_prod = settings.ENVIRONMENT == "production"
+    samesite = "strict"
+    
     # CSRF token - readable by JS
     csrf_token = secrets.token_urlsafe(32)
     response.set_cookie(
         key="csrf_token",
         value=csrf_token,
         httponly=False, # Needed by JS to read and send in header
-        secure=False,   # Set True in prod
-        samesite="lax",
+        secure=is_prod,
+        samesite=samesite,
         max_age=30 * 60 # 30 mins
     )
     
@@ -26,8 +34,8 @@ def set_auth_cookies(response: Response, token: Token):
         key="access_token",
         value=token.access_token,
         httponly=True,
-        secure=False,   # Set True in prod (HTTPS)
-        samesite="lax",
+        secure=is_prod,
+        samesite=samesite,
         max_age=30 * 60 # 30 mins
     )
     
@@ -36,8 +44,8 @@ def set_auth_cookies(response: Response, token: Token):
         key="refresh_token",
         value=token.refresh_token,
         httponly=True,
-        secure=False,   # Set True in prod
-        samesite="lax",
+        secure=is_prod,
+        samesite=samesite,
         max_age=7 * 24 * 60 * 60 # 7 days
     )
 
@@ -51,7 +59,8 @@ def clear_auth_cookies(response: Response):
 # ──────────────────────────────────────────
 
 @router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
-def register(user_in: UserCreate, response: Response):
+@limiter.limit("3/minute")
+def register(request: Request, user_in: UserCreate, response: Response):
     """Register a new customer and log them in immediately."""
     user = auth_service.register_user(user_in)
     # Log them in automatically
@@ -60,7 +69,8 @@ def register(user_in: UserCreate, response: Response):
     return user
 
 @router.post("/login")
-def login(response: Response, form_data: OAuth2PasswordRequestForm = Depends()):
+@limiter.limit("5/minute")
+def login(request: Request, response: Response, form_data: OAuth2PasswordRequestForm = Depends()):
     """Login with email and password, setting secure httpOnly cookies."""
     try:
         credentials = UserLogin(email=form_data.username, password=form_data.password)
@@ -74,7 +84,8 @@ def login(response: Response, form_data: OAuth2PasswordRequestForm = Depends()):
     return {"message": "Logged in successfully"}
 
 @router.post("/refresh")
-def refresh_token(request: Request, response: Response):
+@limiter.limit("5/minute")
+def refresh_token(request: Request, response: Response, _csrf=Depends(verify_csrf_token)):
     """Refresh the access token using the refresh_token cookie."""
     refresh_token = request.cookies.get("refresh_token")
     if not refresh_token:
@@ -85,7 +96,7 @@ def refresh_token(request: Request, response: Response):
     return {"message": "Token refreshed"}
 
 @router.post("/logout")
-def logout(response: Response, token: str = Depends(get_token_from_cookie)):
+def logout(response: Response, _csrf=Depends(verify_csrf_token), token: str = Depends(get_token_from_cookie)):
     """Logout — invalidate the current session and clear cookies."""
     result = auth_service.logout_user(token)
     clear_auth_cookies(response)
@@ -102,7 +113,10 @@ def get_me(user_id: str = Depends(get_current_user_id)):
 
 @router.patch("/me", response_model=UserResponse)
 def update_me(updates: UserProfileUpdate, user_id: str = Depends(get_current_user_id)):
-    """Update current user's profile. Send only the fields you want to change."""
+    """Update current user's profile. Send only the fields you want to change.
+    Note: Email changes are NOT supported here — a verified email-change flow
+    (confirmation link to the new address) must be built before enabling this.
+    """
     return auth_service.update_profile(user_id, updates)
 
 @router.post("/me/change-password")

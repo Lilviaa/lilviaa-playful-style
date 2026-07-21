@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useAuth } from "@/lib/auth";
-import { Settings, MapPin, User, Shield, Key, Trash2, Edit2, Save } from "lucide-react";
+import { useAddresses, useCreateAddress, useUpdateAddress, useDeleteAddress } from "@/lib/addresses-api";
+import { Settings, MapPin, User, Shield, Key, Trash2, Edit2, Save, Plus } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { toast } from "sonner";
 
@@ -15,8 +16,32 @@ export const Route = createFileRoute("/account/settings")({
 
 function AccountSettingsPage() {
   const { user } = useAuth();
+  const { data: addresses = [], isLoading: isLoadingAddresses } = useAddresses();
+  const createAddress = useCreateAddress();
+  const updateAddress = useUpdateAddress();
+  const deleteAddress = useDeleteAddress();
 
   if (!user) return null;
+
+  const handleAddressSubmit = async (e: React.FormEvent<HTMLFormElement>, id?: string) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    const data = {
+      type: formData.get("type") as string,
+      full_name: formData.get("full_name") as string,
+      phone: formData.get("phone") as string,
+      address: formData.get("address") as string,
+      city: formData.get("city") as string,
+      state: formData.get("state") as string,
+      zip: formData.get("zip") as string,
+      is_default: formData.get("is_default") === "on",
+    };
+    if (id) {
+      updateAddress.mutate({ id, data });
+    } else {
+      createAddress.mutate(data);
+    }
+  };
 
   return (
     <div className="space-y-8">
@@ -88,92 +113,158 @@ function AccountSettingsPage() {
             </div>
           </div>
 
-          {/* DEFAULT ADDRESS */}
+          {/* ADDRESSES */}
           <div>
             <div className="flex items-center justify-between border-b border-border pb-2 mb-4">
               <h3 className="font-display text-lg text-cocoa flex items-center gap-2">
-                <MapPin className="h-4 w-4" /> Default Address
+                <MapPin className="h-4 w-4" /> Addresses ({addresses.length}/5)
               </h3>
-              <Dialog>
-                <DialogTrigger asChild>
-                  <button className="text-sm font-semibold text-primary hover:underline flex items-center gap-1">
-                    <Edit2 className="h-3 w-3" /> Edit
-                  </button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-[500px]">
-                  <DialogHeader>
-                    <DialogTitle className="font-display text-2xl text-cocoa">Edit Default Address</DialogTitle>
-                  </DialogHeader>
-                  <form onSubmit={(e) => { e.preventDefault(); toast.success("Address updated"); }} className="space-y-4 pt-4">
-                    <div className="space-y-1.5">
-                      <label className="text-sm font-semibold text-cocoa">Address Type (e.g. Home, Work)</label>
-                      <input
-                        required
-                        type="text"
-                        defaultValue="Home"
-                        className="w-full rounded-xl border-2 border-border bg-background px-4 py-2 text-sm text-cocoa focus:border-primary focus:outline-none"
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <label className="text-sm font-semibold text-cocoa">Street Address</label>
-                      <input type="text" required defaultValue="123 Playful Lane, Apt 4B" className="w-full rounded-xl border-2 border-border bg-background px-4 py-2 text-sm text-cocoa focus:border-primary focus:outline-none" />
-                    </div>
-                    <div className="space-y-1.5">
-                      <label className="text-sm font-semibold text-cocoa">Landmark (Optional)</label>
-                      <input
-                        type="text"
-                        placeholder="e.g. Opposite Central Mall"
-                        className="w-full rounded-xl border-2 border-border bg-background px-4 py-2 text-sm text-cocoa focus:border-primary focus:outline-none"
-                      />
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
+              {addresses.length < 5 && (
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <button className="text-sm font-semibold text-primary hover:underline flex items-center gap-1">
+                      <Plus className="h-3 w-3" /> Add New
+                    </button>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-[500px]">
+                    <DialogHeader>
+                      <DialogTitle className="font-display text-2xl text-cocoa">Add New Address</DialogTitle>
+                    </DialogHeader>
+                    <form onSubmit={(e) => handleAddressSubmit(e)} className="space-y-4 pt-4">
                       <div className="space-y-1.5">
-                        <label className="text-sm font-semibold text-cocoa">City</label>
-                        <input type="text" required defaultValue="Mumbai" className="w-full rounded-xl border-2 border-border bg-background px-4 py-2 text-sm text-cocoa focus:border-primary focus:outline-none" />
+                        <label className="text-sm font-semibold text-cocoa">Address Type (e.g. Home, Work)</label>
+                        <input required name="type" type="text" defaultValue="Home" className="w-full rounded-xl border-2 border-border bg-background px-4 py-2 text-sm text-cocoa focus:border-primary focus:outline-none" />
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-1.5">
+                          <label className="text-sm font-semibold text-cocoa">Full Name</label>
+                          <input type="text" name="full_name" required defaultValue={user.name} className="w-full rounded-xl border-2 border-border bg-background px-4 py-2 text-sm text-cocoa focus:border-primary focus:outline-none" />
+                        </div>
+                        <div className="space-y-1.5">
+                          <label className="text-sm font-semibold text-cocoa">Phone</label>
+                          <input type="text" name="phone" required defaultValue={user.phone || ""} className="w-full rounded-xl border-2 border-border bg-background px-4 py-2 text-sm text-cocoa focus:border-primary focus:outline-none" />
+                        </div>
                       </div>
                       <div className="space-y-1.5">
-                        <label className="text-sm font-semibold text-cocoa">State</label>
-                        <input type="text" required defaultValue="Maharashtra" className="w-full rounded-xl border-2 border-border bg-background px-4 py-2 text-sm text-cocoa focus:border-primary focus:outline-none" />
+                        <label className="text-sm font-semibold text-cocoa">Street Address</label>
+                        <input type="text" name="address" required placeholder="123 Playful Lane" className="w-full rounded-xl border-2 border-border bg-background px-4 py-2 text-sm text-cocoa focus:border-primary focus:outline-none" />
                       </div>
-                      <div className="space-y-1.5">
-                        <label className="text-sm font-semibold text-cocoa">PIN Code</label>
-                        <input
-                          required
-                          type="text"
-                          defaultValue="400001"
-                          className="w-full rounded-xl border-2 border-border bg-background px-4 py-2 text-sm text-cocoa focus:border-primary focus:outline-none"
-                        />
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-1.5">
+                          <label className="text-sm font-semibold text-cocoa">City</label>
+                          <input type="text" name="city" required placeholder="Mumbai" className="w-full rounded-xl border-2 border-border bg-background px-4 py-2 text-sm text-cocoa focus:border-primary focus:outline-none" />
+                        </div>
+                        <div className="space-y-1.5">
+                          <label className="text-sm font-semibold text-cocoa">State</label>
+                          <input type="text" name="state" required placeholder="Maharashtra" className="w-full rounded-xl border-2 border-border bg-background px-4 py-2 text-sm text-cocoa focus:border-primary focus:outline-none" />
+                        </div>
+                        <div className="space-y-1.5">
+                          <label className="text-sm font-semibold text-cocoa">PIN Code</label>
+                          <input required name="zip" type="text" placeholder="400001" className="w-full rounded-xl border-2 border-border bg-background px-4 py-2 text-sm text-cocoa focus:border-primary focus:outline-none" />
+                        </div>
                       </div>
-                      <div className="space-y-1.5">
-                        <label className="text-sm font-semibold text-cocoa">Country</label>
-                        <input
-                          required
-                          type="text"
-                          defaultValue="India"
-                          className="w-full rounded-xl border-2 border-border bg-background px-4 py-2 text-sm text-cocoa focus:border-primary focus:outline-none"
-                        />
+                      <div className="flex items-center gap-2 pt-2">
+                        <input type="checkbox" name="is_default" id="is_default" className="w-4 h-4 text-primary bg-background border-border rounded focus:ring-primary focus:ring-2" />
+                        <label htmlFor="is_default" className="text-sm font-medium text-cocoa">Set as default address</label>
                       </div>
-                    </div>
-                    <div className="pt-4 flex justify-between items-center">
-                      <DialogTrigger asChild>
-                        <button type="button" className="text-sm font-semibold text-muted-foreground hover:text-cocoa">
-                          Cancel
+                      <div className="pt-4 flex justify-between items-center">
+                        <DialogTrigger asChild>
+                          <button type="button" className="text-sm font-semibold text-muted-foreground hover:text-cocoa">Cancel</button>
+                        </DialogTrigger>
+                        <button type="submit" disabled={createAddress.isPending} className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-2.5 text-sm font-bold text-primary-foreground shadow-pop transition-transform hover:-translate-y-0.5 disabled:opacity-50">
+                          <Save className="h-4 w-4" /> Save Address
                         </button>
-                      </DialogTrigger>
-                      <button type="submit" className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-2.5 text-sm font-bold text-primary-foreground shadow-pop transition-transform hover:-translate-y-0.5">
-                        <Save className="h-4 w-4" /> Save Address
-                      </button>
-                    </div>
-                  </form>
-                </DialogContent>
-              </Dialog>
+                      </div>
+                    </form>
+                  </DialogContent>
+                </Dialog>
+              )}
             </div>
             
-            <div className="text-sm">
-              <p className="font-medium text-cocoa">123 Playful Lane, Apt 4B</p>
-              <p className="text-muted-foreground mt-0.5">Mumbai, Maharashtra 400001</p>
-              <p className="text-muted-foreground mt-0.5">India</p>
-            </div>
+            {isLoadingAddresses ? (
+              <p className="text-sm text-muted-foreground">Loading addresses...</p>
+            ) : addresses.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No addresses saved yet.</p>
+            ) : (
+              <div className="grid gap-4 sm:grid-cols-2">
+                {addresses.map((address) => (
+                  <div key={address.id} className="relative rounded-xl border-2 border-border bg-background p-4 flex flex-col">
+                    {address.is_default && (
+                      <span className="absolute top-4 right-4 bg-primary text-primary-foreground text-xs font-bold px-2 py-1 rounded-md">Default</span>
+                    )}
+                    <h4 className="font-semibold text-cocoa mb-1">{address.type} <span className="text-muted-foreground font-normal text-sm ml-2">{address.full_name}</span></h4>
+                    <div className="text-sm text-muted-foreground flex-1">
+                      <p>{address.address}</p>
+                      <p>{address.city}, {address.state} {address.zip}</p>
+                      <p className="mt-1">Ph: {address.phone}</p>
+                    </div>
+                    <div className="mt-4 flex items-center gap-4 border-t border-border pt-3">
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <button className="text-sm font-semibold text-primary hover:underline">Edit</button>
+                        </DialogTrigger>
+                        <DialogContent className="sm:max-w-[500px]">
+                          <DialogHeader>
+                            <DialogTitle className="font-display text-2xl text-cocoa">Edit Address</DialogTitle>
+                          </DialogHeader>
+                          <form onSubmit={(e) => handleAddressSubmit(e, address.id)} className="space-y-4 pt-4">
+                            <div className="space-y-1.5">
+                              <label className="text-sm font-semibold text-cocoa">Address Type</label>
+                              <input required name="type" type="text" defaultValue={address.type} className="w-full rounded-xl border-2 border-border bg-background px-4 py-2 text-sm text-cocoa focus:border-primary focus:outline-none" />
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                              <div className="space-y-1.5">
+                                <label className="text-sm font-semibold text-cocoa">Full Name</label>
+                                <input type="text" name="full_name" required defaultValue={address.full_name} className="w-full rounded-xl border-2 border-border bg-background px-4 py-2 text-sm text-cocoa focus:border-primary focus:outline-none" />
+                              </div>
+                              <div className="space-y-1.5">
+                                <label className="text-sm font-semibold text-cocoa">Phone</label>
+                                <input type="text" name="phone" required defaultValue={address.phone} className="w-full rounded-xl border-2 border-border bg-background px-4 py-2 text-sm text-cocoa focus:border-primary focus:outline-none" />
+                              </div>
+                            </div>
+                            <div className="space-y-1.5">
+                              <label className="text-sm font-semibold text-cocoa">Street Address</label>
+                              <input type="text" name="address" required defaultValue={address.address} className="w-full rounded-xl border-2 border-border bg-background px-4 py-2 text-sm text-cocoa focus:border-primary focus:outline-none" />
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                              <div className="space-y-1.5">
+                                <label className="text-sm font-semibold text-cocoa">City</label>
+                                <input type="text" name="city" required defaultValue={address.city} className="w-full rounded-xl border-2 border-border bg-background px-4 py-2 text-sm text-cocoa focus:border-primary focus:outline-none" />
+                              </div>
+                              <div className="space-y-1.5">
+                                <label className="text-sm font-semibold text-cocoa">State</label>
+                                <input type="text" name="state" required defaultValue={address.state} className="w-full rounded-xl border-2 border-border bg-background px-4 py-2 text-sm text-cocoa focus:border-primary focus:outline-none" />
+                              </div>
+                              <div className="space-y-1.5">
+                                <label className="text-sm font-semibold text-cocoa">PIN Code</label>
+                                <input required name="zip" type="text" defaultValue={address.zip} className="w-full rounded-xl border-2 border-border bg-background px-4 py-2 text-sm text-cocoa focus:border-primary focus:outline-none" />
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2 pt-2">
+                              <input type="checkbox" name="is_default" id={`is_default_${address.id}`} defaultChecked={address.is_default} className="w-4 h-4 text-primary bg-background border-border rounded focus:ring-primary focus:ring-2" />
+                              <label htmlFor={`is_default_${address.id}`} className="text-sm font-medium text-cocoa">Set as default address</label>
+                            </div>
+                            <div className="pt-4 flex justify-between items-center">
+                              <DialogTrigger asChild>
+                                <button type="button" className="text-sm font-semibold text-muted-foreground hover:text-cocoa">Cancel</button>
+                              </DialogTrigger>
+                              <button type="submit" disabled={updateAddress.isPending} className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-2.5 text-sm font-bold text-primary-foreground shadow-pop transition-transform hover:-translate-y-0.5 disabled:opacity-50">
+                                <Save className="h-4 w-4" /> Save
+                              </button>
+                            </div>
+                          </form>
+                        </DialogContent>
+                      </Dialog>
+                      <button onClick={() => {
+                        if (confirm("Are you sure you want to delete this address?")) {
+                          deleteAddress.mutate(address.id);
+                        }
+                      }} className="text-sm font-semibold text-red-600 hover:underline">Delete</button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* SECURITY */}

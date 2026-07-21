@@ -3,13 +3,10 @@ from app.core.exceptions import UnauthorizedError, ForbiddenError
 from app.db.supabase import get_supabase, get_fresh_supabase
 
 async def get_token_from_cookie(request: Request) -> str:
-    """Extract token from httpOnly cookie."""
+    """Extract access token from httpOnly cookie only. No header fallback — cookies are
+    the only accepted mechanism to prevent XSS-based token theft."""
     token = request.cookies.get("access_token")
     if not token:
-        # Fallback to header if needed for swagger (but UI uses cookies)
-        auth_header = request.headers.get("Authorization")
-        if auth_header and auth_header.startswith("Bearer "):
-            return auth_header.split(" ")[1]
         raise UnauthorizedError("Not authenticated")
     return token
 
