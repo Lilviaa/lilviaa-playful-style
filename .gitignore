@@ -1,3 +1,87 @@
-node_modules
+# ──────────────────────────────────────────
+# Secrets & Environment
+# ──────────────────────────────────────────
 .env
-.env.example
+.env.*
+!.env.example
+
+# ──────────────────────────────────────────
+# Python / FastAPI (backend)
+# ──────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+*.pyd
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+*.log
+
+# Virtual environments
+venv/
+.venv/
+env/
+.env_local/
+backend/venv/
+backend/.venv/
+
+# uv
+.uv/
+uv.lock
+
+# ──────────────────────────────────────────
+# Node / React / TanStack (frontend)
+# ──────────────────────────────────────────
+node_modules/
+dist/
+.output/
+.nuxt/
+.next/
+.turbo/
+*.local
+
+# Build output
+frontend/dist/
+frontend/.output/
+frontend/build/
+
+# Package manager locks (keep one, ignore others)
+# Keeping package-lock.json / pnpm-lock.yaml — remove as appropriate
+yarn.lock
+
+# ──────────────────────────────────────────
+# Editor & IDE
+# ──────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# ──────────────────────────────────────────
+# OS
+# ──────────────────────────────────────────
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Desktop.ini
+
+# ──────────────────────────────────────────
+# Supabase local dev
+# ──────────────────────────────────────────
+supabase/.branches/
+supabase/.temp/
