@@ -36,14 +36,25 @@ function AccountLayout() {
     { label: "My Orders", to: "/account/orders", icon: Package, exact: false },
     { label: "Settings", to: "/account/settings", icon: Settings, exact: false },
   ];
+  const currentTabObj = navItems.find(item => item.exact ? pathname === item.to : pathname.startsWith(item.to));
+  const currentTab = currentTabObj?.label || "My Account";
+
+  let tabDescription = `Welcome back, ${user.full_name}!`;
+  if (currentTab === "Overview") {
+    tabDescription = `Welcome back, ${user.full_name}! Manage your account and track your latest activity.`;
+  } else if (currentTab === "My Orders") {
+    tabDescription = "View your orders and track their delivery status.";
+  } else if (currentTab === "Settings") {
+    tabDescription = "Manage your account settings and security preferences.";
+  }
 
   return (
     <div className="mx-auto max-w-7xl px-6 py-12">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-10">
         <div>
-          <h1 className="font-display text-4xl text-cocoa md:text-5xl">My Account</h1>
+          <h1 className="font-display text-4xl text-cocoa md:text-5xl">{currentTab}</h1>
           <p className="mt-2 text-lg text-muted-foreground">
-            Welcome back, {user.full_name}!
+            {tabDescription}
           </p>
         </div>
         <button
@@ -54,34 +65,30 @@ function AccountLayout() {
         </button>
       </div>
 
-      <div className="grid gap-8 lg:grid-cols-[250px_1fr]">
-        <aside>
-          <nav className="flex flex-col gap-2">
-            {navItems.map((item) => {
-              const isActive = item.exact ? pathname === item.to : pathname.startsWith(item.to);
-              return (
-                <Link
-                  key={item.label}
-                  to={item.to}
-                  className={cn(
-                    "flex items-center gap-3 rounded-2xl px-4 py-3 font-semibold transition-colors",
-                    isActive
-                      ? "bg-primary text-primary-foreground shadow-pop"
-                      : "text-cocoa/70 hover:bg-card hover:text-cocoa"
-                  )}
-                >
-                  <item.icon className="h-5 w-5" />
-                  {item.label}
-                </Link>
-              );
-            })}
-          </nav>
-        </aside>
-
-        <main>
-          <Outlet />
-        </main>
+      <div className="flex gap-4 border-b border-border overflow-x-auto pb-1 mb-8 hide-scrollbar">
+        {navItems.map((item) => {
+          const isActive = item.exact ? pathname === item.to : pathname.startsWith(item.to);
+          return (
+            <Link
+              key={item.label}
+              to={item.to}
+              className={cn(
+                "flex items-center gap-2 whitespace-nowrap px-4 py-3 font-semibold transition-all border-b-2",
+                isActive
+                  ? "border-primary text-primary"
+                  : "border-transparent text-muted-foreground hover:text-cocoa hover:border-cocoa/30"
+              )}
+            >
+              <item.icon className="h-5 w-5" />
+              {item.label}
+            </Link>
+          );
+        })}
       </div>
+
+      <main>
+        <Outlet />
+      </main>
     </div>
   );
 }

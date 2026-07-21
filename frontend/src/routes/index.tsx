@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
-import { ArrowRight, Sparkles, Truck, ShieldCheck, Ruler, Star, AlertCircle } from "lucide-react";
+import { ArrowRight, Sparkles, Truck, ShieldCheck, Ruler, Star, AlertCircle, Heart, Gem, Baby, MapPin } from "lucide-react";
 import { featured, categories } from "@/lib/products";
 import { ProductCard } from "@/components/product-card";
 import { ScrollReveal } from "@/components/scroll-reveal";
@@ -99,7 +99,7 @@ function HomePage() {
               <div className="mt-10 flex flex-wrap gap-3 sm:gap-4">
                 <Link
                   to="/shop"
-                  className="group inline-flex h-14 w-full items-center justify-center gap-2 rounded-full bg-primary px-8 text-base font-bold text-primary-foreground shadow-pop transition-all hover:-translate-y-1 hover:shadow-[0_12px_0_0_#d2546e] active:translate-y-1 active:shadow-none sm:w-auto"
+                  className="group inline-flex h-14 w-full items-center justify-center gap-2 rounded-full bg-primary px-8 text-base font-bold text-primary-foreground shadow-pop transition-all hover:scale-105 active:scale-95 sm:w-auto"
                 >
                   Shop the collection
                   <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
@@ -121,11 +121,11 @@ function HomePage() {
       <ScrollReveal className="border-y border-border/60 bg-card">
         <div className="mx-auto grid max-w-7xl gap-6 px-6 py-6 sm:grid-cols-2 md:grid-cols-5">
           {[
-            { icon: Truck, label: "Free shipping over ₹999" },
-            { icon: ShieldCheck, label: "Skin-safe, tested fabrics" },
-            { icon: AlertCircle, label: "No return / exchange" },
-            { icon: Ruler, label: "Check the size guide" },
-            { icon: Sparkles, label: "Handcrafted in India" },
+            { icon: Heart, label: "Comfort First" },
+            { icon: Gem, label: "Premium Fabric" },
+            { icon: Baby, label: "6M–6Y Boys" },
+            { icon: MapPin, label: "Made in India" },
+            { icon: Truck, label: "Free Shipping ₹3K+" },
           ].map(({ icon: Icon, label }) => (
             <div key={label} className="flex items-center gap-3 text-sm font-semibold text-cocoa">
               <span className="flex h-9 w-9 items-center justify-center rounded-full bg-sand text-primary">
@@ -157,6 +157,7 @@ function HomePage() {
               <ScrollReveal key={c.slug} direction="up" delay={i * 0.1}>
                 <Link
                   to="/shop"
+                  search={{ category: c.slug }}
                   className="group relative flex aspect-[4/5] w-full flex-col justify-between overflow-hidden rounded-[2.5rem] bg-card p-6 shadow-cute transition-all duration-500 ease-out hover:-translate-y-2 hover:shadow-pop"
                 >
                   {/* Background Image */}

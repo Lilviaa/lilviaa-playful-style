@@ -199,40 +199,52 @@ function CheckoutPage() {
                           defaultValue={field.value}
                           className="grid grid-cols-1 gap-4 sm:grid-cols-2"
                         >
-                          <FormItem className="flex items-center space-x-3 space-y-0 rounded-2xl border border-border bg-background p-4 shadow-sm hover:border-primary transition-colors cursor-pointer">
+                          <FormItem 
+                            onClick={() => field.onChange("upi")}
+                            className={`flex items-center space-x-3 space-y-0 rounded-2xl border bg-background p-4 shadow-sm hover:border-primary transition-colors cursor-pointer ${field.value === 'upi' ? 'border-primary ring-1 ring-primary' : 'border-border'}`}
+                          >
                             <FormControl>
                               <RadioGroupItem value="upi" />
                             </FormControl>
                             <div className="flex flex-1 items-center gap-3">
                               <SmartphoneNfc className="h-5 w-5 text-muted-foreground" />
-                              <FormLabel className="font-semibold text-cocoa cursor-pointer">UPI / QR</FormLabel>
+                              <FormLabel className="font-semibold text-cocoa cursor-pointer pointer-events-none">UPI / QR</FormLabel>
                             </div>
                           </FormItem>
-                          <FormItem className="flex items-center space-x-3 space-y-0 rounded-2xl border border-border bg-background p-4 shadow-sm hover:border-primary transition-colors cursor-pointer">
+                          <FormItem 
+                            onClick={() => field.onChange("card")}
+                            className={`flex items-center space-x-3 space-y-0 rounded-2xl border bg-background p-4 shadow-sm hover:border-primary transition-colors cursor-pointer ${field.value === 'card' ? 'border-primary ring-1 ring-primary' : 'border-border'}`}
+                          >
                             <FormControl>
                               <RadioGroupItem value="card" />
                             </FormControl>
                             <div className="flex flex-1 items-center gap-3">
                               <CreditCard className="h-5 w-5 text-muted-foreground" />
-                              <FormLabel className="font-semibold text-cocoa cursor-pointer">Credit / Debit Card</FormLabel>
+                              <FormLabel className="font-semibold text-cocoa cursor-pointer pointer-events-none">Credit / Debit Card</FormLabel>
                             </div>
                           </FormItem>
-                          <FormItem className="flex items-center space-x-3 space-y-0 rounded-2xl border border-border bg-background p-4 shadow-sm hover:border-primary transition-colors cursor-pointer">
+                          <FormItem 
+                            onClick={() => field.onChange("netbanking")}
+                            className={`flex items-center space-x-3 space-y-0 rounded-2xl border bg-background p-4 shadow-sm hover:border-primary transition-colors cursor-pointer ${field.value === 'netbanking' ? 'border-primary ring-1 ring-primary' : 'border-border'}`}
+                          >
                             <FormControl>
                               <RadioGroupItem value="netbanking" />
                             </FormControl>
                             <div className="flex flex-1 items-center gap-3">
                               <Landmark className="h-5 w-5 text-muted-foreground" />
-                              <FormLabel className="font-semibold text-cocoa cursor-pointer">Net Banking</FormLabel>
+                              <FormLabel className="font-semibold text-cocoa cursor-pointer pointer-events-none">Net Banking</FormLabel>
                             </div>
                           </FormItem>
-                          <FormItem className="flex items-center space-x-3 space-y-0 rounded-2xl border border-border bg-background p-4 shadow-sm hover:border-primary transition-colors cursor-pointer">
+                          <FormItem 
+                            onClick={() => field.onChange("cod")}
+                            className={`flex items-center space-x-3 space-y-0 rounded-2xl border bg-background p-4 shadow-sm hover:border-primary transition-colors cursor-pointer ${field.value === 'cod' ? 'border-primary ring-1 ring-primary' : 'border-border'}`}
+                          >
                             <FormControl>
                               <RadioGroupItem value="cod" />
                             </FormControl>
                             <div className="flex flex-1 items-center gap-3">
                               <Banknote className="h-5 w-5 text-muted-foreground" />
-                              <FormLabel className="font-semibold text-cocoa cursor-pointer">Cash on Delivery</FormLabel>
+                              <FormLabel className="font-semibold text-cocoa cursor-pointer pointer-events-none">Cash on Delivery</FormLabel>
                             </div>
                           </FormItem>
                         </RadioGroup>

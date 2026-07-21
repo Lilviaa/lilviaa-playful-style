@@ -4,6 +4,12 @@ import { products, categories } from "@/lib/products";
 import { ProductCard } from "@/components/product-card";
 
 export const Route = createFileRoute("/shop")({
+  validateSearch: (search: Record<string, unknown>): { category?: string; tag?: string } => {
+    return {
+      category: typeof search.category === "string" ? search.category : undefined,
+      tag: typeof search.tag === "string" ? search.tag : undefined,
+    };
+  },
   head: () => ({
     meta: [
       { title: "Shop all — lilviaa" },
@@ -30,7 +36,9 @@ const genders = [
 ] as const;
 
 function ShopPage() {
-  const [cat, setCat] = useState<string>("all");
+  const search = Route.useSearch();
+  const [cat, setCat] = useState<string>(search.category ?? "all");
+  const [tag, setTag] = useState<string>(search.tag ?? "all");
   const [gender, setGender] = useState<string>("all");
   const [sort, setSort] = useState<string>("featured");
 
@@ -38,12 +46,13 @@ function ShopPage() {
     let list = products.filter(
       (p) =>
         (cat === "all" || p.category === cat) &&
-        (gender === "all" || p.gender === gender),
+        (gender === "all" || p.gender === gender) &&
+        (tag === "all" || p.tag === tag),
     );
     if (sort === "price-asc") list = [...list].sort((a, b) => a.price - b.price);
     if (sort === "price-desc") list = [...list].sort((a, b) => b.price - a.price);
     return list;
-  }, [cat, gender, sort]);
+  }, [cat, gender, tag, sort]);
 
   return (
     <div>
@@ -67,6 +76,17 @@ function ShopPage() {
             options={[{ v: "all", l: "All" }, ...categories.map((c) => ({ v: c.slug, l: c.label }))]}
             value={cat}
             onChange={setCat}
+          />
+          <FilterGroup 
+            label="Collection" 
+            options={[
+              { v: "all", l: "All" }, 
+              { v: "new", l: "New Arrivals" }, 
+              { v: "bestseller", l: "Bestsellers" }, 
+              { v: "sale", l: "Sale" }
+            ]} 
+            value={tag} 
+            onChange={setTag} 
           />
           <FilterGroup label="For" options={genders as any} value={gender} onChange={setGender} />
           <div className="mt-2 w-full sm:ml-auto sm:mt-0 sm:w-auto">
