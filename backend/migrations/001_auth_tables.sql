@@ -47,10 +47,9 @@ CREATE POLICY "Users can read own row"
     ON public.users FOR SELECT
     USING (auth.uid() = id);
 
--- Users: service role can do everything (backend uses service_role key)
-CREATE POLICY "Service role full access on users"
-    ON public.users FOR ALL
-    USING (auth.role() = 'service_role');
+-- Note: service_role key bypasses RLS entirely at the Postgres level.
+-- No explicit service_role policy is needed or effective here.
+-- The backend uses the service_role client (get_supabase()) for admin operations.
 
 -- User profiles: users can read/update their own profile
 CREATE POLICY "Users can read own profile"
@@ -61,15 +60,9 @@ CREATE POLICY "Users can update own profile"
     ON public.user_profiles FOR UPDATE
     USING (auth.uid() = user_id);
 
--- User profiles: service role full access
-CREATE POLICY "Service role full access on user_profiles"
-    ON public.user_profiles FOR ALL
-    USING (auth.role() = 'service_role');
+-- Note: service_role bypasses RLS — no policy needed for backend admin operations.
 
--- Audit logs: only service role can insert/read (backend only)
-CREATE POLICY "Service role full access on audit_logs"
-    ON public.audit_logs FOR ALL
-    USING (auth.role() = 'service_role');
+-- Audit logs: no user-facing SELECT — only accessible via service_role (RLS bypass).
 
 -- ============================================
 -- INDEXES

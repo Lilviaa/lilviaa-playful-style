@@ -7,6 +7,7 @@ from app.services.auth_service import auth_service
 from app.api.dependencies import get_current_user_id, get_current_user_token, get_token_from_cookie, verify_csrf_token
 from app.core.config import settings
 from app.core.limiter import limiter
+from slowapi.util import get_remote_address
 
 router = APIRouter()
 
@@ -61,15 +62,30 @@ def clear_auth_cookies(response: Response):
 @router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 @limiter.limit("3/minute")
 def register(request: Request, user_in: UserCreate, response: Response):
-    """Register a new customer and log them in immediately."""
+    """Register a new customer and immediately issue a session.
+    
+    MVP shortcut: email_confirm is set to True (auto-confirmed) so users can log in
+    right away without clicking a verification link. This means anyone can register
+    with an email they don't own. This is an intentional, documented trade-off for
+    the MVP phase — real email verification must be implemented before production launch.
+    TODO: set email_confirm=False + send confirmation email before enabling real users.
+    """
     user = auth_service.register_user(user_in)
-    # Log them in automatically
     token = auth_service.login_user(UserLogin(email=user_in.email, password=user_in.password))
     set_auth_cookies(response, token)
     return user
 
+def _email_key(request: Request) -> str:
+    """Key function for per-email rate limiting on login.
+    form._dict is populated by FastAPI's OAuth2PasswordRequestForm Depends before this runs."""
+    form = getattr(request, "_form", None)
+    if form:
+        return f"login_email:{form.get('username', 'unknown')}"
+    return f"login_ip:{get_remote_address(request)}"
+
 @router.post("/login")
-@limiter.limit("5/minute")
+@limiter.limit("5/minute")                          # Layer 1: per IP
+@limiter.limit("5/minute", key_func=_email_key)    # Layer 2: per email address
 def login(request: Request, response: Response, form_data: OAuth2PasswordRequestForm = Depends()):
     """Login with email and password, setting secure httpOnly cookies."""
     try:

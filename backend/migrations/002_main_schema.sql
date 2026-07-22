@@ -132,41 +132,42 @@ ALTER TABLE public.orders ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.order_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.payment_transactions ENABLE ROW LEVEL SECURITY;
 
+-- ============================================
+-- NOTE ON SERVICE ROLE AND RLS
+-- ============================================
+-- The backend uses the Supabase service_role key which bypasses RLS entirely
+-- at the Postgres level. No "service role full access" policies are created
+-- because they have no effect and are misleading.
+-- User-facing policies below apply only to authenticated user JWTs (anon role).
+
 -- Addresses
 CREATE POLICY "Users can read own addresses" ON public.addresses FOR SELECT USING (auth.uid() = user_id);
 CREATE POLICY "Users can insert own addresses" ON public.addresses FOR INSERT WITH CHECK (auth.uid() = user_id);
 CREATE POLICY "Users can update own addresses" ON public.addresses FOR UPDATE USING (auth.uid() = user_id);
 CREATE POLICY "Users can delete own addresses" ON public.addresses FOR DELETE USING (auth.uid() = user_id);
-CREATE POLICY "Service role full access addresses" ON public.addresses FOR ALL USING (auth.role() = 'service_role');
 
--- Products (Public Read for published, Admin full)
+-- Products (public read for published only; writes are backend-only via service_role)
 CREATE POLICY "Public can view published products" ON public.products FOR SELECT USING (status = 'published');
-CREATE POLICY "Service role full access products" ON public.products FOR ALL USING (auth.role() = 'service_role');
 
--- Product Variants (Public Read for published, Admin full)
+-- Product Variants (published only)
 CREATE POLICY "Public can view published variants" ON public.product_variants FOR SELECT USING (
     EXISTS (SELECT 1 FROM public.products p WHERE p.id = product_variants.product_id AND p.status = 'published')
 );
-CREATE POLICY "Service role full access product_variants" ON public.product_variants FOR ALL USING (auth.role() = 'service_role');
 
--- Product Images (Public Read for published, Admin full)
+-- Product Images (published only)
 CREATE POLICY "Public can view published images" ON public.product_images FOR SELECT USING (
     EXISTS (SELECT 1 FROM public.products p WHERE p.id = product_images.product_id AND p.status = 'published')
 );
-CREATE POLICY "Service role full access product_images" ON public.product_images FOR ALL USING (auth.role() = 'service_role');
 
--- Orders (Users read own, Admin full)
+-- Orders (users read own; all writes are backend-only via service_role)
 CREATE POLICY "Users can view own orders" ON public.orders FOR SELECT USING (auth.uid() = user_id);
-CREATE POLICY "Service role full access orders" ON public.orders FOR ALL USING (auth.role() = 'service_role');
 
--- Order Items (Users read own via join, Admin full)
+-- Order Items (users read own via join)
 CREATE POLICY "Users can view own order items" ON public.order_items FOR SELECT USING (
     EXISTS (SELECT 1 FROM public.orders o WHERE o.id = order_items.order_id AND o.user_id = auth.uid())
 );
-CREATE POLICY "Service role full access order_items" ON public.order_items FOR ALL USING (auth.role() = 'service_role');
 
--- Payment Transactions (Admin full, user read own via join)
+-- Payment Transactions (users read own via join)
 CREATE POLICY "Users can view own payment transactions" ON public.payment_transactions FOR SELECT USING (
     EXISTS (SELECT 1 FROM public.orders o WHERE o.id = payment_transactions.order_id AND o.user_id = auth.uid())
 );
-CREATE POLICY "Service role full access payment_transactions" ON public.payment_transactions FOR ALL USING (auth.role() = 'service_role');

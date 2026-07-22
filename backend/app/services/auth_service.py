@@ -45,7 +45,7 @@ class AuthService:
 
     def login_user(self, user_in: UserLogin) -> Token:
         try:
-            # Use ANON client so sign_in doesn't pollute admin singleton and uses safe privileges
+            # Use ANON client — safe privilege level for user-facing sign-in
             anon_client = get_anon_supabase()
             auth_response = anon_client.auth.sign_in_with_password({
                 "email": user_in.email,
@@ -64,15 +64,16 @@ class AuthService:
                 refresh_token=auth_response.session.refresh_token,
                 token_type="bearer"
             )
-        except Exception as e:
-            # Try to find the user by email to log the failed attempt against their user_id
+        except Exception:
+            # Sanitized: do not log the raw exception — it can leak whether the email
+            # exists, Supabase internal messages, etc.
             user_data = self.supabase.table("users").select("id").eq("email", user_in.email).execute()
             user_id = user_data.data[0]["id"] if user_data.data else None
             
             self.supabase.table("audit_logs").insert({
                 "user_id": user_id,
                 "action": "login_failed",
-                "details": {"email": user_in.email, "error": str(e)}
+                "details": {"email": user_in.email, "reason": "invalid_credentials"}
             }).execute()
             
             raise UnauthorizedError("Invalid email or password")
@@ -80,8 +81,9 @@ class AuthService:
     def refresh_token(self, refresh_token: str) -> Token:
         """Exchange a refresh token for a new access + refresh token."""
         try:
-            fresh_client = get_fresh_supabase()
-            auth_response = fresh_client.auth.refresh_session(refresh_token)
+            # Anon client is sufficient for session refresh — no service_role needed
+            anon_client = get_anon_supabase()
+            auth_response = anon_client.auth.refresh_session(refresh_token)
             if not auth_response or not auth_response.session:
                 raise UnauthorizedError("Session expired or invalid refresh token")
                 

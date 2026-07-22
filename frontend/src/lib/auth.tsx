@@ -61,7 +61,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     if (!res.ok) {
       const errData = await res.json();
-      throw new Error(errData.detail || "Login failed");
+      let errorMessage = "Login failed";
+      if (Array.isArray(errData.detail)) {
+        errorMessage = errData.detail.map((e: any) => e.msg).join(", ");
+      } else if (typeof errData.detail === "string") {
+        errorMessage = errData.detail;
+      }
+      throw new Error(errorMessage);
     }
 
     // Now fetch the profile
@@ -76,7 +82,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     if (!res.ok) {
       const errData = await res.json();
-      throw new Error(errData.detail || "Registration failed");
+      let errorMessage = "Registration failed";
+      if (Array.isArray(errData.detail)) {
+        errorMessage = errData.detail.map((e: any) => e.msg).join(", ");
+      } else if (typeof errData.detail === "string") {
+        errorMessage = errData.detail;
+      }
+      throw new Error(errorMessage);
     }
 
     // Registration also logs us in, so fetch profile
