@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Sparkles, Heart, Leaf, Users } from "lucide-react";
-import { featured } from "@/lib/products";
+import { ProductCard } from "@/components/product-card";
+import { useFeaturedProducts } from "@/lib/products-api";
 
 export const Route = createFileRoute("/about")({
   head: () => ({
@@ -18,6 +19,8 @@ export const Route = createFileRoute("/about")({
 });
 
 function AboutPage() {
+  const { data: featured = [], isLoading } = useFeaturedProducts();
+
   return (
     <div>
       <section className="bg-hero px-6 py-20">
@@ -37,7 +40,7 @@ function AboutPage() {
           {featured.slice(0, 3).map((p, i) => (
             <img
               key={p.slug}
-              src={p.image}
+              src={p.image || "/fallback-image.jpg"}
               alt=""
               className={`aspect-[3/4] w-full rounded-3xl object-cover shadow-cute ${
                 i === 1 ? "md:mt-10" : ""

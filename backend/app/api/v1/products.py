@@ -1,0 +1,139 @@
+from fastapi import APIRouter, HTTPException, status, Query
+from typing import List, Optional
+from datetime import datetime, timezone
+from app.models.public_product import PublicProductResponse, ProductColor
+from app.db.supabase import get_supabase
+from app.core.exceptions import AppError
+
+router = APIRouter()
+
+def map_product(row: dict) -> dict:
+    """Map DB row to frontend strict shape"""
+    now = datetime.now(timezone.utc)
+    
+    # 1. Pricing logic
+    base_price = float(row.get("base_price", 0))
+    sale_price = row.get("sale_price")
+    sale_start_str = row.get("sale_start")
+    sale_end_str = row.get("sale_end")
+    
+    is_sale_active = False
+    if sale_price is not None:
+        is_sale_active = True
+        if sale_start_str:
+            sale_start = datetime.fromisoformat(sale_start_str.replace("Z", "+00:00"))
+            if now < sale_start:
+                is_sale_active = False
+        if sale_end_str:
+            sale_end = datetime.fromisoformat(sale_end_str.replace("Z", "+00:00"))
+            if now > sale_end:
+                is_sale_active = False
+                
+    if is_sale_active:
+        price = float(sale_price)
+        compareAt = base_price
+    else:
+        price = base_price
+        compareAt = None
+
+    # 2. Images logic
+    images_raw = row.get("product_images", [])
+    images_sorted = sorted(images_raw, key=lambda x: x.get("sort_order", 0))
+    gallery = [img["url"] for img in images_sorted]
+    image = gallery[0] if gallery else ""
+
+    # 3. Variants logic (sizes & colors)
+    variants_raw = row.get("product_variants", [])
+    sizes = []
+    colors_dict = {}
+    for v in variants_raw:
+        if v.get("size") and v["size"] not in sizes:
+            sizes.append(v["size"])
+        color_name = v.get("color")
+        color_hex = v.get("color_hex")
+        if color_name and color_hex and color_name not in colors_dict:
+            colors_dict[color_name] = color_hex
+            
+    colors = [{"name": name, "hex": hex_code} for name, hex_code in colors_dict.items()]
+
+    # 4. Category
+    category_slug = row.get("category", {}).get("slug", "") if row.get("category") else ""
+
+    result = {
+        "slug": row.get("slug") or "",
+        "name": row.get("name") or "",
+        "price": price,
+        "image": image,
+        "gallery": gallery,
+        "category": category_slug,
+        "gender": row.get("gender") or "unisex",
+        "ageRange": row.get("age_range") or "",
+        "sizes": sizes,
+        "colors": colors,
+        "description": row.get("description") or "",
+        "fabric": row.get("fabric") or "",
+        "care": row.get("wash_care") or "",
+    }
+    
+    if compareAt is not None:
+        result["compareAt"] = compareAt
+    if row.get("tag"):
+        result["tag"] = row["tag"]
+        
+    return result
+
+@router.get("/", response_model=List[PublicProductResponse])
+def get_products(
+    category: Optional[str] = None,
+    sort: Optional[str] = Query(None, description="price_asc, price_desc, newest")
+):
+    """Fetch all published products with optional category filtering and sorting."""
+    supabase = get_supabase()
+    
+    # We use inner join on category if filtering, else left join
+    query = supabase.table("products").select(
+        "*, category:categories!inner(slug), product_images(*), product_variants(*)"
+    ).eq("status", "published")
+    
+    if category:
+        query = query.eq("categories.slug", category)
+        
+    if sort == "newest":
+        query = query.order("created_at", desc=True)
+        
+    result = query.execute()
+    products = [map_product(row) for row in result.data]
+    
+    # Post-query sorting for price (since price is calculated in Python)
+    if sort == "price_asc":
+        products.sort(key=lambda x: x["price"])
+    elif sort == "price_desc":
+        products.sort(key=lambda x: x["price"], reverse=True)
+        
+    return products
+
+@router.get("/featured", response_model=List[PublicProductResponse])
+def get_featured_products():
+    """Fetch featured published products (e.g. tag is bestseller or new). Limit to 8."""
+    supabase = get_supabase()
+    
+    query = supabase.table("products").select(
+        "*, category:categories(slug), product_images(*), product_variants(*)"
+    ).eq("status", "published").in_("tag", ["bestseller", "new"]).order("created_at", desc=True).limit(8)
+    
+    result = query.execute()
+    return [map_product(row) for row in result.data]
+
+@router.get("/{slug}", response_model=PublicProductResponse)
+def get_product_by_slug(slug: str):
+    """Fetch a single published product by slug."""
+    supabase = get_supabase()
+    
+    result = supabase.table("products").select(
+        "*, category:categories(slug), product_images(*), product_variants(*)"
+    ).eq("status", "published").eq("slug", slug).execute()
+    
+    if not result.data:
+        raise AppError("Product not found", status_code=404)
+        
+    return map_product(result.data[0])

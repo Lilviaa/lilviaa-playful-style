@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
+import { getCategories, createCategory } from "@/lib/categories-api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -37,7 +39,8 @@ export function ProductForm({ initialData }: ProductFormProps) {
     description: initialData?.description || "",
     fabric: initialData?.fabric || "",
     wash_care: initialData?.wash_care || "",
-    category: initialData?.category || "Shirts",
+    category_id: initialData?.category_id || "",
+    category: initialData?.category || "",
     base_price: initialData?.base_price || 0,
     sale_price: initialData?.sale_price || null,
     sale_start: initialData?.sale_start || null,
@@ -45,6 +48,11 @@ export function ProductForm({ initialData }: ProductFormProps) {
     status: initialData?.status || "draft",
     variants: initialData?.variants || [],
     images: initialData?.images || [],
+  });
+
+  const { data: categories = [], refetch: refetchCategories } = useQuery({
+    queryKey: ["categories"],
+    queryFn: getCategories,
   });
 
   // Auto-generate slug from name if new
@@ -82,8 +90,28 @@ export function ProductForm({ initialData }: ProductFormProps) {
     const images = formData.images!.map((i) => ({ ...i, product_id: formData.id! }));
 
     try {
+      let finalCategoryId = formData.category_id;
+      
+      // If a new category was typed, create it on the fly
+      if (isNewCategory && formData.category) {
+        try {
+          const newCat = await createCategory({
+            name: formData.category,
+            slug: formData.category.toLowerCase().replace(/\\s+/g, "-").replace(/[^a-z0-9-]/g, ""),
+            sort_order: 0
+          });
+          finalCategoryId = newCat.id;
+          await refetchCategories();
+        } catch (err: any) {
+          return toast.error("Failed to create new category: " + err.message);
+        }
+      } else if (!finalCategoryId && categories.length > 0) {
+        finalCategoryId = categories[0].id;
+      }
+
       await saveProduct.mutateAsync({
         ...formData,
+        category_id: finalCategoryId,
         variants,
         images,
       } as any);
@@ -192,13 +220,14 @@ export function ProductForm({ initialData }: ProductFormProps) {
                     </div>
                   ) : (
                     <Select
-                      value={formData.category}
+                      value={formData.category_id || (categories.length > 0 ? categories[0].id : "")}
                       onValueChange={(val) => {
                         if (val === "NEW_CATEGORY") {
                           setIsNewCategory(true);
                           updateField("category", "");
+                          updateField("category_id", "");
                         } else {
-                          updateField("category", val);
+                          updateField("category_id", val);
                         }
                       }}
                     >
@@ -206,16 +235,14 @@ export function ProductForm({ initialData }: ProductFormProps) {
                         <SelectValue placeholder="Select category" />
                       </SelectTrigger>
                       <SelectContent>
-                        {predefinedCategories.map((cat) => (
-                          <SelectItem key={cat} value={cat}>
-                            {cat}
+                        {categories.map((cat) => (
+                          <SelectItem key={cat.id} value={cat.id}>
+                            {cat.name}
                           </SelectItem>
                         ))}
-                        {formData.category &&
-                          !predefinedCategories.includes(formData.category) &&
-                          formData.category !== "NEW_CATEGORY" && (
-                            <SelectItem value={formData.category}>{formData.category}</SelectItem>
-                          )}
+                        {categories.length === 0 && (
+                          <SelectItem value="empty" disabled>No categories found</SelectItem>
+                        )}
                         <div className="h-px bg-border my-2" />
                         <SelectItem
                           value="NEW_CATEGORY"

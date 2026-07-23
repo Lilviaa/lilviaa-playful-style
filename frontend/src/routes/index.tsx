@@ -1,7 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import { ArrowRight, Sparkles, Truck, ShieldCheck, Ruler, Star, AlertCircle, Heart, Gem, Baby, MapPin } from "lucide-react";
-import { featured, categories } from "@/lib/products";
+import { categories } from "@/lib/products";
+import { useFeaturedProducts } from "@/lib/products-api";
 import { ProductCard } from "@/components/product-card";
 import { ScrollReveal } from "@/components/scroll-reveal";
 import logoAsset from "@/assets/lilviaa-logo.png.asset.json";
@@ -24,6 +25,7 @@ const heroImages = [
 
 function HomePage() {
   const [currentHeroImage, setCurrentHeroImage] = useState(0);
+  const { data: featured = [], isLoading } = useFeaturedProducts();
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -163,7 +165,7 @@ function HomePage() {
                   {/* Background Image */}
                   <div className="absolute inset-0 z-0 bg-cocoa/20">
                     <img
-                      src={p.image}
+                      src={p?.image || "/fallback-image.jpg"}
                       alt={c.label}
                       className="h-full w-full object-cover transition-transform duration-1000 ease-out group-hover:scale-110"
                     />
@@ -204,9 +206,13 @@ function HomePage() {
           </Link>
         </div>
         <div className="mt-8 grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
-          {featured.map((p) => (
-            <ProductCard key={p.slug} product={p} />
-          ))}
+          {isLoading ? (
+             <p className="col-span-full text-center text-muted-foreground py-10">Loading bestsellers...</p>
+          ) : (
+            featured.map((p) => (
+              <ProductCard key={p.slug} product={p} />
+            ))
+          )}
         </div>
       </ScrollReveal>
 
@@ -235,16 +241,20 @@ function HomePage() {
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4">
-            <img
-              src={featured[2].image}
-              alt=""
-              className="aspect-[3/4] w-full rounded-3xl object-cover shadow-cute rotate-[-3deg]"
-            />
-            <img
-              src={featured[5].image}
-              alt=""
-              className="mt-10 aspect-[3/4] w-full rounded-3xl object-cover shadow-cute rotate-[3deg]"
-            />
+            {featured.length > 2 && (
+              <img
+                src={featured[2].image}
+                alt=""
+                className="aspect-[3/4] w-full rounded-3xl object-cover shadow-cute rotate-[-3deg]"
+              />
+            )}
+            {featured.length > 5 && (
+              <img
+                src={featured[5].image}
+                alt=""
+                className="mt-10 aspect-[3/4] w-full rounded-3xl object-cover shadow-cute rotate-[3deg]"
+              />
+            )}
           </div>
         </div>
       </ScrollReveal>

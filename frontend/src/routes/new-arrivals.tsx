@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { products } from "@/lib/products";
+import { useProducts } from "@/lib/products-api";
 import { ProductCard } from "@/components/product-card";
 import { ArrowRight } from "lucide-react";
 import { Link } from "@tanstack/react-router";
@@ -20,13 +20,14 @@ export const Route = createFileRoute("/new-arrivals")({
 
 function NewArrivalsPage() {
   const [sort, setSort] = useState<string>("featured");
+  const { data: allProducts = [], isLoading } = useProducts();
 
-  const items = useMemo(() => {
-    let list = products.filter((p) => p.tag === "new");
+  const newArrivals = useMemo(() => {
+    let list = allProducts.filter((p) => p.tag === "new");
     if (sort === "price-asc") list = [...list].sort((a, b) => a.price - b.price);
     if (sort === "price-desc") list = [...list].sort((a, b) => b.price - a.price);
     return list;
-  }, [sort]);
+  }, [allProducts, sort]);
 
   return (
     <div>
@@ -44,7 +45,7 @@ function NewArrivalsPage() {
 
       <section className="mx-auto max-w-7xl px-6 py-8">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <p className="text-sm font-bold text-muted-foreground">{items.length} new styles</p>
+          <p className="text-sm font-bold text-muted-foreground">{newArrivals.length} new styles</p>
           <div className="ml-auto">
             <label className="mr-2 text-sm font-semibold text-cocoa">Sort</label>
             <select
@@ -59,13 +60,17 @@ function NewArrivalsPage() {
           </div>
         </div>
 
-        <div className="mt-6 grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
-          {items.map((p) => (
-            <ProductCard key={p.slug} product={p} />
-          ))}
-        </div>
+        {isLoading ? (
+          <p className="mt-6 text-sm text-muted-foreground">Loading new arrivals...</p>
+        ) : (
+          <div className="mt-6 grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
+            {newArrivals.map((p) => (
+              <ProductCard key={p.slug} product={p} />
+            ))}
+          </div>
+        )}
         
-        {items.length === 0 && (
+        {!isLoading && newArrivals.length === 0 && (
           <div className="mt-16 rounded-3xl bg-card p-10 text-center shadow-cute">
             <p className="font-display text-2xl text-cocoa">All sold out! 🌱</p>
             <p className="mt-2 text-sm text-muted-foreground">

@@ -1,5 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { products } from "@/lib/products";
+import { useMemo } from "react";
+import { useProducts } from "@/lib/products-api";
 import { ProductCard } from "@/components/product-card";
 import { Search as SearchIcon } from "lucide-react";
 
@@ -19,15 +20,17 @@ function SearchPage() {
   const { q } = Route.useSearch();
   const navigate = useNavigate({ from: "/search" });
 
-  const results = products.filter((p) => {
-    if (!q) return false;
-    const query = q.toLowerCase();
-    return (
-      p.name.toLowerCase().includes(query) ||
-      (p.category && p.category.toLowerCase().includes(query)) ||
-      (p.tag && p.tag.toLowerCase().includes(query))
+  const { data: allProducts = [], isLoading } = useProducts();
+  const results = useMemo(() => {
+    if (!q) return [];
+    const lowerQ = q.toLowerCase();
+    return allProducts.filter(
+      (p) =>
+        p.name.toLowerCase().includes(lowerQ) ||
+        p.description.toLowerCase().includes(lowerQ) ||
+        (p.category && p.category.toLowerCase().includes(lowerQ))
     );
-  });
+  }, [q, allProducts]);
 
   return (
     <div className="mx-auto max-w-7xl px-6 py-12 md:py-24">
@@ -39,8 +42,10 @@ function SearchPage() {
 
       <div className="mt-16">
         {q ? (
-          results.length > 0 ? (
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+          isLoading ? (
+            <p className="text-muted-foreground text-center py-8">Searching...</p>
+          ) : results.length > 0 ? (
+            <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
               {results.map((p) => (
                 <ProductCard key={p.slug} product={p} />
               ))}

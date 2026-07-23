@@ -39,7 +39,7 @@ export function ProductCard({ product }: { product: Product }) {
       >
         <div className="relative aspect-square overflow-hidden bg-sand">
           <img
-            src={product.image}
+            src={product.image || "/fallback-image.jpg"}
             alt={product.name}
             loading="lazy"
             className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"

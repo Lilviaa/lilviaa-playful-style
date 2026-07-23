@@ -1,6 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { products } from "@/lib/products";
-
+import { apiFetch } from "@/lib/api";
 export interface RevenueData {
   current: number;
   previous: number;
@@ -71,14 +70,19 @@ async function getRevenueChartData(): Promise<{ date: string; revenue: number }[
 }
 
 async function getTopProducts(limit = 5): Promise<TopProductsData> {
-  await delay(300);
+  const res = await apiFetch("/admin/products/");
+  let products = [];
+  if (res.ok) {
+    products = await res.json();
+  }
+
   const byUnits = [...products]
     .sort(() => 0.5 - Math.random())
     .slice(0, limit)
     .map((p) => ({
-      id: p.slug,
+      id: p.slug || p.id,
       name: p.name,
-      image: p.image,
+      image: p.images?.[0]?.url || "/fallback-image.jpg",
       value: Math.floor(Math.random() * 150) + 20,
     }))
     .sort((a, b) => b.value - a.value);
@@ -87,9 +91,9 @@ async function getTopProducts(limit = 5): Promise<TopProductsData> {
     .sort(() => 0.5 - Math.random())
     .slice(0, limit)
     .map((p) => ({
-      id: p.slug,
+      id: p.slug || p.id,
       name: p.name,
-      image: p.image,
+      image: p.images?.[0]?.url || "/fallback-image.jpg",
       value: Math.floor(Math.random() * 50000) + 10000,
     }))
     .sort((a, b) => b.value - a.value);

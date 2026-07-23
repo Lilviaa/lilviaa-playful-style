@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { products, categories } from "@/lib/products";
+import { categories } from "@/lib/products";
+import { useProducts } from "@/lib/products-api";
 import { ProductCard } from "@/components/product-card";
 
 export const Route = createFileRoute("/shop")({
@@ -41,6 +42,8 @@ function ShopPage() {
   const [tag, setTag] = useState<string>(search.tag ?? "all");
   const [gender, setGender] = useState<string>("all");
   const [sort, setSort] = useState<string>("featured");
+
+  const { data: products = [], isLoading } = useProducts();
 
   const items = useMemo(() => {
     let list = products.filter(
@@ -103,14 +106,18 @@ function ShopPage() {
           </div>
         </div>
 
-        <p className="mt-6 text-sm text-muted-foreground">{items.length} products</p>
+        {isLoading ? (
+          <p className="mt-6 text-sm text-muted-foreground">Loading products...</p>
+        ) : (
+          <p className="mt-6 text-sm text-muted-foreground">{items.length} products</p>
+        )}
 
         <div className="mt-6 grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
           {items.map((p) => (
             <ProductCard key={p.slug} product={p} />
           ))}
         </div>
-        {items.length === 0 && (
+        {!isLoading && items.length === 0 && (
           <div className="mt-16 rounded-3xl bg-card p-10 text-center shadow-cute">
             <p className="font-display text-2xl text-cocoa">Nothing here yet 🌱</p>
             <p className="mt-2 text-sm text-muted-foreground">

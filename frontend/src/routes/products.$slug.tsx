@@ -2,7 +2,8 @@ import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-ro
 import { useState } from "react";
 import { toast } from "sonner";
 import { Heart, Minus, Plus, ShieldCheck, Truck, Ruler } from "lucide-react";
-import { findProduct, products, type Product } from "@/lib/products";
+import type { Product } from "@/lib/products";
+import { fetchProduct, useProducts } from "@/lib/products-api";
 import { formatINR, useCart } from "@/lib/cart";
 import { useWishlist } from "@/lib/wishlist";
 import { ProductCard } from "@/components/product-card";
@@ -15,10 +16,13 @@ import {
 } from "@/components/ui/accordion";
 
 export const Route = createFileRoute("/products/$slug")({
-  loader: ({ params }): { product: Product } => {
-    const product = findProduct(params.slug);
-    if (!product) throw notFound();
-    return { product };
+  loader: async ({ params }): Promise<{ product: Product }> => {
+    try {
+      const product = await fetchProduct(params.slug);
+      return { product };
+    } catch (e) {
+      throw notFound();
+    }
   },
   head: ({ loaderData }) => {
     if (!loaderData) {
@@ -71,6 +75,9 @@ function ProductPage() {
   const [qty, setQty] = useState(1);
   const [selectedColor, setSelectedColor] = useState(product.colors[0]);
   
+  const { data: allProducts = [] } = useProducts();
+  const related = allProducts.filter((p) => p.slug !== product.slug).slice(0, 4);
+
   const inWishlist = inWishlistCheck(product.slug);
 
   const toggleWishlist = () => {
@@ -86,7 +93,7 @@ function ProductPage() {
     }
   };
 
-  const related = products.filter((p) => p.slug !== product.slug).slice(0, 4);
+
 
   const handleAdd = () => {
     add({
@@ -129,7 +136,7 @@ function ProductPage() {
                   activeImg === g ? "ring-2 ring-cocoa" : "opacity-60 hover:opacity-100"
                 }`}
               >
-                <img src={g} alt={`${product.name} thumbnail ${i + 1}`} className="h-full w-full object-cover" />
+                <img src={g || "/fallback-image.jpg"} alt={`${product.name} thumbnail ${i + 1}`} className="h-full w-full object-cover" />
               </button>
             ))}
           </div>
@@ -156,7 +163,7 @@ function ProductPage() {
               }
             }}
           >
-            <img id="base-img" src={activeImg} alt={product.name} className="h-full w-full object-cover transition-opacity duration-200" />
+            <img id="base-img" src={activeImg || "/fallback-image.jpg"} alt={product.name} className="h-full w-full object-cover transition-opacity duration-200" />
             <div 
               id="zoom-layer"
               className="pointer-events-none absolute inset-0 z-10 opacity-0 transition-opacity duration-200"
@@ -202,52 +209,56 @@ function ProductPage() {
           <hr className="my-8 border-border" />
 
           {/* Color Selection */}
-          <div>
-            <div className="mb-3 text-sm font-bold text-cocoa uppercase tracking-wider">
-              Color: <span className="font-medium text-muted-foreground normal-case tracking-normal">{selectedColor.name}</span>
+          {product.colors && product.colors.length > 0 && (
+            <div>
+              <div className="mb-3 text-sm font-bold text-cocoa uppercase tracking-wider">
+                Color: <span className="font-medium text-muted-foreground normal-case tracking-normal">{selectedColor?.name}</span>
+              </div>
+              <div className="flex gap-3">
+                {product.colors.map((c) => (
+                  <button
+                    key={c.name}
+                    onClick={() => setSelectedColor(c)}
+                    className={`h-10 w-10 rounded-full border p-1 transition-transform hover:scale-110 focus:outline-none ${
+                      selectedColor?.name === c.name ? "border-cocoa ring-1 ring-cocoa" : "border-border"
+                    }`}
+                    title={c.name}
+                  >
+                    <div className="h-full w-full rounded-full" style={{ background: c.hex }} />
+                  </button>
+                ))}
+              </div>
             </div>
-            <div className="flex gap-3">
-              {product.colors.map((c) => (
-                <button
-                  key={c.name}
-                  onClick={() => setSelectedColor(c)}
-                  className={`h-10 w-10 rounded-full border p-1 transition-transform hover:scale-110 focus:outline-none ${
-                    selectedColor.name === c.name ? "border-cocoa ring-1 ring-cocoa" : "border-border"
-                  }`}
-                  title={c.name}
-                >
-                  <div className="h-full w-full rounded-full" style={{ background: c.hex }} />
-                </button>
-              ))}
-            </div>
-          </div>
+          )}
 
           {/* Size Selection */}
-          <div className="mt-8">
-            <div className="mb-3 flex items-center justify-between">
-              <div className="text-sm font-bold text-cocoa uppercase tracking-wider">Select Size</div>
-              <SizeGuide>
-                <button className="flex items-center gap-1.5 text-xs font-bold text-cocoa hover:text-primary transition-colors uppercase tracking-widest">
-                  <Ruler className="h-3.5 w-3.5" /> Size guide
-                </button>
-              </SizeGuide>
+          {product.sizes && product.sizes.length > 0 && (
+            <div className="mt-8">
+              <div className="mb-3 flex items-center justify-between">
+                <div className="text-sm font-bold text-cocoa uppercase tracking-wider">Select Size</div>
+                <SizeGuide>
+                  <button className="flex items-center gap-1.5 text-xs font-bold text-cocoa hover:text-primary transition-colors uppercase tracking-widest">
+                    <Ruler className="h-3.5 w-3.5" /> Size guide
+                  </button>
+                </SizeGuide>
+              </div>
+              <div className="flex flex-wrap gap-3">
+                {product.sizes.map((s) => (
+                  <button
+                    key={s}
+                    onClick={() => setSize(s)}
+                    className={`min-w-[4rem] px-4 py-3 text-sm font-bold transition-all ${
+                      size === s
+                        ? "bg-cocoa text-white ring-1 ring-cocoa"
+                        : "bg-transparent text-cocoa border border-border hover:border-cocoa"
+                    }`}
+                  >
+                    {s}
+                  </button>
+                ))}
+              </div>
             </div>
-            <div className="flex flex-wrap gap-3">
-              {product.sizes.map((s) => (
-                <button
-                  key={s}
-                  onClick={() => setSize(s)}
-                  className={`min-w-[4rem] px-4 py-3 text-sm font-bold transition-all ${
-                    size === s
-                      ? "bg-cocoa text-white ring-1 ring-cocoa"
-                      : "bg-transparent text-cocoa border border-border hover:border-cocoa"
-                  }`}
-                >
-                  {s}
-                </button>
-              ))}
-            </div>
-          </div>
+          )}
 
           {/* Quantity & Actions */}
           <div className="mt-8 flex flex-col gap-4">

@@ -5,8 +5,15 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
+    "boto3>=1.43.53",
     "fastapi>=0.139.2",
     "pydantic-settings>=2.14.2",
     "pydantic[email]>=2.13.4",
     "uvicorn>=0.51.0",
+]
+
+[dependency-groups]
+dev = [
+    "python-dotenv>=1.2.2",
+    "requests>=2.34.2",
 ]

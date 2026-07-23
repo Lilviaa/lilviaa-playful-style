@@ -1,12 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useCustomer } from "@/lib/admin/customers-api";
+import { useProducts } from "@/lib/admin/products-api";
 import { ChevronLeft, User, Mail, Phone, CalendarDays } from "lucide-react";
 import { formatINR } from "@/lib/cart";
 import { CustomerTags } from "@/components/admin/customers/customer-tags";
 import { CustomerAddresses } from "@/components/admin/customers/customer-addresses";
 import { CustomerOrderHistory } from "@/components/admin/customers/customer-order-history";
 import { Badge } from "@/components/ui/badge";
-import { products } from "@/lib/products";
 
 export const Route = createFileRoute("/admin/customers/$customerId")({
   component: CustomerProfilePage,
@@ -15,6 +15,7 @@ export const Route = createFileRoute("/admin/customers/$customerId")({
 function CustomerProfilePage() {
   const { customerId } = Route.useParams();
   const { data: customer, isLoading } = useCustomer(customerId);
+  const { data: allProducts } = useProducts();
 
   if (isLoading) {
     return <div className="p-8 text-center text-muted-foreground">Loading customer profile...</div>;
@@ -24,8 +25,13 @@ function CustomerProfilePage() {
     return <div className="p-8 text-center text-muted-foreground">Customer not found.</div>;
   }
 
-  // Mock wishlist items for the sake of the admin UI preview
-  const mockWishlistItems = products.slice(0, 4);
+  // Mock wishlist items using real products for the sake of the admin UI preview
+  const mockWishlistItems = (allProducts || []).slice(0, 2).map((p) => ({
+    slug: p.slug,
+    name: p.name,
+    price: p.base_price,
+    image: p.images?.[0]?.url || "/placeholder.jpg"
+  }));
 
   return (
     <div className="space-y-6 pb-24">

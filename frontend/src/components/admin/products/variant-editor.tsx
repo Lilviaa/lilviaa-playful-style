@@ -24,6 +24,7 @@ export function VariantEditor({ variants, onChange, basePrice }: VariantEditorPr
         sku: "",
         stock: 0,
         price_override: null,
+        sales: 0,
       }
     ]);
   };

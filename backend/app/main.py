@@ -1,8 +1,11 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from dotenv import load_dotenv
+load_dotenv()
+
 from app.core.config import settings
 from app.core.exceptions import AppError, app_error_handler
-from app.api.v1 import auth, addresses
+from app.api.v1 import auth, addresses, categories, products, admin_products
 
 app = FastAPI(
     title="Lilviaa E-Commerce API",
@@ -34,6 +37,9 @@ app.add_exception_handler(AppError, app_error_handler)
 # Include Routers
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["Auth"])
 app.include_router(addresses.router, prefix="/api/v1/addresses", tags=["Addresses"])
+app.include_router(categories.router, prefix="/api/v1/categories", tags=["Categories"])
+app.include_router(products.router, prefix="/api/v1/products", tags=["Products"])
+app.include_router(admin_products.router, prefix="/api/v1/admin/products", tags=["Admin Products"])
 
 @app.get("/health")
 def health_check():
