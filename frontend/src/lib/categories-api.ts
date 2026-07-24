@@ -1,4 +1,12 @@
 import { apiFetch } from "./api";
+import { useQuery } from "@tanstack/react-query";
+
+export const useCategories = () => {
+  return useQuery({
+    queryKey: ["categories"],
+    queryFn: getCategories,
+  });
+};
 
 export interface Category {
   id: string;

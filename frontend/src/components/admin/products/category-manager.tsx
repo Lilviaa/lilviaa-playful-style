@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { useProducts, useBulkUpdateProducts } from "@/lib/admin/products-api";
+import { getCategories, createCategory, updateCategory, deleteCategory, useCategories } from "@/lib/categories-api";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   Sheet,
   SheetContent,
@@ -36,6 +38,7 @@ import {
 export function CategoryManager({ children }: { children: React.ReactNode }) {
   const { data: products } = useProducts();
   const bulkUpdate = useBulkUpdateProducts();
+  const queryClient = useQueryClient();
 
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
@@ -49,19 +52,31 @@ export function CategoryManager({ children }: { children: React.ReactNode }) {
   const [isCreatingCategory, setIsCreatingCategory] = useState(false);
   const [newStandaloneCategory, setNewStandaloneCategory] = useState("");
 
+  const { data: dbCategories = [] } = useCategories();
+  const dbCategoryNames = dbCategories.map(c => c.name);
+
   const uniqueCategories = Array.from(
-    new Set([...(products?.map((p) => p.category).filter(Boolean) || []), ...customCategories]),
+    new Set([...dbCategoryNames, ...customCategories]),
   );
 
-  const handleCreateCategory = () => {
+  const handleCreateCategory = async () => {
     const trimmed = newStandaloneCategory.trim();
     if (!trimmed) {
       setIsCreatingCategory(false);
       return;
     }
     if (!uniqueCategories.includes(trimmed)) {
-      setCustomCategories([...customCategories, trimmed]);
-      toast.success(`Category "${trimmed}" created!`);
+      try {
+        await createCategory({
+          name: trimmed,
+          slug: trimmed.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+          sort_order: 0
+        });
+        queryClient.invalidateQueries({ queryKey: ["categories"] });
+        toast.success(`Category "${trimmed}" created!`);
+      } catch (err: any) {
+        toast.error(err.message || "Failed to create category");
+      }
     } else {
       toast.error("Category already exists.");
     }
@@ -81,65 +96,135 @@ export function CategoryManager({ children }: { children: React.ReactNode }) {
       return matchesSearch && matchesCategory;
     }) || [];
 
-  const handleRenameCategory = (oldName: string) => {
+  const handleRenameCategory = async (oldName: string) => {
     if (!newCategoryName.trim() || newCategoryName === oldName) {
       setEditingCategory(null);
       return;
     }
 
-    const productsInCat = products?.filter((p) => p.category === oldName) || [];
-    const ids = productsInCat.map((p) => p.id);
-
-    bulkUpdate.mutate(
-      { ids, updates: { category: newCategoryName } },
-      {
-        onSuccess: () => {
-          toast.success(`Renamed category to ${newCategoryName}`);
-          setEditingCategory(null);
-          if (selectedCategory === oldName) setSelectedCategory(newCategoryName);
-        },
-      },
-    );
+    try {
+      const categories = await getCategories();
+      const targetCat = categories.find(c => c.name === oldName);
+      
+      if (targetCat) {
+        await updateCategory(targetCat.id, {
+          name: newCategoryName,
+          slug: newCategoryName.toLowerCase().replace(/[^a-z0-9]+/g, '-')
+        });
+      }
+      
+      setCustomCategories(prev => prev.map(c => c === oldName ? newCategoryName : c));
+      toast.success(`Renamed category to ${newCategoryName}`);
+      setEditingCategory(null);
+      if (selectedCategory === oldName) setSelectedCategory(newCategoryName);
+      
+      queryClient.invalidateQueries({ queryKey: ["admin-products"] });
+      queryClient.invalidateQueries({ queryKey: ["categories"] });
+    } catch (err: any) {
+      toast.error(err.message || "Failed to rename category");
+    }
   };
 
-  const handleDeleteCategory = (catName: string) => {
+  const handleDeleteCategory = async (catName: string) => {
     const productsInCat = products?.filter((p) => p.category === catName) || [];
     const ids = productsInCat.map((p) => p.id);
 
-    bulkUpdate.mutate(
-      { ids, updates: { category: "" } },
-      {
-        onSuccess: () => {
-          toast.success(`Deleted category ${catName}`);
-          if (selectedCategory === catName) setSelectedCategory("all");
+    setCustomCategories((prev) => prev.filter((c) => c !== catName));
+
+    const removeCategoryFromDB = async () => {
+      try {
+        const categories = await getCategories();
+        const targetCat = categories.find(c => c.name === catName);
+        if (targetCat) {
+          await deleteCategory(targetCat.id);
+          queryClient.invalidateQueries({ queryKey: ["categories"] });
+        }
+      } catch (e) {
+        console.error("Failed to delete category from DB", e);
+      }
+    };
+
+    if (ids.length > 0) {
+      bulkUpdate.mutate(
+        { ids, updates: { category: "", category_id: null } as any },
+        {
+          onSuccess: async () => {
+            await removeCategoryFromDB();
+            toast.success(`Deleted category ${catName}`);
+            if (selectedCategory === catName) setSelectedCategory("all");
+          },
         },
+      );
+    } else {
+      await removeCategoryFromDB();
+      toast.success(`Deleted category ${catName}`);
+      if (selectedCategory === catName) setSelectedCategory("all");
+    }
+  };
+
+  const handleMoveProduct = async (productId: string, newCategory: string) => {
+    let catId: string | null = null;
+    if (newCategory !== "uncategorized" && newCategory !== "") {
+      try {
+        const categories = await getCategories();
+        let targetCat = categories.find(c => c.name === newCategory);
+        if (!targetCat) {
+          targetCat = await createCategory({
+            name: newCategory,
+            slug: newCategory.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+            sort_order: 0
+          });
+          queryClient.invalidateQueries({ queryKey: ["categories"] });
+        }
+        catId = targetCat.id;
+      } catch (err) {
+        toast.error("Failed to resolve category.");
+        return;
+      }
+    }
+
+    bulkUpdate.mutate(
+      { ids: [productId], updates: { category: newCategory, category_id: catId } as any },
+      {
+        onSuccess: () => toast.success("Moved product to category"),
       },
     );
   };
 
-  const handleMoveProduct = (productId: string, newCategory: string) => {
-    bulkUpdate.mutate(
-      { ids: [productId], updates: { category: newCategory } },
-      {
-        onSuccess: () => {
-          toast.success("Moved product to category");
-        },
-      },
-    );
-  };
-
-  const handleBulkMove = () => {
+  const handleBulkMove = async () => {
     if (selectedProducts.size === 0) return;
     if (!bulkCategoryInput.trim()) {
       toast.error("Please enter or select a category name");
       return;
     }
 
+    const catName = bulkCategoryInput.trim();
+    let catId: string | null = null;
+    
+    if (catName !== "uncategorized" && catName !== "") {
+      try {
+        const categories = await getCategories();
+        let targetCat = categories.find(c => c.name.toLowerCase() === catName.toLowerCase());
+        if (!targetCat) {
+          targetCat = await createCategory({
+            name: catName,
+            slug: catName.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+            sort_order: 0
+          });
+          queryClient.invalidateQueries({ queryKey: ["categories"] });
+        }
+        catId = targetCat.id;
+      } catch (err: any) {
+        toast.error(err.message || "Failed to resolve category.");
+        return;
+      }
+    }
+
     bulkUpdate.mutate(
-      { ids: Array.from(selectedProducts), updates: { category: bulkCategoryInput.trim() } },
+      { ids: Array.from(selectedProducts), updates: { category: catName, category_id: catId } as any },
       {
         onSuccess: () => {
-          toast.success(`Moved ${selectedProducts.size} products to ${bulkCategoryInput}`);
+          toast.success(`Moved ${selectedProducts.size} products to ${catName}`);
           setSelectedProducts(new Set());
           setBulkCategoryInput("");
         },

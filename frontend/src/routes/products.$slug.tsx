@@ -1,7 +1,7 @@
 import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Heart, Minus, Plus, ShieldCheck, Truck, Ruler } from "lucide-react";
+import { Heart, Minus, Plus, ShieldCheck, Truck, Ruler, Banknote } from "lucide-react";
 import type { Product } from "@/lib/products";
 import { fetchProduct, useProducts } from "@/lib/products-api";
 import { formatINR, useCart } from "@/lib/cart";
@@ -73,7 +73,18 @@ function ProductPage() {
   const [activeImg, setActiveImg] = useState(product.image);
   const [size, setSize] = useState(product.sizes[2] ?? product.sizes[0]);
   const [qty, setQty] = useState(1);
-  const [selectedColor, setSelectedColor] = useState(product.colors[0]);
+  const [selectedColor, setSelectedColor] = useState(product.colors && product.colors.length > 0 ? product.colors[0] : null);
+  
+  // Find the exact variant based on selected size (and color if applicable)
+  const activeVariant = product.variants?.find(v => 
+    v.size === size && (!selectedColor || v.color?.toLowerCase() === selectedColor.name.toLowerCase())
+  ) || product.variants?.find(v => v.size === size);
+
+  const displayPrice = activeVariant?.price_override ?? product.price;
+  const displayStock = activeVariant?.stock ?? product.stock;
+  const displaySku = activeVariant?.sku || product.sku;
+  // If price is overridden, the base compareAt might not make sense, but we'll show it if no override exists
+  const displayCompareAt = activeVariant?.price_override ? null : product.compareAt;
   
   const { data: allProducts = [] } = useProducts();
   const related = allProducts.filter((p) => p.slug !== product.slug).slice(0, 4);
@@ -99,7 +110,7 @@ function ProductPage() {
     add({
       slug: product.slug,
       name: product.name,
-      price: product.price,
+      price: displayPrice,
       image: product.image,
       size,
       qty,
@@ -120,6 +131,13 @@ function ProductPage() {
       <div className="mx-auto max-w-7xl px-6 pt-6 pb-4 text-xs font-medium text-muted-foreground uppercase tracking-wider">
         <Link to="/" className="hover:text-cocoa transition-colors">Home</Link> <span className="mx-2">/</span>
         <Link to="/shop" className="hover:text-cocoa transition-colors">Shop</Link> <span className="mx-2">/</span>
+        {product.category && (
+          <>
+            <Link to="/shop" search={{ category: product.category }} className="hover:text-cocoa transition-colors">
+              {product.category.replace(/-/g, ' ')}
+            </Link> <span className="mx-2">/</span>
+          </>
+        )}
         <span className="text-cocoa font-bold">{product.name}</span>
       </div>
 
@@ -189,21 +207,30 @@ function ProductPage() {
             {product.name}
           </h1>
           
-          <div className="mt-4 flex items-baseline gap-3">
-            <span className="text-2xl font-bold text-cocoa">{formatINR(product.price)}</span>
-            {product.compareAt && (
+          <div className="mt-4 flex flex-wrap items-center gap-1.5">
+            <span className="text-2xl font-bold text-cocoa">{formatINR(displayPrice)}</span>
+            <span className="text-sm font-medium text-muted-foreground mt-1">
+              + Shipping Charges
+            </span>
+            {displayCompareAt && (
               <span className="text-lg text-muted-foreground line-through decoration-muted-foreground/50">
-                {formatINR(product.compareAt)}
+                {formatINR(displayCompareAt)}
               </span>
             )}
-            {product.compareAt && (
+            {displayCompareAt && (
               <span className="text-sm font-bold text-red-600">
-                {Math.round(((product.compareAt - product.price) / product.compareAt) * 100)}% OFF
+                {Math.round(((displayCompareAt - displayPrice) / displayCompareAt) * 100)}% OFF
               </span>
             )}
           </div>
-          <div className="mt-1 text-xs font-medium text-muted-foreground uppercase tracking-wide">
-            Inclusive of all taxes
+
+          <div className="mt-4 flex flex-col gap-2 text-sm font-medium text-cocoa/90">
+            <div className="flex items-center gap-2">
+              <span className="flex items-center justify-center h-4 w-4 rounded-full bg-green-100 text-green-700 text-[10px] font-bold">✓</span> Ships in 2–4 Days
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="flex items-center justify-center h-4 w-4 rounded-full bg-green-100 text-green-700 text-[10px] font-bold">✓</span> Free Shipping above ₹3000
+            </div>
           </div>
 
           <hr className="my-8 border-border" />
@@ -260,8 +287,22 @@ function ProductPage() {
             </div>
           )}
 
+          {/* Stock Status */}
+          <div className="mt-6 mb-2">
+            {displayStock !== undefined && displayStock > 0 ? (
+              <div className="flex items-center gap-2 text-sm font-bold text-amber-600 uppercase tracking-wider">
+                Only {displayStock} left
+              </div>
+            ) : displayStock === 0 ? (
+              <div className="flex items-center gap-2 text-sm font-bold text-red-600 uppercase tracking-wider">
+                <div className="h-2 w-2 rounded-full bg-red-600"></div>
+                Out of Stock
+              </div>
+            ) : null}
+          </div>
+
           {/* Quantity & Actions */}
-          <div className="mt-8 flex flex-col gap-4">
+          <div className="mt-4 flex flex-col gap-4">
             <div className="flex flex-wrap sm:flex-nowrap gap-3">
               <div className="flex h-14 w-32 shrink-0 items-center justify-between border border-border px-4">
                 <button onClick={() => setQty((q) => Math.max(1, q - 1))} className="text-cocoa hover:text-primary transition-colors">
@@ -296,6 +337,45 @@ function ProductPage() {
             </button>
           </div>
 
+          {/* SKU, Category & Payments */}
+          <div className="mt-8 space-y-3">
+            <div className="flex items-center gap-2 text-sm">
+              <span className="font-bold text-cocoa">SKU:</span> 
+              <span className="text-muted-foreground">{displaySku || "N/A"}</span>
+            </div>
+            <div className="flex items-center gap-2 text-sm">
+              <span className="font-bold text-cocoa">Category:</span> 
+              <span className="text-muted-foreground capitalize">{product.category.replace(/-/g, ' ') || "Uncategorized"}</span>
+            </div>
+
+            <div className="pt-6 mt-6 border-t border-border">
+              <div className="text-xs font-bold text-center text-cocoa uppercase tracking-widest mb-4">
+                Guaranteed Safe Checkout
+              </div>
+              <div className="flex flex-wrap items-center justify-center gap-3">
+                <div className="h-8 w-14 bg-white border border-border rounded flex items-center justify-center shadow-sm p-2">
+                  <img src="/asset/Checkout_logo/VISA-logo-768x432.png" alt="Visa" className="h-full w-full object-contain" />
+                </div>
+                <div className="h-8 w-14 bg-white border border-border rounded flex items-center justify-center shadow-sm p-1.5">
+                  <img src="/asset/Checkout_logo/masterCard.png" alt="MasterCard" className="h-full w-full object-contain" />
+                </div>
+                <div className="h-8 w-14 bg-white border border-border rounded flex items-center justify-center shadow-sm p-1">
+                  <img src="/asset/Checkout_logo/upi_logo_icon_169316.png" alt="UPI" className="h-full w-full object-contain" />
+                </div>
+                <div className="h-8 w-14 bg-white border border-border rounded flex items-center justify-center shadow-sm p-1.5">
+                  <img src="/asset/Checkout_logo/pngwing.com.png" alt="GPay" className="h-full w-full object-contain" />
+                </div>
+                <div className="h-8 w-14 bg-white border border-border rounded flex items-center justify-center shadow-sm p-1.5">
+                  <img src="/asset/Checkout_logo/pngwing.com (1).png" alt="PhonePe" className="h-full w-full object-contain" />
+                </div>
+                <div className="h-8 px-2.5 bg-white border border-border rounded flex items-center justify-center shadow-sm gap-1.5 text-emerald-700">
+                  <img src="/asset/Checkout_logo/cod.png" alt="COD" className="h-4 w-4 object-contain" />
+                  <span className="text-[11px] font-black tracking-wider">COD</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <hr className="my-10 border-border" />
 
           {/* Accordions */}
@@ -305,14 +385,9 @@ function ProductPage() {
                 Description
               </AccordionTrigger>
               <AccordionContent className="text-muted-foreground leading-relaxed pt-2 pb-6">
-                <p className="mb-4 text-cocoa/90">
-                  Premium-quality fabric designed for comfort and durability. Perfect for festive occasions, family gatherings, and celebrations. Bright-colored Chinese / Ben Collar printed shirts with excellent finishing and a comfortable fit.
-                </p>
-                <ul className="list-disc list-outside ml-4 space-y-2 text-cocoa/80 text-sm">
-                  <li>Price mentioned is for the <strong>shirt only</strong>. Dhoti or trousers are available at an additional cost.</li>
-                  <li>We aim to display product colors as accurately as possible. However, slight variations may occur.</li>
-                  <li>Manufactured in India and supplied directly from the manufacturer to the customer.</li>
-                </ul>
+                <div className="text-cocoa/90 whitespace-pre-line">
+                  {product.description ? product.description : "No description available for this product."}
+                </div>
               </AccordionContent>
             </AccordionItem>
             
@@ -322,30 +397,62 @@ function ProductPage() {
               </AccordionTrigger>
               <AccordionContent className="pt-2 pb-6">
                 <dl className="divide-y divide-border/50">
-                  <div className="flex justify-between py-3 text-sm">
-                    <dt className="font-semibold text-cocoa">Material</dt>
-                    <dd className="text-muted-foreground text-right">Shimmer Silk with Inner Lining</dd>
-                  </div>
-                  <div className="flex justify-between py-3 text-sm">
-                    <dt className="font-semibold text-cocoa">Fit</dt>
-                    <dd className="text-muted-foreground text-right">Regular Fit</dd>
-                  </div>
-                  <div className="flex justify-between py-3 text-sm">
-                    <dt className="font-semibold text-cocoa">Style</dt>
-                    <dd className="text-muted-foreground text-right">Chinese / Ben Collar</dd>
-                  </div>
-                  <div className="flex justify-between py-3 text-sm">
-                    <dt className="font-semibold text-cocoa">Closure Type</dt>
-                    <dd className="text-muted-foreground text-right">Button</dd>
-                  </div>
-                  <div className="flex justify-between py-3 text-sm">
-                    <dt className="font-semibold text-cocoa">Sleeve Type</dt>
-                    <dd className="text-muted-foreground text-right">Half Sleeve</dd>
-                  </div>
-                  <div className="flex justify-between py-3 text-sm">
-                    <dt className="font-semibold text-cocoa">Care Instructions</dt>
-                    <dd className="text-muted-foreground text-right">Machine Wash</dd>
-                  </div>
+                  {(() => {
+                    let customDetails = null;
+                    if (product.fabric && product.fabric.startsWith("[")) {
+                      try {
+                        const parsed = JSON.parse(product.fabric);
+                        if (Array.isArray(parsed)) {
+                          customDetails = parsed;
+                        }
+                      } catch (e) {
+                        // fallback to string
+                      }
+                    }
+
+                    // If it's explicitly a JSON array (even if empty)
+                    if (customDetails !== null) {
+                      if (customDetails.length === 0) return null;
+                      
+                      return customDetails.map((detail: any, i: number) => (
+                        <div key={i} className="flex justify-between py-3 text-sm">
+                          <dt className="font-semibold text-cocoa">{detail.key}</dt>
+                          <dd className="text-muted-foreground text-right">{detail.value || "N/A"}</dd>
+                        </div>
+                      ));
+                    }
+
+                    // Fallback for old products that just have a raw fabric string
+                    if (product.fabric || product.care) {
+                      return (
+                        <>
+                          <div className="flex justify-between py-3 text-sm">
+                            <dt className="font-semibold text-cocoa">Material</dt>
+                            <dd className="text-muted-foreground text-right">{product.fabric || "N/A"}</dd>
+                          </div>
+                          <div className="flex justify-between py-3 text-sm">
+                            <dt className="font-semibold text-cocoa">Care Instructions</dt>
+                            <dd className="text-muted-foreground text-right">{product.care || "N/A"}</dd>
+                          </div>
+                        </>
+                      );
+                    }
+                    
+                    return null;
+                  })()}
+
+                  {product.gender && product.gender !== "unisex" && (
+                    <div className="flex justify-between py-3 text-sm">
+                      <dt className="font-semibold text-cocoa">Gender</dt>
+                      <dd className="text-muted-foreground text-right capitalize">{product.gender}</dd>
+                    </div>
+                  )}
+                  {product.ageRange && (
+                    <div className="flex justify-between py-3 text-sm">
+                      <dt className="font-semibold text-cocoa">Age Range</dt>
+                      <dd className="text-muted-foreground text-right">{product.ageRange}</dd>
+                    </div>
+                  )}
                   <div className="flex justify-between pt-3 text-sm">
                     <dt className="font-semibold text-cocoa">Country of Origin</dt>
                     <dd className="text-muted-foreground text-right">India</dd>
@@ -365,8 +472,8 @@ function ProductPage() {
                       <Truck className="h-4 w-4 text-primary" />
                     </div>
                     <div>
-                      <h4 className="font-bold text-cocoa text-sm mb-1">Free Shipping</h4>
-                      <p className="text-sm text-muted-foreground leading-relaxed">We offer free shipping across India on all prepaid orders above ₹999. Standard delivery takes 3-5 business days.</p>
+                      <h4 className="font-bold text-cocoa text-sm mb-1">Fast Delivery</h4>
+                      <p className="text-sm text-muted-foreground leading-relaxed">Orders are delivered within 2–4 business days in Tamil Nadu and 3–6 business days across the rest of India. Free shipping is available on orders above ₹3,000.</p>
                     </div>
                   </div>
                   <div className="flex gap-4">
@@ -374,8 +481,8 @@ function ProductPage() {
                       <ShieldCheck className="h-4 w-4 text-primary" />
                     </div>
                     <div>
-                      <h4 className="font-bold text-cocoa text-sm mb-1">Easy Returns</h4>
-                      <p className="text-sm text-muted-foreground leading-relaxed">Not the perfect fit? We accept returns within 7 days of delivery. The items must be unused, unwashed, and with all original tags attached.</p>
+                      <h4 className="font-bold text-cocoa text-sm mb-1">Returns & Refunds</h4>
+                      <p className="text-sm text-muted-foreground leading-relaxed">Lil Viaa follows a No Return & No Refund Policy. Damaged or incorrect products must be reported within 48 hours of delivery with an unboxing video and product images for assistance.</p>
                     </div>
                   </div>
                 </div>

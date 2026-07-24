@@ -13,8 +13,8 @@ export interface User {
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
-  login: (credentials: Record<string, string>) => Promise<void>;
-  registerUser: (userData: Record<string, string>) => Promise<void>;
+  login: (credentials: Record<string, string>) => Promise<User | undefined>;
+  registerUser: (userData: Record<string, string>) => Promise<User | undefined>;
   logout: () => Promise<void>;
 }
 
@@ -31,11 +31,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (res.ok) {
         const data = await res.json();
         setUser(data);
+        return data;
       } else {
         setUser(null);
+        return null;
       }
     } catch (e) {
       setUser(null);
+      return null;
     } finally {
       setIsLoading(false);
     }
@@ -71,7 +74,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     // Now fetch the profile
-    await checkSession();
+    return await checkSession();
   };
 
   const registerUser = async (userData: Record<string, string>) => {
@@ -92,7 +95,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     // Registration also logs us in, so fetch profile
-    await checkSession();
+    return await checkSession();
   };
 
   const logout = async () => {

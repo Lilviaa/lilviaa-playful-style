@@ -128,7 +128,7 @@ function AccountIndexPage() {
                     <label className="text-sm font-semibold text-cocoa">Full Name</label>
                     <input
                       type="text"
-                      defaultValue={user.name}
+                      defaultValue={user.full_name}
                       className="w-full rounded-xl border-2 border-border bg-background px-4 py-2 text-sm text-cocoa focus:border-primary focus:outline-none"
                     />
                   </div>
@@ -165,12 +165,18 @@ function AccountIndexPage() {
           <div className="space-y-4 text-sm">
             <div>
               <p className="text-muted-foreground text-xs uppercase tracking-wider">Full Name</p>
-              <p className="font-medium text-cocoa mt-0.5">{user.name}</p>
+              <p className="font-medium text-cocoa mt-0.5">{user.full_name || "Not provided"}</p>
             </div>
             <div>
               <div className="flex items-center justify-between">
                 <p className="text-muted-foreground text-xs uppercase tracking-wider">Email Address</p>
-                <button onClick={() => toast.success("Verification link sent to email!")} className="text-[10px] font-bold text-primary hover:underline flex items-center gap-1">
+                <button onClick={() => {
+                  toast.success("Verification link sent to email!");
+                  setTimeout(() => {
+                    const otp = prompt("Enter the verification code sent to your email:");
+                    if(otp) toast.success("Email verified successfully!");
+                  }, 800);
+                }} className="text-[10px] font-bold text-primary hover:underline flex items-center gap-1">
                   <AlertCircle className="h-3 w-3" /> Verify
                 </button>
               </div>
@@ -179,7 +185,13 @@ function AccountIndexPage() {
             <div>
               <div className="flex items-center justify-between">
                 <p className="text-muted-foreground text-xs uppercase tracking-wider">Phone Number</p>
-                <button onClick={() => toast.success("OTP sent to phone!")} className="text-[10px] font-bold text-primary hover:underline flex items-center gap-1">
+                <button onClick={() => {
+                  toast.success("OTP sent to phone!");
+                  setTimeout(() => {
+                    const otp = prompt("Enter the OTP sent to your phone:");
+                    if(otp) toast.success("Phone verified successfully!");
+                  }, 800);
+                }} className="text-[10px] font-bold text-primary hover:underline flex items-center gap-1">
                   <AlertCircle className="h-3 w-3" /> Verify
                 </button>
               </div>

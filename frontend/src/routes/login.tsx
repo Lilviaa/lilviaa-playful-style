@@ -47,8 +47,12 @@ function LoginPage() {
     setErrorMsg("");
     setIsLoading(true);
     try {
-      await login(values);
-      navigate({ to: "/account" });
+      const user = await login(values);
+      if (user?.role === "admin") {
+        navigate({ to: "/admin" });
+      } else {
+        navigate({ to: "/" });
+      }
     } catch (e: any) {
       setErrorMsg(e.message || "Failed to login. Please check your credentials.");
     } finally {

@@ -39,6 +39,7 @@ export interface ProductImage {
   product_id: string;
   url: string;
   sort_order: number;
+  file?: File;
 }
 
 export interface ProductWithDetails extends Product {
@@ -77,7 +78,8 @@ export function useProduct(id: string) {
       const res = await apiFetch("/admin/products/");
       if (!res.ok) throw new Error("Failed to fetch products");
       const data: ProductWithDetails[] = await res.json();
-      const p: any = data.find((prod) => prod.id === id);
+      const cleanId = id.replace(/\s+/g, '-');
+      const p: any = data.find((prod) => prod.id === cleanId);
       if (!p) return null;
       p.category_name = p.category?.name || "Uncategorized"; // map correctly
       p.category_slug = p.category?.slug || "";
@@ -217,11 +219,23 @@ export function useSaveProduct() {
         if (!res.ok) throw new Error("Failed to update product");
       }
 
-      // For variants (we just blindly add new variants for now as requested in M3 minimal endpoints)
+      // Handle variants
       for (const v of data.variants) {
-        if (v.id.startsWith("new_") || !v.id) {
+        if (v.id.includes("new_") || !v.id) {
           await apiFetch(`/admin/products/${productId}/variants`, {
             method: "POST",
+            body: JSON.stringify({
+              size: v.size,
+              color: v.color,
+              sku: v.sku,
+              stock: v.stock,
+              price_override: v.price_override
+            })
+          });
+        } else {
+          // Update existing variant
+          await apiFetch(`/admin/products/variants/${v.id}`, {
+            method: "PUT",
             body: JSON.stringify({
               size: v.size,
               color: v.color,
@@ -233,6 +247,35 @@ export function useSaveProduct() {
         }
       }
 
+      // For images
+      if (data.images) {
+        for (const [index, img] of data.images.entries()) {
+          if (img.file) {
+            // 1. Request presigned URL
+            const reqRes = await apiFetch('/admin/products/upload/request-url', {
+              method: 'POST',
+              body: JSON.stringify({ filename: img.file.name, content_type: img.file.type })
+            });
+            if (!reqRes.ok) throw new Error("Failed to get upload URL");
+            const { upload_url, file_path } = await reqRes.json();
+            
+            // 2. PUT to R2 (direct fetch)
+            const uploadRes = await fetch(upload_url, {
+              method: 'PUT',
+              body: img.file,
+              headers: { 'Content-Type': img.file.type }
+            });
+            if (!uploadRes.ok) throw new Error("Failed to upload image");
+            
+            // 3. Confirm upload
+            await apiFetch('/admin/products/upload/confirm', {
+              method: 'POST',
+              body: JSON.stringify({ file_path, product_id: productId, sort_order: index })
+            });
+          }
+        }
+      }
+
       return productId;
     },
     onSuccess: (id) => {
@@ -240,5 +283,8 @@ export function useSaveProduct() {
       queryClient.invalidateQueries({ queryKey: ["admin-product", id] });
       toast.success("Product saved successfully");
     },
+    onError: (error: any) => {
+      toast.error(error.message || "Failed to save product");
+    }
   });
 }

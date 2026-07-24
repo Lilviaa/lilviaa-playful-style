@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
-import { categories } from "@/lib/products";
-import { useProducts } from "@/lib/products-api";
+import { useMemo, useState, useRef, useEffect } from "react";
+import { ChevronDown } from "lucide-react";
+import { useProducts, useCategories } from "@/lib/products-api";
 import { ProductCard } from "@/components/product-card";
 
 export const Route = createFileRoute("/shop")({
@@ -44,6 +44,7 @@ function ShopPage() {
   const [sort, setSort] = useState<string>("featured");
 
   const { data: products = [], isLoading } = useProducts();
+  const { data: dbCategories = [] } = useCategories();
 
   const items = useMemo(() => {
     let list = products.filter(
@@ -55,7 +56,7 @@ function ShopPage() {
     if (sort === "price-asc") list = [...list].sort((a, b) => a.price - b.price);
     if (sort === "price-desc") list = [...list].sort((a, b) => b.price - a.price);
     return list;
-  }, [cat, gender, tag, sort]);
+  }, [cat, gender, tag, sort, products]);
 
   return (
     <div>
@@ -74,35 +75,40 @@ function ShopPage() {
 
       <section className="mx-auto max-w-7xl px-6 py-8">
         <div className="flex flex-col items-start gap-5 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3">
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center z-20">
+            <span className="text-sm font-semibold text-cocoa">Category:</span>
+            <CustomSelect
+              value={cat}
+              onChange={setCat}
+              options={[
+                { v: "all", l: "All" },
+                ...dbCategories.map((c) => ({ v: c.slug, l: c.name })),
+              ]}
+            />
+          </div>
           <FilterGroup
-            label="Category"
-            options={[{ v: "all", l: "All" }, ...categories.map((c) => ({ v: c.slug, l: c.label }))]}
-            value={cat}
-            onChange={setCat}
-          />
-          <FilterGroup 
-            label="Collection" 
+            label="Collection"
             options={[
-              { v: "all", l: "All" }, 
-              { v: "new", l: "New Arrivals" }, 
-              { v: "bestseller", l: "Bestsellers" }, 
+              { v: "all", l: "All" },
+              { v: "new", l: "New Arrivals" },
+              { v: "bestseller", l: "Bestsellers" },
               { v: "sale", l: "Sale" }
-            ]} 
-            value={tag} 
-            onChange={setTag} 
+            ]}
+            value={tag}
+            onChange={setTag}
           />
           <FilterGroup label="For" options={genders as any} value={gender} onChange={setGender} />
-          <div className="mt-2 w-full sm:ml-auto sm:mt-0 sm:w-auto">
-            <label className="mr-2 text-sm font-semibold text-cocoa">Sort</label>
-            <select
+          <div className="mt-2 flex w-full flex-col gap-2 sm:ml-auto sm:mt-0 sm:w-auto sm:flex-row sm:items-center z-10">
+            <span className="text-sm font-semibold text-cocoa">Sort:</span>
+            <CustomSelect
               value={sort}
-              onChange={(e) => setSort(e.target.value)}
-              className="w-full sm:w-auto rounded-full border-2 border-border bg-card px-4 py-2 text-sm font-semibold text-cocoa focus:border-primary focus:outline-none"
-            >
-              <option value="featured">Featured</option>
-              <option value="price-asc">Price: low to high</option>
-              <option value="price-desc">Price: high to low</option>
-            </select>
+              onChange={setSort}
+              options={[
+                { v: "featured", l: "Featured" },
+                { v: "price-asc", l: "Price: low to high" },
+                { v: "price-desc", l: "Price: high to low" },
+              ]}
+            />
           </div>
         </div>
 
@@ -149,16 +155,72 @@ function FilterGroup({
           <button
             key={o.v}
             onClick={() => onChange(o.v)}
-            className={`rounded-full px-3.5 py-1.5 text-xs font-bold transition-colors ${
-              value === o.v
+            className={`rounded-full px-3.5 py-1.5 text-xs font-bold transition-colors ${value === o.v
                 ? "bg-primary text-primary-foreground"
                 : "text-cocoa/70 hover:text-cocoa"
-            }`}
+              }`}
           >
             {o.l}
           </button>
         ))}
       </div>
+    </div>
+  );
+}
+
+function CustomSelect({
+  value,
+  onChange,
+  options,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  options: { v: string; l: string }[];
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const selected = options.find((o) => o.v === value) || options[0];
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
+
+  return (
+    <div className="relative w-full sm:w-48" ref={ref}>
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="flex w-full items-center justify-between rounded-[1.25rem] bg-card px-4 py-1.5 text-sm font-bold text-cocoa shadow-cute transition-colors hover:text-primary focus:outline-none"
+      >
+        <span className="truncate">{selected.l}</span>
+        <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+      </button>
+
+      {isOpen && (
+        <div className="absolute top-[calc(100%+8px)] z-50 max-h-60 w-full overflow-y-auto rounded-2xl border border-border bg-card p-1.5 shadow-cute">
+          {options.map((o) => (
+            <button
+              key={o.v}
+              onClick={() => {
+                onChange(o.v);
+                setIsOpen(false);
+              }}
+              className={`flex w-full items-center rounded-xl px-3 py-2 text-left text-sm transition-colors ${
+                value === o.v
+                  ? "bg-primary text-primary-foreground font-bold"
+                  : "font-semibold text-cocoa/70 hover:bg-muted hover:text-cocoa"
+              }`}
+            >
+              {o.l}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

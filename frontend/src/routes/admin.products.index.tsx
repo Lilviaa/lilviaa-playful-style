@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useProducts } from "@/lib/admin/products-api";
+import { useCategories } from "@/lib/categories-api";
 import { ProductTable } from "@/components/admin/products/product-table";
 import { BulkActionsBar } from "@/components/admin/products/bulk-actions-bar";
 import { Button } from "@/components/ui/button";
@@ -24,6 +25,7 @@ export const Route = createFileRoute("/admin/products/")({
 
 function AdminProductsPage() {
   const { data: products, isLoading } = useProducts();
+  const { data: dbCategories = [] } = useCategories();
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -53,8 +55,11 @@ function AdminProductsPage() {
     .map((idx) => filteredProducts[parseInt(idx)]?.id)
     .filter(Boolean);
 
-  // Extract unique categories from products for the filter
-  const uniqueCategories = Array.from(new Set(products?.map((p) => p.category) || []));
+  // Extract unique categories from products and db
+  const uniqueCategories = Array.from(new Set([
+    ...dbCategories.map(c => c.name),
+    ...(products?.map((p) => p.category).filter(Boolean) || [])
+  ]));
 
   return (
     <div className="space-y-6 pb-24 relative">

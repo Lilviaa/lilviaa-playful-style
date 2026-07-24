@@ -28,9 +28,25 @@ interface ProductFormProps {
 export function ProductForm({ initialData }: ProductFormProps) {
   const navigate = useNavigate();
   const saveProduct = useSaveProduct();
-
-  const predefinedCategories = ["Shirts", "Kurtas", "Rompers", "Dresses", "Sets", "Accessories"];
   const [isNewCategory, setIsNewCategory] = useState(false);
+
+  const [customDetails, setCustomDetails] = useState<{key: string, value: string}[]>(() => {
+    if (initialData?.fabric && initialData.fabric.startsWith("[")) {
+      try {
+        return JSON.parse(initialData.fabric);
+      } catch (e) {
+        // Fallback below
+      }
+    }
+    const details = [];
+    if (initialData?.fabric && !initialData.fabric.startsWith("[")) {
+      details.push({ key: "Material", value: initialData.fabric });
+    }
+    if (initialData?.wash_care) {
+      details.push({ key: "Care Instructions", value: initialData.wash_care });
+    }
+    return details;
+  });
 
   const [formData, setFormData] = useState<Partial<ProductWithDetails>>({
     id: initialData?.id || `p_new_${Date.now()}`,
@@ -97,7 +113,7 @@ export function ProductForm({ initialData }: ProductFormProps) {
         try {
           const newCat = await createCategory({
             name: formData.category,
-            slug: formData.category.toLowerCase().replace(/\\s+/g, "-").replace(/[^a-z0-9-]/g, ""),
+            slug: formData.category.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, ""),
             sort_order: 0
           });
           finalCategoryId = newCat.id;
@@ -111,6 +127,8 @@ export function ProductForm({ initialData }: ProductFormProps) {
 
       await saveProduct.mutateAsync({
         ...formData,
+        fabric: JSON.stringify(customDetails),
+        wash_care: "",
         category_id: finalCategoryId,
         variants,
         images,
@@ -118,7 +136,8 @@ export function ProductForm({ initialData }: ProductFormProps) {
 
       navigate({ to: "/admin/products" });
     } catch (err) {
-      // toast is handled in mutation
+      // The error toast is handled in the mutation, but we don't want to navigate
+      console.error(err);
     }
   };
 
@@ -152,8 +171,8 @@ export function ProductForm({ initialData }: ProductFormProps) {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="draft">Draft</SelectItem>
-              <SelectItem value="published">Published</SelectItem>
-              <SelectItem value="archived">Archived</SelectItem>
+              <SelectItem value="published">Publish</SelectItem>
+              <SelectItem value="archived">Archive</SelectItem>
             </SelectContent>
           </Select>
 
@@ -211,7 +230,7 @@ export function ProductForm({ initialData }: ProductFormProps) {
                         size="icon"
                         onClick={() => {
                           setIsNewCategory(false);
-                          updateField("category", predefinedCategories[0]);
+                          updateField("category", "");
                         }}
                         className="text-muted-foreground hover:text-rose-500"
                       >
@@ -323,28 +342,62 @@ export function ProductForm({ initialData }: ProductFormProps) {
 
             {/* Details */}
             <div className="space-y-4 rounded-xl border border-border bg-card p-6 shadow-sm">
-              <h2 className="text-lg font-bold text-cocoa">Product Details</h2>
-
-              <div className="space-y-2">
-                <Label htmlFor="fabric">Fabric</Label>
-                <Input
-                  id="fabric"
-                  value={formData.fabric}
-                  onChange={(e) => updateField("fabric", e.target.value)}
-                  placeholder="e.g. 100% Cotton"
-                />
+              <div className="flex items-center justify-between mb-2">
+                <h2 className="text-lg font-bold text-cocoa">Product Details</h2>
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => setCustomDetails([...customDetails, { key: "", value: "" }])}
+                >
+                  <Plus className="mr-2 h-4 w-4" /> Add Detail
+                </Button>
               </div>
+              <p className="text-xs text-muted-foreground mb-4">Add custom specifications like Material, Fit, or Care Instructions.</p>
 
-              <div className="space-y-2">
-                <Label htmlFor="wash_care">Wash Care</Label>
-                <Textarea
-                  id="wash_care"
-                  value={formData.wash_care}
-                  onChange={(e) => updateField("wash_care", e.target.value)}
-                  rows={2}
-                  placeholder="e.g. Machine wash cold"
-                />
-              </div>
+              {customDetails.length === 0 ? (
+                <p className="text-xs text-muted-foreground text-center py-6 border border-dashed rounded-lg bg-sand/30">No details added yet.</p>
+              ) : (
+                <div className="space-y-3">
+                  {customDetails.map((detail, index) => (
+                    <div key={index} className="flex gap-2 items-start">
+                      <Input 
+                        placeholder="Key (e.g. Material)" 
+                        value={detail.key}
+                        onChange={(e) => {
+                          const newDetails = [...customDetails];
+                          newDetails[index].key = e.target.value;
+                          setCustomDetails(newDetails);
+                        }}
+                        className="flex-1"
+                      />
+                      <Input 
+                        placeholder="Value (e.g. 100% Cotton)" 
+                        value={detail.value}
+                        onChange={(e) => {
+                          const newDetails = [...customDetails];
+                          newDetails[index].value = e.target.value;
+                          setCustomDetails(newDetails);
+                        }}
+                        className="flex-1"
+                      />
+                      <Button 
+                        type="button" 
+                        variant="ghost" 
+                        size="icon" 
+                        className="text-muted-foreground hover:text-rose-500 shrink-0"
+                        onClick={() => {
+                          const newDetails = [...customDetails];
+                          newDetails.splice(index, 1);
+                          setCustomDetails(newDetails);
+                        }}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </ResizablePanel>

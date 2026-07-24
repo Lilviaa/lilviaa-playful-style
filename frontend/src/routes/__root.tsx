@@ -155,7 +155,7 @@ function RootComponent() {
                 </main>
                 {!hideHeaderFooter && <SiteFooter />}
               </div>
-              <Toaster richColors position="top-center" />
+              <Toaster richColors position="top-center" expand={true} />
             </WishlistProvider>
           </CartProvider>
         </AdminAuthProvider>

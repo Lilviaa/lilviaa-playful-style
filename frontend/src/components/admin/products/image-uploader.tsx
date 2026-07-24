@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { ProductImage } from "@/lib/admin/products-api";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -36,24 +36,48 @@ export function ImageUploader({ images, onChange }: ImageUploaderProps) {
     onChange(newImages.map((img, i) => ({ ...img, sort_order: i })));
   };
 
-  const simulateUpload = () => {
-    // Mock upload for now
-    const newImage: ProductImage = {
-      id: `img_${Date.now()}`,
-      product_id: "",
-      url: `https://images.unsplash.com/photo-1518831959646-742c3a14ebf7?auto=format&fit=crop&q=80&w=400&time=${Date.now()}`,
-      sort_order: images.length,
-    };
-    onChange([...images, newImage]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleUploadClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      const files = Array.from(e.target.files);
+      const newImages = files.map((file, idx) => ({
+        id: `img_local_${Date.now()}_${idx}`,
+        product_id: "",
+        url: URL.createObjectURL(file),
+        sort_order: images.length + idx,
+        file: file // Storing file object for future backend upload implementation
+      }));
+      
+      onChange([...images, ...newImages]);
+      
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
   };
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <Label className="text-base font-semibold text-cocoa">Product Images</Label>
-        <Button type="button" variant="outline" size="sm" onClick={simulateUpload}>
-          <UploadCloud className="mr-2 h-4 w-4" /> Add Image
-        </Button>
+        <div>
+          <input 
+            type="file" 
+            ref={fileInputRef} 
+            className="hidden" 
+            accept="image/*" 
+            multiple 
+            onChange={handleFileChange} 
+          />
+          <Button type="button" variant="outline" size="sm" onClick={handleUploadClick}>
+            <UploadCloud className="mr-2 h-4 w-4" /> Add Image
+          </Button>
+        </div>
       </div>
 
       {images.length === 0 ? (

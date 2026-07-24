@@ -14,6 +14,15 @@ export type Product = {
   description: string;
   fabric: string;
   care: string;
+  sku?: string;
+  stock?: number;
+  variants?: {
+    size: string;
+    color: string;
+    sku: string;
+    stock: number;
+    price_override: number | null;
+  }[];
 };
 
 export const categories = [

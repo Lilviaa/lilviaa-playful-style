@@ -45,3 +45,24 @@ export function useProduct(slug: string) {
     enabled: !!slug,
   });
 }
+
+export type Category = {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string;
+  sort_order: number;
+};
+
+export async function fetchCategories(): Promise<Category[]> {
+  const res = await fetch(`${API_URL}/categories/`);
+  if (!res.ok) throw new Error("Failed to fetch categories");
+  return res.json();
+}
+
+export function useCategories() {
+  return useQuery({
+    queryKey: ["categories"],
+    queryFn: fetchCategories,
+  });
+}

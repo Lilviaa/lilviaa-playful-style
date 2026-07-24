@@ -53,13 +53,17 @@ function RegisterPage() {
     setErrorMsg("");
     setIsLoading(true);
     try {
-      await registerUser({
+      const user = await registerUser({
         full_name: values.fullName, // Match backend snake_case key
         email: values.email,
         phone: values.phone,
         password: values.password
       });
-      navigate({ to: "/account" });
+      if (user?.role === "admin") {
+        navigate({ to: "/admin" });
+      } else {
+        navigate({ to: "/" });
+      }
     } catch (e: any) {
       setErrorMsg(e.message || "Failed to register. Please check your details.");
     } finally {
