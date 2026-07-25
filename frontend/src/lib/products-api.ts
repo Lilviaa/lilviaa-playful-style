@@ -1,9 +1,16 @@
 import { useQuery } from "@tanstack/react-query";
 import type { Product } from "./products";
-export const API_URL = "http://127.0.0.1:8000/api/v1";
+export const API_URL = "http://localhost:8000/api/v1";
 
-export async function fetchProducts(): Promise<Product[]> {
-  const res = await fetch(`${API_URL}/products/`);
+export async function fetchProducts(category?: string, sort?: string): Promise<Product[]> {
+  const url = new URL(`${API_URL}/products/`);
+  if (category && category !== "all") url.searchParams.append("category", category);
+  if (sort && sort !== "featured") {
+    // Map frontend sort values to backend expected values
+    const backendSort = sort.replace("-", "_");
+    url.searchParams.append("sort", backendSort);
+  }
+  const res = await fetch(url.toString());
   if (!res.ok) throw new Error("Failed to fetch products");
   return res.json();
 }
@@ -24,10 +31,10 @@ export async function fetchProduct(slug: string): Promise<Product> {
 }
 
 // React Query Hooks
-export function useProducts() {
+export function useProducts(category?: string, sort?: string) {
   return useQuery({
-    queryKey: ["products"],
-    queryFn: fetchProducts,
+    queryKey: ["products", category, sort],
+    queryFn: () => fetchProducts(category, sort),
   });
 }
 
@@ -52,6 +59,8 @@ export type Category = {
   slug: string;
   description?: string;
   sort_order: number;
+  emoji?: string;
+  applicable_genders: string[];
 };
 
 export async function fetchCategories(): Promise<Category[]> {

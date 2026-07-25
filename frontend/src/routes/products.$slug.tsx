@@ -67,7 +67,7 @@ export const Route = createFileRoute("/products/$slug")({
 
 function ProductPage() {
   const { product } = Route.useLoaderData() as { product: Product };
-  const { add } = useCart();
+  const { items, add, setQty: setCartQty, remove: removeFromCart } = useCart();
   const { add: addToWishlist, remove: removeFromWishlist, has: inWishlistCheck } = useWishlist();
   const navigate = useNavigate();
   const [activeImg, setActiveImg] = useState(product.image);
@@ -81,7 +81,7 @@ function ProductPage() {
   ) || product.variants?.find(v => v.size === size);
 
   const displayPrice = activeVariant?.price_override ?? product.price;
-  const displayStock = activeVariant?.stock ?? product.stock;
+  const displayStock = activeVariant?.stock ?? product.stock ?? 0;
   const displaySku = activeVariant?.sku || product.sku;
   // If price is overridden, the base compareAt might not make sense, but we'll show it if no override exists
   const displayCompareAt = activeVariant?.price_override ? null : product.compareAt;
@@ -100,13 +100,43 @@ function ProductPage() {
         name: product.name,
         price: product.price,
         image: product.image,
+        variant_id: activeVariant?.sku || "",
       });
     }
   };
 
 
 
+  const cartItem = items.find(i => i.variant_id === (activeVariant?.sku || ""));
+  const inCart = !!cartItem;
+  const currentQty = inCart ? cartItem.qty : qty;
+
+  const handleMinus = () => {
+    if (inCart) {
+      if (currentQty === 1) removeFromCart(cartItem.slug, cartItem.size);
+      else setCartQty(cartItem.slug, cartItem.size, currentQty - 1);
+    } else {
+      setQty((q) => Math.max(1, q - 1));
+    }
+  };
+
+  const handlePlus = () => {
+    if (currentQty < displayStock) {
+      if (inCart) {
+        setCartQty(cartItem.slug, cartItem.size, currentQty + 1);
+      } else {
+        setQty((q) => q + 1);
+      }
+    } else {
+      toast.error(`Only ${displayStock} items available in stock`);
+    }
+  };
+
   const handleAdd = () => {
+    if (inCart) {
+      // If already in cart, just go to cart/checkout or do nothing
+      return;
+    }
     add({
       slug: product.slug,
       name: product.name,
@@ -114,6 +144,7 @@ function ProductPage() {
       image: product.image,
       size,
       qty,
+      variant_id: activeVariant?.sku || "",
     });
     toast.success(`${product.name} added to cart`, {
       description: `Size ${size} · Qty ${qty}`,
@@ -305,19 +336,24 @@ function ProductPage() {
           <div className="mt-4 flex flex-col gap-4">
             <div className="flex flex-wrap sm:flex-nowrap gap-3">
               <div className="flex h-14 w-32 shrink-0 items-center justify-between border border-border px-4">
-                <button onClick={() => setQty((q) => Math.max(1, q - 1))} className="text-cocoa hover:text-primary transition-colors">
+                <button onClick={handleMinus} className="text-cocoa hover:text-primary transition-colors">
                   <Minus className="h-4 w-4" />
                 </button>
-                <span className="font-bold text-cocoa">{qty}</span>
-                <button onClick={() => setQty((q) => q + 1)} className="text-cocoa hover:text-primary transition-colors">
+                <span className="font-bold text-cocoa">{currentQty}</span>
+                <button onClick={handlePlus} className="text-cocoa hover:text-primary transition-colors">
                   <Plus className="h-4 w-4" />
                 </button>
               </div>
               <button
-                onClick={handleAdd}
-                className="flex h-14 flex-1 items-center justify-center whitespace-nowrap bg-background border border-cocoa text-cocoa font-bold uppercase tracking-widest text-xs sm:text-sm hover:bg-cocoa hover:text-white transition-colors"
+                onClick={inCart ? () => navigate({ to: "/checkout" }) : handleAdd}
+                disabled={displayStock === 0}
+                className={`flex h-14 flex-1 items-center justify-center whitespace-nowrap border font-bold uppercase tracking-widest text-xs sm:text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                  inCart 
+                    ? "bg-primary text-primary-foreground border-primary hover:bg-primary/90" 
+                    : "bg-background border-cocoa text-cocoa hover:bg-cocoa hover:text-white disabled:hover:bg-background disabled:hover:text-cocoa"
+                }`}
               >
-                Add to Cart
+                {displayStock === 0 ? "Out of Stock" : inCart ? "Added To Cart (Checkout)" : "Add to Cart"}
               </button>
               <button
                 onClick={toggleWishlist}
@@ -331,7 +367,8 @@ function ProductPage() {
             
             <button
               onClick={handleBuyNow}
-              className="w-full h-14 flex items-center justify-center bg-cocoa text-white font-bold uppercase tracking-widest text-sm hover:bg-cocoa/90 transition-colors shadow-sm"
+              disabled={displayStock === 0}
+              className="w-full h-14 flex items-center justify-center bg-cocoa text-white font-bold uppercase tracking-widest text-sm hover:bg-cocoa/90 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-cocoa"
             >
               Buy it Now
             </button>

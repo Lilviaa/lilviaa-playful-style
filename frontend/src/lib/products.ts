@@ -25,9 +25,3 @@ export type Product = {
   }[];
 };
 
-export const categories = [
-  { slug: "kurta", label: "Kurtas", emoji: "🌼" },
-  { slug: "shirt", label: "Shirts", emoji: "☀️" },
-  { slug: "ethnic", label: "Ethnic", emoji: "🪁" },
-  { slug: "party", label: "Party", emoji: "🎈" },
-] as const;

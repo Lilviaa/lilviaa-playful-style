@@ -305,12 +305,12 @@ export function ProductTable({
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem asChild>
-                <Link to={`/admin/products/${product.id}`} className="cursor-pointer">
+                <Link to="/admin/products/$productId" params={{ productId: product.id }} className="cursor-pointer">
                   <Pencil className="mr-2 h-4 w-4" /> Edit
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
-                <Link to={`/products/${product.slug}`} target="_blank" className="cursor-pointer">
+                <Link to="/products/$slug" params={{ slug: product.slug }} target="_blank" className="cursor-pointer">
                   <Eye className="mr-2 h-4 w-4" /> View in store
                 </Link>
               </DropdownMenuItem>
@@ -480,7 +480,6 @@ export function ProductTable({
                     <img
                       src={
                         quickViewProduct.images?.[0]?.url ||
-                        quickViewProduct.images?.[0] ||
                         "https://placehold.co/200"
                       }
                       alt={quickViewProduct.name}
@@ -505,10 +504,25 @@ export function ProductTable({
                         </span>
                       )}
                     </p>
-                    <p className="text-sm text-cocoa">
-                      <span className="font-semibold">Fabric: </span>{" "}
-                      {quickViewProduct.fabric || "N/A"}
-                    </p>
+                    {(() => {
+                      let text = quickViewProduct.fabric || "N/A";
+                      if (quickViewProduct.fabric && quickViewProduct.fabric.startsWith("[")) {
+                        try {
+                          const parsed = JSON.parse(quickViewProduct.fabric);
+                          if (Array.isArray(parsed)) {
+                            text = parsed.map((d: any) => `${d.key}: ${d.value}`).join(", ") || "N/A";
+                          }
+                        } catch (e) {
+                          // fallback to raw string
+                        }
+                      }
+                      return (
+                        <p className="text-sm text-cocoa">
+                          <span className="font-semibold">Fabric: </span>{" "}
+                          {text}
+                        </p>
+                      );
+                    })()}
                     <p className="text-sm text-cocoa">
                       <span className="font-semibold">Status: </span>
                       <span className="capitalize">{quickViewProduct.status}</span>

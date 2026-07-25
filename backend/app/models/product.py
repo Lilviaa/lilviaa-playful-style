@@ -93,6 +93,8 @@ class ProductUpdate(BaseModel):
     fabric: Optional[str] = None
     wash_care: Optional[str] = None
     category_id: Optional[str] = None
+    gender: Optional[str] = None
+    tag: Optional[str] = None
     base_price: Optional[float] = None
     sale_price: Optional[float] = None
     sale_start: Optional[datetime] = None
@@ -104,8 +106,8 @@ class ProductResponse(ProductBase):
     created_at: datetime
     updated_at: datetime
     
-    # We can embed relations if needed
     variants: Optional[List[ProductVariantResponse]] = []
     images: Optional[List[ProductImageResponse]] = []
+    category: Optional[dict] = None
 
     model_config = ConfigDict(from_attributes=True)

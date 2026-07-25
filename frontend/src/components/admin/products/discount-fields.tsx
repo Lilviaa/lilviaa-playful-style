@@ -3,6 +3,7 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Product } from "@/lib/admin/products-api";
+import { useState, useEffect } from "react";
 
 interface DiscountFieldsProps {
   basePrice: number;
@@ -20,7 +21,14 @@ function toLocalDatetimeString(isoString: string) {
 }
 
 export function DiscountFields({ basePrice, salePrice, saleStart, saleEnd, onChange }: DiscountFieldsProps) {
-  const isOnSale = salePrice !== null;
+  const [isOnSale, setIsOnSale] = useState(salePrice !== null);
+
+  useEffect(() => {
+    // Sync state if a product is loaded from the outside that has a sale
+    if (salePrice !== null && !isOnSale) {
+      setIsOnSale(true);
+    }
+  }, [salePrice, isOnSale]);
 
   const setDuration = (days: number) => {
     const start = new Date();
@@ -42,6 +50,7 @@ export function DiscountFields({ basePrice, salePrice, saleStart, saleEnd, onCha
         <Switch 
           checked={isOnSale} 
           onCheckedChange={(checked) => {
+            setIsOnSale(checked);
             if (checked) {
               onChange({ sale_price: Math.floor(basePrice * 0.9) }); // Default 10% off
             } else {

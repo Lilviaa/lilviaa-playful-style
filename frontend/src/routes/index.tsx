@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import { ArrowRight, Sparkles, Truck, ShieldCheck, Ruler, Star, AlertCircle, Heart, Gem, Baby, MapPin } from "lucide-react";
-import { useFeaturedProducts } from "@/lib/products-api";
+import { useFeaturedProducts, useProducts } from "@/lib/products-api";
 import { useCategories } from "@/lib/categories-api";
 import { ProductCard } from "@/components/product-card";
 import { ScrollReveal } from "@/components/scroll-reveal";
@@ -27,6 +27,7 @@ function HomePage() {
   const [currentHeroImage, setCurrentHeroImage] = useState(0);
   const { data: featured = [], isLoading: isLoadingProducts } = useFeaturedProducts();
   const { data: dbCategories = [], isLoading: isLoadingCategories } = useCategories();
+  const { data: allProducts = [] } = useProducts();
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -155,9 +156,9 @@ function HomePage() {
         </div>
         <div className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {dbCategories.slice(0, 4).map((c, i) => {
-            const p = featured[(i + 1) * 2] ?? featured[i];
-            const emojiMap: Record<string, string> = { "kurtas": "🌼", "shirts": "☀️", "ethnic": "🪁", "party": "🎈" };
-            const emoji = emojiMap[c.slug] || "✨";
+            const categoryProduct = allProducts.find((prod) => prod.category === c.slug && prod.image);
+            const imageUrl = categoryProduct?.image || "/fallback-image.svg";
+            
             return (
               <ScrollReveal key={c.slug} direction="up" delay={i * 0.1}>
                 <Link
@@ -168,7 +169,7 @@ function HomePage() {
                   {/* Background Image */}
                   <div className="absolute inset-0 z-0 bg-cocoa/20">
                     <img
-                      src={p?.image || "/fallback-image.jpg"}
+                      src={imageUrl}
                       alt={c.name}
                       className="h-full w-full object-cover transition-transform duration-1000 ease-out group-hover:scale-110"
                     />
@@ -177,9 +178,11 @@ function HomePage() {
                   <div className="absolute inset-0 z-10 bg-gradient-to-b from-transparent via-transparent to-cocoa/90 opacity-80 transition-opacity duration-500 group-hover:opacity-100" />
                   
                   {/* Emoji / Tag */}
-                  <div className="relative z-20 self-start rounded-full bg-cream/95 px-4 py-2 text-xl shadow-sm backdrop-blur-md transition-transform duration-500 ease-out group-hover:rotate-[-8deg] group-hover:scale-110">
-                    {emoji}
-                  </div>
+                  {c.emoji && (
+                    <div className="relative z-20 self-start rounded-full bg-cream/95 px-4 py-2 text-xl shadow-sm backdrop-blur-md transition-transform duration-500 ease-out group-hover:rotate-[-8deg] group-hover:scale-110">
+                      {c.emoji}
+                    </div>
+                  )}
 
                   {/* Content */}
                   <div className="relative z-20 mt-auto translate-y-4 transition-transform duration-500 ease-out group-hover:translate-y-0">

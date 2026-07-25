@@ -5,7 +5,7 @@ load_dotenv()
 
 from app.core.config import settings
 from app.core.exceptions import AppError, app_error_handler
-from app.api.v1 import auth, addresses, categories, products, admin_products
+from app.api.v1 import auth, addresses, categories, products, admin_products, orders
 
 app = FastAPI(
     title="Lilviaa E-Commerce API",
@@ -40,6 +40,7 @@ app.include_router(addresses.router, prefix="/api/v1/addresses", tags=["Addresse
 app.include_router(categories.router, prefix="/api/v1/categories", tags=["Categories"])
 app.include_router(products.router, prefix="/api/v1/products", tags=["Products"])
 app.include_router(admin_products.router, prefix="/api/v1/admin/products", tags=["Admin Products"])
+app.include_router(orders.router, prefix="/api/v1/orders", tags=["Orders"])
 
 @app.get("/health")
 def health_check():

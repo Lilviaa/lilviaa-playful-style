@@ -47,6 +47,9 @@ export function CategoryManager({ children }: { children: React.ReactNode }) {
   const [selectedProducts, setSelectedProducts] = useState<Set<string>>(new Set());
   const [bulkCategoryInput, setBulkCategoryInput] = useState("");
 
+  const [editingCategoryGenders, setEditingCategoryGenders] = useState<string[]>([]);
+  const [newCategoryGenders, setNewCategoryGenders] = useState<string[]>(["boys", "girls", "unisex"]);
+
   // To allow creating categories without products in this session
   const [customCategories, setCustomCategories] = useState<string[]>([]);
   const [isCreatingCategory, setIsCreatingCategory] = useState(false);
@@ -70,7 +73,8 @@ export function CategoryManager({ children }: { children: React.ReactNode }) {
         await createCategory({
           name: trimmed,
           slug: trimmed.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
-          sort_order: 0
+          sort_order: 0,
+          applicable_genders: newCategoryGenders
         });
         setCustomCategories((prev) => [...prev, trimmed]);
         queryClient.invalidateQueries({ queryKey: ["categories"] });
@@ -110,7 +114,8 @@ export function CategoryManager({ children }: { children: React.ReactNode }) {
       if (targetCat) {
         await updateCategory(targetCat.id, {
           name: newCategoryName,
-          slug: newCategoryName.toLowerCase().replace(/[^a-z0-9]+/g, '-')
+          slug: newCategoryName.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+          applicable_genders: editingCategoryGenders
         });
       }
       
@@ -270,30 +275,47 @@ export function CategoryManager({ children }: { children: React.ReactNode }) {
                     className="flex items-center justify-between p-2 rounded-lg hover:bg-muted/50 transition-colors"
                   >
                     {editingCategory === cat ? (
-                      <div className="flex items-center gap-2 flex-1 mr-2">
-                        <Input
-                          value={newCategoryName}
-                          onChange={(e) => setNewCategoryName(e.target.value)}
-                          className="h-8"
-                          autoFocus
-                          onKeyDown={(e) => e.key === "Enter" && handleRenameCategory(cat)}
-                        />
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="h-8 w-8 text-green-600"
-                          onClick={() => handleRenameCategory(cat)}
-                        >
-                          <Check className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="h-8 w-8 text-muted-foreground"
-                          onClick={() => setEditingCategory(null)}
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
+                      <div className="flex flex-col gap-2 flex-1 mr-2 bg-background p-3 rounded-lg border border-border">
+                        <div className="flex items-center gap-2">
+                          <Input
+                            value={newCategoryName}
+                            onChange={(e) => setNewCategoryName(e.target.value)}
+                            className="h-8"
+                            autoFocus
+                            onKeyDown={(e) => e.key === "Enter" && handleRenameCategory(cat)}
+                          />
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-8 w-8 text-green-600"
+                            onClick={() => handleRenameCategory(cat)}
+                          >
+                            <Check className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-8 w-8 text-muted-foreground"
+                            onClick={() => setEditingCategory(null)}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                        <div className="flex items-center gap-4 px-1 mt-1">
+                          <span className="text-xs font-semibold text-cocoa">For:</span>
+                          {["boys", "girls", "unisex"].map((g) => (
+                            <label key={g} className="flex items-center gap-1.5 text-xs text-cocoa cursor-pointer">
+                              <Checkbox 
+                                checked={editingCategoryGenders.includes(g)}
+                                onCheckedChange={(checked) => {
+                                  if (checked) setEditingCategoryGenders([...editingCategoryGenders, g]);
+                                  else setEditingCategoryGenders(editingCategoryGenders.filter(x => x !== g));
+                                }}
+                              />
+                              <span className="capitalize">{g}</span>
+                            </label>
+                          ))}
+                        </div>
                       </div>
                     ) : (
                       <>
@@ -316,6 +338,8 @@ export function CategoryManager({ children }: { children: React.ReactNode }) {
                             onClick={() => {
                               setEditingCategory(cat);
                               setNewCategoryName(cat);
+                              const targetCat = dbCategories.find(c => c.name === cat);
+                              setEditingCategoryGenders(targetCat?.applicable_genders || ["boys", "girls", "unisex"]);
                             }}
                           >
                             <Edit2 className="h-4 w-4" />
@@ -367,30 +391,47 @@ export function CategoryManager({ children }: { children: React.ReactNode }) {
 
             <div className="mt-4 border-t border-border/50 pt-4">
               {isCreatingCategory ? (
-                <div className="flex items-center gap-2">
-                  <Input
-                    placeholder="New category name..."
-                    value={newStandaloneCategory}
-                    onChange={(e) => setNewStandaloneCategory(e.target.value)}
-                    autoFocus
-                    className="h-9 text-sm"
-                    onKeyDown={(e) => e.key === "Enter" && handleCreateCategory()}
-                  />
-                  <Button
-                    size="sm"
-                    className="h-9 bg-primary hover:bg-primary/90 text-primary-foreground"
-                    onClick={handleCreateCategory}
-                  >
-                    <Check className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="h-9"
-                    onClick={() => setIsCreatingCategory(false)}
-                  >
-                    <X className="h-4 w-4 text-muted-foreground" />
-                  </Button>
+                <div className="flex flex-col gap-3 bg-card p-3 rounded-xl border border-border">
+                  <div className="flex items-center gap-2">
+                    <Input
+                      placeholder="New category name..."
+                      value={newStandaloneCategory}
+                      onChange={(e) => setNewStandaloneCategory(e.target.value)}
+                      autoFocus
+                      className="h-9 text-sm"
+                      onKeyDown={(e) => e.key === "Enter" && handleCreateCategory()}
+                    />
+                    <Button
+                      size="sm"
+                      className="h-9 bg-primary hover:bg-primary/90 text-primary-foreground"
+                      onClick={handleCreateCategory}
+                    >
+                      <Check className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-9"
+                      onClick={() => setIsCreatingCategory(false)}
+                    >
+                      <X className="h-4 w-4 text-muted-foreground" />
+                    </Button>
+                  </div>
+                  <div className="flex items-center gap-4 px-1">
+                    <span className="text-xs font-semibold text-cocoa">For:</span>
+                    {["boys", "girls", "unisex"].map((g) => (
+                      <label key={g} className="flex items-center gap-1.5 text-xs text-cocoa cursor-pointer">
+                        <Checkbox 
+                          checked={newCategoryGenders.includes(g)}
+                          onCheckedChange={(checked) => {
+                            if (checked) setNewCategoryGenders([...newCategoryGenders, g]);
+                            else setNewCategoryGenders(newCategoryGenders.filter(x => x !== g));
+                          }}
+                        />
+                        <span className="capitalize">{g}</span>
+                      </label>
+                    ))}
+                  </div>
                 </div>
               ) : (
                 <Button

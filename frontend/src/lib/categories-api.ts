@@ -14,6 +14,8 @@ export interface Category {
   slug: string;
   description?: string;
   sort_order: number;
+  emoji?: string;
+  applicable_genders: string[];
 }
 
 export const getCategories = async (): Promise<Category[]> => {

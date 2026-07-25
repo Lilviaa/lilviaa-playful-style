@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { formatINR, useCart } from "@/lib/cart";
 import { useAuth } from "@/lib/auth";
 import { useAddresses } from "@/lib/addresses-api";
+import { API_URL } from "@/lib/products-api";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -43,7 +44,7 @@ const formSchema = z.object({
 });
 
 function CheckoutPage() {
-  const { items, subtotal } = useCart();
+  const { items, subtotal, clear } = useCart();
   const navigate = useNavigate();
   const { user } = useAuth();
   const { data: addresses } = useAddresses();
@@ -79,10 +80,42 @@ function CheckoutPage() {
     }
   }, [addresses, form]);
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
-    // In a real app, this is where we'd hit Razorpay API or our backend
-    console.log("Order details:", values);
-    navigate({ to: "/order-success" });
+  async function onSubmit(values: z.infer<typeof formSchema>) {
+    try {
+      const payload = {
+        full_name: values.fullName,
+        phone: values.phone,
+        address: values.address,
+        city: values.city,
+        state: values.state,
+        zip: values.zip,
+        payment_method: values.paymentMethod,
+        total_amount: total,
+        shipping_amount: shipping,
+        items: items.map(it => ({
+          product_variant_id: it.variant_id,
+          quantity: it.qty,
+          unit_price: it.price
+        }))
+      };
+
+      const res = await fetch(`${API_URL}/orders/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.detail || "Failed to create order");
+      }
+
+      // Success
+      clear();
+      navigate({ to: "/order-success" });
+    } catch (error: any) {
+      alert(error.message || "Something went wrong during checkout.");
+    }
   }
 
   if (items.length === 0) {
@@ -320,7 +353,8 @@ function CheckoutPage() {
           
           <button
             onClick={() => document.getElementById("checkout-submit")?.click()}
-            className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-bold text-primary-foreground shadow-pop transition-transform hover:scale-105 active:scale-95"
+            disabled={items.some(it => it.qty === 0)}
+            className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-bold text-primary-foreground shadow-pop transition-transform hover:scale-105 active:scale-95 disabled:opacity-50 disabled:pointer-events-none"
           >
             Place Order <ArrowRight className="h-4 w-4" />
           </button>

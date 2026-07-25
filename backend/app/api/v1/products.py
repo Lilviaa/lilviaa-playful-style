@@ -46,6 +46,8 @@ def map_product(row: dict) -> dict:
     variants_raw = row.get("product_variants", [])
     sizes = []
     colors_dict = {}
+    variants = []
+    total_stock = 0
     for v in variants_raw:
         if v.get("size") and v["size"] not in sizes:
             sizes.append(v["size"])
@@ -54,12 +56,23 @@ def map_product(row: dict) -> dict:
         if color_name and color_hex and color_name not in colors_dict:
             colors_dict[color_name] = color_hex
             
+        variants.append({
+            "id": v.get("id"),
+            "size": v.get("size"),
+            "color": v.get("color"),
+            "sku": v.get("sku"),
+            "stock": v.get("stock", 0),
+            "price_override": v.get("price_override")
+        })
+        total_stock += v.get("stock", 0)
+            
     colors = [{"name": name, "hex": hex_code} for name, hex_code in colors_dict.items()]
 
     # 4. Category
     category_slug = row.get("category", {}).get("slug", "") if row.get("category") else ""
 
     result = {
+        "id": row.get("id") or "",
         "slug": row.get("slug") or "",
         "name": row.get("name") or "",
         "price": price,
@@ -73,6 +86,8 @@ def map_product(row: dict) -> dict:
         "description": row.get("description") or "",
         "fabric": row.get("fabric") or "",
         "care": row.get("wash_care") or "",
+        "stock": total_stock,
+        "variants": variants,
     }
     
     if compareAt is not None:
@@ -91,9 +106,9 @@ def get_products(
     supabase = get_supabase()
     
     # We use inner join on category if filtering, else left join
-    query = supabase.table("products").select(
-        "*, category:categories!inner(slug), product_images(*), product_variants(*)"
-    ).eq("status", "published")
+    select_clause = "*, category:categories!inner(slug), product_images(*), product_variants(*)" if category else "*, category:categories(slug), product_images(*), product_variants(*)"
+    
+    query = supabase.table("products").select(select_clause).eq("status", "published")
     
     if category:
         query = query.eq("categories.slug", category)

@@ -57,6 +57,8 @@ export function ProductForm({ initialData }: ProductFormProps) {
     wash_care: initialData?.wash_care || "",
     category_id: initialData?.category_id || "",
     category: initialData?.category || "",
+    gender: initialData?.gender || "unisex",
+    tag: initialData?.tag || null,
     base_price: initialData?.base_price || 0,
     sale_price: initialData?.sale_price || null,
     sale_start: initialData?.sale_start || null,
@@ -265,10 +267,18 @@ export function ProductForm({ initialData }: ProductFormProps) {
                         <SelectValue placeholder="Select category" />
                       </SelectTrigger>
                       <SelectContent>
-                        {categories.map((cat) => (
-                          <SelectItem key={cat.id} value={cat.id}>
-                            {cat.name}
-                          </SelectItem>
+                        {categories
+                          .filter(cat => 
+                            !formData.gender || 
+                            formData.gender === "unisex" || 
+                            !cat.applicable_genders ||
+                            cat.applicable_genders.includes(formData.gender) ||
+                            cat.applicable_genders.includes("unisex")
+                          )
+                          .map((cat) => (
+                            <SelectItem key={cat.id} value={cat.id}>
+                              {cat.name}
+                            </SelectItem>
                         ))}
                         {categories.length === 0 && (
                           <SelectItem value="empty" disabled>No categories found</SelectItem>
@@ -288,6 +298,43 @@ export function ProductForm({ initialData }: ProductFormProps) {
                       </SelectContent>
                     </Select>
                   )}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="gender">For (Gender)</Label>
+                  <Select
+                    value={formData.gender || "unisex"}
+                    onValueChange={(val) => updateField("gender", val)}
+                  >
+                    <SelectTrigger id="gender">
+                      <SelectValue placeholder="Select gender" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="unisex">Unisex</SelectItem>
+                      <SelectItem value="boys">Boys</SelectItem>
+                      <SelectItem value="girls">Girls</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="tag">Collection (Badge)</Label>
+                  <Select
+                    value={formData.tag || "none"}
+                    onValueChange={(val) => updateField("tag", val === "none" ? null : val)}
+                  >
+                    <SelectTrigger id="tag">
+                      <SelectValue placeholder="Select collection" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none" className="text-muted-foreground italic">None</SelectItem>
+                      <SelectItem value="new">New Arrival</SelectItem>
+                      <SelectItem value="bestseller">Bestseller</SelectItem>
+                      <SelectItem value="sale">Sale</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
 

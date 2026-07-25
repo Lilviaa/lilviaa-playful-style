@@ -21,7 +21,16 @@ class PublicProductResponse(BaseModel):
     pass
 
 # Let's redefine PublicProductResponse simply:
+class PublicProductVariant(BaseModel):
+    id: str
+    size: str
+    color: Optional[str] = None
+    sku: Optional[str] = None
+    stock: int
+    price_override: Optional[float] = None
+
 class PublicProductResponse(BaseModel):
+    id: str
     slug: str
     name: str
     price: float
@@ -37,3 +46,5 @@ class PublicProductResponse(BaseModel):
     description: str
     fabric: str
     care: str
+    stock: int = 0
+    variants: List[PublicProductVariant] = []

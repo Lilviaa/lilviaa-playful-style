@@ -14,6 +14,8 @@ export interface Product {
   category_id: string | null;
   category: string; // The joined category name for display
   category_slug?: string;
+  gender: string;
+  tag: string | null;
   base_price: number;
   sale_price: number | null;
   sale_start: string | null;
@@ -194,6 +196,8 @@ export function useSaveProduct() {
         fabric: data.fabric,
         wash_care: data.wash_care,
         category_id: data.category_id,
+        gender: data.gender,
+        tag: data.tag,
         base_price: data.base_price,
         sale_price: data.sale_price,
         sale_start: data.sale_start,
