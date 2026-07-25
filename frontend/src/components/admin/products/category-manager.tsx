@@ -72,6 +72,7 @@ export function CategoryManager({ children }: { children: React.ReactNode }) {
           slug: trimmed.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
           sort_order: 0
         });
+        setCustomCategories((prev) => [...prev, trimmed]);
         queryClient.invalidateQueries({ queryKey: ["categories"] });
         toast.success(`Category "${trimmed}" created!`);
       } catch (err: any) {

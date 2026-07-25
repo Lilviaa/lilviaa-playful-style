@@ -314,7 +314,21 @@ export function ProductTable({
                   <Eye className="mr-2 h-4 w-4" /> View in store
                 </Link>
               </DropdownMenuItem>
-              <DropdownMenuItem className="cursor-pointer">
+              <DropdownMenuItem 
+                className="cursor-pointer"
+                onClick={() => {
+                  const duplicate = {
+                    ...product,
+                    id: `new_${Date.now()}`,
+                    name: `${product.name} (Copy)`,
+                    slug: `${product.slug}-copy`,
+                    images: [],
+                    variants: product.variants.map((v: any) => ({ ...v, id: "", product_id: "" }))
+                  };
+                  sessionStorage.setItem("duplicate_product", JSON.stringify(duplicate));
+                  navigate({ to: "/admin/products/new" });
+                }}
+              >
                 <Copy className="mr-2 h-4 w-4" /> Duplicate
               </DropdownMenuItem>
               <DropdownMenuSeparator />

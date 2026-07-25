@@ -18,7 +18,7 @@ import { ProductWithDetails, ProductStatus, useSaveProduct } from "@/lib/admin/p
 import { VariantEditor } from "./variant-editor";
 import { ImageUploader } from "./image-uploader";
 import { DiscountFields } from "./discount-fields";
-import { Save, ArrowLeft, Plus, X } from "lucide-react";
+import { Save, ArrowLeft, Plus, X, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 interface ProductFormProps {
@@ -121,8 +121,8 @@ export function ProductForm({ initialData }: ProductFormProps) {
         } catch (err: any) {
           return toast.error("Failed to create new category: " + err.message);
         }
-      } else if (!finalCategoryId && categories.length > 0) {
-        finalCategoryId = categories[0].id;
+      } else if (finalCategoryId === "") {
+        finalCategoryId = null;
       }
 
       await saveProduct.mutateAsync({
@@ -176,8 +176,17 @@ export function ProductForm({ initialData }: ProductFormProps) {
             </SelectContent>
           </Select>
 
-          <Button type="submit" className="bg-primary hover:bg-primary/90 text-primary-foreground">
-            <Save className="mr-2 h-4 w-4" /> Save Product
+          <Button 
+            type="submit" 
+            disabled={saveProduct.isPending}
+            className="bg-primary hover:bg-primary/90 text-primary-foreground"
+          >
+            {saveProduct.isPending ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Save className="mr-2 h-4 w-4" />
+            )}
+            {saveProduct.isPending ? "Saving..." : "Save Product"}
           </Button>
         </div>
       </div>
@@ -239,11 +248,13 @@ export function ProductForm({ initialData }: ProductFormProps) {
                     </div>
                   ) : (
                     <Select
-                      value={formData.category_id || (categories.length > 0 ? categories[0].id : "")}
+                      value={formData.category_id || "none"}
                       onValueChange={(val) => {
                         if (val === "NEW_CATEGORY") {
                           setIsNewCategory(true);
                           updateField("category", "");
+                          updateField("category_id", "");
+                        } else if (val === "none") {
                           updateField("category_id", "");
                         } else {
                           updateField("category_id", val);
@@ -262,6 +273,9 @@ export function ProductForm({ initialData }: ProductFormProps) {
                         {categories.length === 0 && (
                           <SelectItem value="empty" disabled>No categories found</SelectItem>
                         )}
+                        <SelectItem value="none" className="text-muted-foreground italic">
+                          None (Uncategorized)
+                        </SelectItem>
                         <div className="h-px bg-border my-2" />
                         <SelectItem
                           value="NEW_CATEGORY"

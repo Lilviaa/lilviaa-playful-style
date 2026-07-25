@@ -202,48 +202,77 @@ export function useSaveProduct() {
       };
 
       let productId = data.id;
+      let newlyCreated = false;
 
       if (isNew) {
         const res = await apiFetch(`/admin/products/`, {
           method: "POST",
           body: JSON.stringify(productPayload)
         });
-        if (!res.ok) throw new Error("Failed to create product");
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.detail || "Failed to create product");
+        }
         const created = await res.json();
         productId = created.id;
+        newlyCreated = true;
       } else {
         const res = await apiFetch(`/admin/products/${productId}`, {
           method: "PUT",
           body: JSON.stringify(productPayload)
         });
-        if (!res.ok) throw new Error("Failed to update product");
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.detail || "Failed to update product");
+        }
       }
 
-      // Handle variants
+      try {
+        // Handle variants (creation & updates)
+        const incomingVariantIds = new Set(data.variants.map((v) => v.id));
+
+      if (!isNew) {
+        // Fetch existing variants to figure out if any were deleted
+        const pRes = await apiFetch(`/admin/products/`);
+        const pData = await pRes.json();
+        const existingProduct = pData.find((prod: any) => prod.id === productId);
+        if (existingProduct && existingProduct.variants) {
+          for (const ev of existingProduct.variants) {
+            if (!incomingVariantIds.has(ev.id)) {
+              await apiFetch(`/admin/products/variants/${ev.id}`, { method: 'DELETE' });
+            }
+          }
+        }
+      }
+
       for (const v of data.variants) {
+        const variantPayload = {
+          size: v.size,
+          color: v.color || null,
+          sku: v.sku || null,
+          stock: v.stock,
+          price_override: v.price_override
+        };
+
         if (v.id.includes("new_") || !v.id) {
-          await apiFetch(`/admin/products/${productId}/variants`, {
+          const res = await apiFetch(`/admin/products/${productId}/variants`, {
             method: "POST",
-            body: JSON.stringify({
-              size: v.size,
-              color: v.color,
-              sku: v.sku,
-              stock: v.stock,
-              price_override: v.price_override
-            })
+            body: JSON.stringify(variantPayload)
           });
+          if (!res.ok) {
+             const err = await res.json();
+             throw new Error(err.detail || "Failed to create variant");
+          }
         } else {
           // Update existing variant
-          await apiFetch(`/admin/products/variants/${v.id}`, {
+          const res = await apiFetch(`/admin/products/variants/${v.id}`, {
             method: "PUT",
-            body: JSON.stringify({
-              size: v.size,
-              color: v.color,
-              sku: v.sku,
-              stock: v.stock,
-              price_override: v.price_override
-            })
+            body: JSON.stringify(variantPayload)
           });
+          if (!res.ok) {
+             const err = await res.json();
+             throw new Error(err.detail || "Failed to update variant");
+          }
         }
       }
 
@@ -259,8 +288,8 @@ export function useSaveProduct() {
             if (!reqRes.ok) throw new Error("Failed to get upload URL");
             const { upload_url, file_path } = await reqRes.json();
             
-            // 2. PUT to R2 (direct fetch)
-            const uploadRes = await fetch(upload_url, {
+            // 2. PUT to Supabase via backend (with apiFetch)
+            const uploadRes = await apiFetch(upload_url, {
               method: 'PUT',
               body: img.file,
               headers: { 'Content-Type': img.file.type }
@@ -275,11 +304,22 @@ export function useSaveProduct() {
           }
         }
       }
+      } catch (err) {
+        // Rollback product creation if variants/images fail
+        if (newlyCreated && productId) {
+          try {
+            await apiFetch(`/admin/products/${productId}`, { method: 'DELETE' });
+          } catch (rollbackErr) {
+            console.error("Failed to rollback product creation", rollbackErr);
+          }
+        }
+        throw err;
+      }
 
       return productId;
     },
-    onSuccess: (id) => {
-      queryClient.invalidateQueries({ queryKey: ["admin-products"] });
+    onSuccess: async (id) => {
+      await queryClient.refetchQueries({ queryKey: ["admin-products"] });
       queryClient.invalidateQueries({ queryKey: ["admin-product", id] });
       toast.success("Product saved successfully");
     },

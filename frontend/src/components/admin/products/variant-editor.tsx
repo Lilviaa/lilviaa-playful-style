@@ -80,6 +80,7 @@ export function VariantEditor({ variants, onChange, basePrice }: VariantEditorPr
                       value={v.size} 
                       onChange={e => updateVariant(i, 'size', e.target.value)}
                       className="h-8"
+                      required
                     />
                   </td>
                   <td className="p-2">

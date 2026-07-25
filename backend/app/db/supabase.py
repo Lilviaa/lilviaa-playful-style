@@ -1,3 +1,6 @@
+import os
+os.environ["HTTPX_NO_HTTP2"] = "1"
+
 from supabase import create_client, Client
 from app.core.config import settings
 
