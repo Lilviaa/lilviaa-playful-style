@@ -37,3 +37,5 @@ class PublicProductResponse(BaseModel):
     description: str
     fabric: str
     care: str
+    sku: Optional[str] = None
+    stock: Optional[int] = None

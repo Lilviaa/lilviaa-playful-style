@@ -46,7 +46,12 @@ def map_product(row: dict) -> dict:
     variants_raw = row.get("product_variants", [])
     sizes = []
     colors_dict = {}
+    total_stock = 0
+    sku = ""
     for v in variants_raw:
+        total_stock += v.get("stock") or 0
+        if v.get("sku") and not sku:
+            sku = v["sku"]
         if v.get("size") and v["size"] not in sizes:
             sizes.append(v["size"])
         color_name = v.get("color")
@@ -73,6 +78,8 @@ def map_product(row: dict) -> dict:
         "description": row.get("description") or "",
         "fabric": row.get("fabric") or "",
         "care": row.get("wash_care") or "",
+        "sku": sku,
+        "stock": total_stock,
     }
     
     if compareAt is not None:
