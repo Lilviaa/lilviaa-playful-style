@@ -7,8 +7,15 @@ requires-python = ">=3.11"
 dependencies = [
     "boto3>=1.43.53",
     "fastapi>=0.139.2",
+    "passlib[bcrypt]>=1.7.4",
+    "pillow>=12.3.0",
     "pydantic-settings>=2.14.2",
     "pydantic[email]>=2.13.4",
+    "python-dotenv>=1.2.2",
+    "python-jose[cryptography]>=3.5.0",
+    "python-multipart>=0.0.32",
+    "slowapi>=0.1.10",
+    "supabase>=2.31.0",
     "uvicorn>=0.51.0",
 ]
 

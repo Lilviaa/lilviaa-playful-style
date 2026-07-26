@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useBulkUpdateProducts, useDeleteProducts } from "@/lib/admin/products-api";
-import { Archive, CheckCircle, Tag, Percent, X, Trash2 } from "lucide-react";
+import { useCategories } from "@/lib/categories-api";
+import { Archive, CheckCircle, Tag, Percent, X, Trash2, Loader2 } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -41,10 +42,14 @@ export function BulkActionsBar({ selectedIds, clearSelection }: BulkActionsBarPr
   const count = selectedIds.length;
   const bulkUpdate = useBulkUpdateProducts();
   const deleteProducts = useDeleteProducts();
+  const { data: dbCategories = [] } = useCategories();
 
   const [isDiscountOpen, setIsDiscountOpen] = useState(false);
   const [discountPercent, setDiscountPercent] = useState("");
-  const [saleStart, setSaleStart] = useState("");
+  const [saleStart, setSaleStart] = useState(() => {
+    const d = new Date();
+    return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+  });
   const [saleEnd, setSaleEnd] = useState("");
 
   if (count === 0) return null;
@@ -104,99 +109,17 @@ export function BulkActionsBar({ selectedIds, clearSelection }: BulkActionsBarPr
             <DropdownMenuContent align="center">
               <DropdownMenuLabel>Move to...</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => handleAction({ category: "Shirts" })}>
-                Shirts
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleAction({ category: "Kurtas" })}>
-                Kurtas
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleAction({ category: "Rompers" })}>
-                Rompers
-              </DropdownMenuItem>
+              {dbCategories.map((c: any) => (
+                <DropdownMenuItem key={c.id} onClick={() => handleAction({ category_id: c.id })}>
+                  {c.name}
+                </DropdownMenuItem>
+              ))}
+              {dbCategories.length === 0 && (
+                <DropdownMenuItem disabled>No categories</DropdownMenuItem>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
 
-          <Dialog open={isDiscountOpen} onOpenChange={setIsDiscountOpen}>
-            <DialogTrigger asChild>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-9 rounded-full px-4 hover:bg-black/5 font-medium text-cocoa"
-              >
-                <Percent className="mr-2 h-4 w-4 text-muted-foreground" /> Discount
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[460px] p-0 overflow-hidden border-none shadow-2xl rounded-3xl">
-              <div className="bg-gradient-to-br from-primary/20 via-transparent to-transparent p-6 pb-2">
-                <DialogHeader>
-                  <DialogTitle className="text-2xl font-bold text-cocoa flex items-center gap-2">
-                    <div className="p-2 bg-white rounded-xl shadow-sm">
-                      <Percent className="h-5 w-5 text-primary" />
-                    </div>
-                    Bulk Discount
-                  </DialogTitle>
-                </DialogHeader>
-              </div>
-
-              <div className="grid gap-6 p-6 pt-2 bg-white">
-                <div className="grid gap-2">
-                  <Label htmlFor="discount" className="text-cocoa font-medium">
-                    Discount Percentage (%)
-                  </Label>
-                  <div className="relative">
-                    <Input
-                      id="discount"
-                      type="number"
-                      min="1"
-                      max="99"
-                      placeholder="e.g. 20"
-                      value={discountPercent}
-                      onChange={(e) => setDiscountPercent(e.target.value)}
-                      className="rounded-xl h-12 pl-4 text-lg border-cocoa/20 focus-visible:ring-primary shadow-sm"
-                    />
-                    <Percent className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground opacity-50" />
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="grid gap-2">
-                    <Label className="text-cocoa font-medium text-sm">Sale Starts</Label>
-                    <Input
-                      type="datetime-local"
-                      value={saleStart}
-                      onChange={(e) => setSaleStart(e.target.value)}
-                      className="rounded-xl border-cocoa/20 focus-visible:ring-primary shadow-sm"
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label className="text-cocoa font-medium text-sm">Sale Ends</Label>
-                    <Input
-                      type="datetime-local"
-                      value={saleEnd}
-                      onChange={(e) => setSaleEnd(e.target.value)}
-                      className="rounded-xl border-cocoa/20 focus-visible:ring-primary shadow-sm"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between p-6 pt-0 bg-white">
-                <Button
-                  variant="ghost"
-                  onClick={handleClearDiscount}
-                  className="text-rose-500 hover:text-rose-600 hover:bg-rose-50 rounded-xl px-4"
-                >
-                  <X className="mr-2 h-4 w-4" /> Remove all
-                </Button>
-                <Button
-                  onClick={handleApplyDiscount}
-                  disabled={!discountPercent}
-                  className="rounded-xl px-8 shadow-md"
-                >
-                  Apply Discount
-                </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>

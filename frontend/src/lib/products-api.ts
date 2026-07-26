@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import type { Product } from "./products";
 export const API_URL = "http://localhost:8000/api/v1";
 
-export async function fetchProducts(category?: string, sort?: string): Promise<Product[]> {
+export async function fetchProducts(category?: string, sort?: string, q?: string): Promise<Product[]> {
   const url = new URL(`${API_URL}/products/`);
   if (category && category !== "all") url.searchParams.append("category", category);
   if (sort && sort !== "featured") {
@@ -10,6 +10,7 @@ export async function fetchProducts(category?: string, sort?: string): Promise<P
     const backendSort = sort.replace("-", "_");
     url.searchParams.append("sort", backendSort);
   }
+  if (q) url.searchParams.append("q", q);
   const res = await fetch(url.toString());
   if (!res.ok) throw new Error("Failed to fetch products");
   return res.json();
@@ -31,10 +32,10 @@ export async function fetchProduct(slug: string): Promise<Product> {
 }
 
 // React Query Hooks
-export function useProducts(category?: string, sort?: string) {
+export function useProducts(category?: string, sort?: string, q?: string) {
   return useQuery({
-    queryKey: ["products", category, sort],
-    queryFn: () => fetchProducts(category, sort),
+    queryKey: ["products", category, sort, q],
+    queryFn: () => fetchProducts(category, sort, q),
   });
 }
 

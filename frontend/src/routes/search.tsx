@@ -20,17 +20,7 @@ function SearchPage() {
   const { q } = Route.useSearch();
   const navigate = useNavigate({ from: "/search" });
 
-  const { data: allProducts = [], isLoading } = useProducts();
-  const results = useMemo(() => {
-    if (!q) return [];
-    const lowerQ = q.toLowerCase();
-    return allProducts.filter(
-      (p) =>
-        p.name.toLowerCase().includes(lowerQ) ||
-        p.description.toLowerCase().includes(lowerQ) ||
-        (p.category && p.category.toLowerCase().includes(lowerQ))
-    );
-  }, [q, allProducts]);
+  const { data: results = [], isLoading } = useProducts(undefined, undefined, q);
 
   return (
     <div className="mx-auto max-w-7xl px-6 py-12 md:py-24">
