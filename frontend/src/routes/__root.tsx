@@ -140,7 +140,9 @@ function RootComponent() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const isAdmin = pathname.startsWith("/admin");
   const isAuthPage = pathname === "/login" || pathname === "/register" || pathname === "/forgot-password";
-  const hideHeaderFooter = isAdmin || isAuthPage;
+  const isCheckout = pathname === "/checkout";
+  const hideHeader = isAdmin || isAuthPage;
+  const hideFooter = isAdmin || isAuthPage || isCheckout;
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -149,11 +151,11 @@ function RootComponent() {
           <CartProvider>
             <WishlistProvider>
               <div className="flex min-h-screen flex-col bg-background text-foreground">
-                {!hideHeaderFooter && <SiteHeader />}
+                {!hideHeader && <SiteHeader />}
                 <main className="flex-1">
                   <Outlet />
                 </main>
-                {!hideHeaderFooter && <SiteFooter />}
+                {!hideFooter && <SiteFooter />}
               </div>
               <Toaster richColors position="top-center" expand={true} />
             </WishlistProvider>

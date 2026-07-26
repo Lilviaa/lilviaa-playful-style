@@ -46,8 +46,10 @@ def map_product(row: dict) -> dict:
     variants_raw = row.get("product_variants", [])
     sizes = []
     colors_dict = {}
+    variants = []
+    total_stock = 0
+    sku = ""
     for v in variants_raw:
-        total_stock += v.get("stock") or 0
         if v.get("sku") and not sku:
             sku = v["sku"]
         if v.get("size") and v["size"] not in sizes:
@@ -62,10 +64,10 @@ def map_product(row: dict) -> dict:
             "size": v.get("size"),
             "color": v.get("color"),
             "sku": v.get("sku"),
-            "stock": v.get("stock", 0),
+            "stock": v.get("stock") or 0,
             "price_override": v.get("price_override")
         })
-        total_stock += v.get("stock", 0)
+        total_stock += v.get("stock") or 0
             
     colors = [{"name": name, "hex": hex_code} for name, hex_code in colors_dict.items()]
 

@@ -25,6 +25,8 @@ export function DiscountManager({ children }: { children: React.ReactNode }) {
   const [selectedProducts, setSelectedProducts] = useState<Set<string>>(new Set());
   const [bulkDiscountPrice, setBulkDiscountPrice] = useState("");
 
+  const [discountType, setDiscountType] = useState<"percentage" | "flat">("percentage");
+
   const filteredProducts =
     products?.filter((p) => {
       const searchLower = search.toLowerCase();
@@ -71,19 +73,49 @@ export function DiscountManager({ children }: { children: React.ReactNode }) {
   const handleBulkApply = () => {
     if (selectedProducts.size === 0) return;
 
-    const newPrice = parseFloat(bulkDiscountPrice);
-    if (isNaN(newPrice) || newPrice < 0) {
-      toast.error("Please enter a valid sale price.");
+    const value = parseFloat(bulkDiscountPrice);
+    if (isNaN(value) || value <= 0) {
+      toast.error("Please enter a valid discount value.");
       return;
     }
 
-    // In a real app we'd validate that newPrice < basePrice for ALL selected items,
-    // but for mock purposes we'll just apply it.
+    const itemsToUpdate: any[] = [];
+    let hasError = false;
+
+    for (const id of Array.from(selectedProducts)) {
+      const product = products?.find(p => p.id === id);
+      if (!product) continue;
+
+      let newSalePrice = 0;
+      if (discountType === "percentage") {
+        if (value >= 100) {
+          toast.error("Percentage discount cannot be 100% or more.");
+          hasError = true;
+          break;
+        }
+        newSalePrice = Math.round(product.base_price * (1 - (value / 100)));
+      } else {
+        if (value >= product.base_price) {
+          toast.error(`Flat discount of ₹${value} is greater than base price of ${product.name} (₹${product.base_price}).`);
+          hasError = true;
+          break;
+        }
+        newSalePrice = product.base_price - value;
+      }
+
+      itemsToUpdate.push({
+        id,
+        updates: { sale_price: newSalePrice }
+      });
+    }
+
+    if (hasError) return;
+
     bulkUpdate.mutate(
-      { ids: Array.from(selectedProducts), updates: { sale_price: newPrice } },
+      { items: itemsToUpdate },
       {
         onSuccess: () => {
-          toast.success(`Applied sale price to ${selectedProducts.size} products`);
+          toast.success(`Applied discount to ${selectedProducts.size} products`);
           setSelectedProducts(new Set());
           setBulkDiscountPrice("");
         },
@@ -157,16 +189,27 @@ export function DiscountManager({ children }: { children: React.ReactNode }) {
                   {selectedProducts.size} selected
                 </span>
                 <div className="flex flex-1 sm:justify-end gap-2">
-                  <div className="relative flex-1 sm:max-w-[150px]">
-                    <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">
-                      ₹
-                    </span>
+                  <div className="flex bg-white rounded-md border border-rose-200 p-0.5 shadow-sm mr-1">
+                    <button 
+                      onClick={() => setDiscountType("percentage")}
+                      className={`px-3 py-1 text-xs font-bold rounded-sm transition-colors ${discountType === 'percentage' ? 'bg-rose-100 text-rose-700' : 'text-muted-foreground hover:bg-muted'}`}
+                    >
+                      % OFF
+                    </button>
+                    <button 
+                      onClick={() => setDiscountType("flat")}
+                      className={`px-3 py-1 text-xs font-bold rounded-sm transition-colors ${discountType === 'flat' ? 'bg-rose-100 text-rose-700' : 'text-muted-foreground hover:bg-muted'}`}
+                    >
+                      ₹ OFF
+                    </button>
+                  </div>
+                  <div className="relative flex-1 sm:max-w-[120px]">
                     <Input
                       type="number"
-                      placeholder="Sale price..."
+                      placeholder="Amount..."
                       value={bulkDiscountPrice}
                       onChange={(e) => setBulkDiscountPrice(e.target.value)}
-                      className="bg-white h-9 pl-6 text-sm border-rose-200"
+                      className="bg-white h-9 text-sm border-rose-200 text-center"
                     />
                   </div>
                   <Button

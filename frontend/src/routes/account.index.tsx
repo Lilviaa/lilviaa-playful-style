@@ -50,6 +50,7 @@ function AccountIndexPage() {
   const { user } = useAuth();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isAddressOpen, setIsAddressOpen] = useState(false);
+  const [isPhoneOpen, setIsPhoneOpen] = useState(false);
 
   const [addresses, setAddresses] = useState<Address[]>(defaultAddresses);
   const [addressView, setAddressView] = useState<"list" | "edit" | "add">("list");
@@ -172,10 +173,6 @@ function AccountIndexPage() {
                 <p className="text-muted-foreground text-xs uppercase tracking-wider">Email Address</p>
                 <button onClick={() => {
                   toast.success("Verification link sent to email!");
-                  setTimeout(() => {
-                    const otp = prompt("Enter the verification code sent to your email:");
-                    if(otp) toast.success("Email verified successfully!");
-                  }, 800);
                 }} className="text-[10px] font-bold text-primary hover:underline flex items-center gap-1">
                   <AlertCircle className="h-3 w-3" /> Verify
                 </button>
@@ -185,15 +182,49 @@ function AccountIndexPage() {
             <div>
               <div className="flex items-center justify-between">
                 <p className="text-muted-foreground text-xs uppercase tracking-wider">Phone Number</p>
-                <button onClick={() => {
-                  toast.success("OTP sent to phone!");
-                  setTimeout(() => {
-                    const otp = prompt("Enter the OTP sent to your phone:");
-                    if(otp) toast.success("Phone verified successfully!");
-                  }, 800);
-                }} className="text-[10px] font-bold text-primary hover:underline flex items-center gap-1">
-                  <AlertCircle className="h-3 w-3" /> Verify
-                </button>
+                <Dialog open={isPhoneOpen} onOpenChange={setIsPhoneOpen}>
+                  <DialogTrigger asChild>
+                    <button onClick={() => toast.success("OTP sent to phone!")} className="text-[10px] font-bold text-primary hover:underline flex items-center gap-1">
+                      <AlertCircle className="h-3 w-3" /> Verify
+                    </button>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-[400px]">
+                    <DialogHeader>
+                      <DialogTitle className="font-display text-2xl text-cocoa">Verify Phone Number</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4 pt-4 text-center">
+                      <p className="text-sm text-muted-foreground text-left">
+                        Enter the 6-digit OTP sent to {user.phone}.
+                      </p>
+                      <input
+                        type="text"
+                        maxLength={6}
+                        placeholder="000000"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        onChange={(e) => {
+                          e.target.value = e.target.value.replace(/\D/g, "");
+                        }}
+                        className="w-full text-center tracking-[1em] rounded-xl border-2 border-border bg-background px-4 py-3 text-lg font-bold text-cocoa focus:border-primary focus:outline-none"
+                      />
+                      <button
+                        onClick={() => {
+                          toast.success("Phone verified successfully!");
+                          setIsPhoneOpen(false);
+                        }}
+                        className="w-full inline-flex justify-center items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-bold text-primary-foreground shadow-pop transition-transform hover:-translate-y-0.5"
+                      >
+                        Verify OTP
+                      </button>
+                      <button
+                        onClick={() => toast.success("New OTP sent to phone!")}
+                        className="text-xs font-semibold text-muted-foreground hover:text-primary hover:underline"
+                      >
+                        Didn't receive it? Resend OTP
+                      </button>
+                    </div>
+                  </DialogContent>
+                </Dialog>
               </div>
               <p className="font-medium text-cocoa mt-0.5">{user.phone || "Not provided"}</p>
             </div>

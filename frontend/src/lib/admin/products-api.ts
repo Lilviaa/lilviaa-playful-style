@@ -97,33 +97,28 @@ export function useBulkUpdateProducts() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({
-      ids,
-      updates,
-    }: {
-      ids: string[];
-      updates: Partial<Product> & { discount_percentage?: number; clear_discount?: boolean };
+    mutationFn: async (payload: {
+      ids?: string[];
+      updates?: Partial<Product> & { clear_discount?: boolean };
+      items?: { id: string; updates: Partial<Product> & { clear_discount?: boolean } }[];
     }) => {
-      // Bulk update via individual PUT requests (since we only have single PUT endpoint)
-      for (const id of ids) {
-        const payload: any = { ...updates };
-        
-        // Convert pseudo-fields to actual fields
-        if (updates.discount_percentage) {
-          // We can't do math without the base price, so this is a bit broken in the UI without a dedicated endpoint.
-          // For now, we will ignore discount_percentage on bulk unless we fetch the product first.
-        }
-        if (updates.clear_discount) {
-          payload.sale_price = null;
-          payload.sale_start = null;
-          payload.sale_end = null;
-        }
-        delete payload.discount_percentage;
-        delete payload.clear_discount;
+      // Create a unified list of items to update
+      const itemsToUpdate = payload.items || (payload.ids || []).map(id => ({ id, updates: payload.updates! }));
 
-        await apiFetch(`/admin/products/${id}`, {
+      for (const item of itemsToUpdate) {
+        const bodyPayload: any = { ...item.updates };
+        
+        if (item.updates.clear_discount) {
+          bodyPayload.sale_price = null;
+          bodyPayload.sale_start = null;
+          bodyPayload.sale_end = null;
+        }
+        delete bodyPayload.clear_discount;
+        delete bodyPayload.discount_percentage;
+
+        await apiFetch(`/admin/products/${item.id}`, {
           method: "PUT",
-          body: JSON.stringify(payload)
+          body: JSON.stringify(bodyPayload)
         });
       }
       return { success: true };
