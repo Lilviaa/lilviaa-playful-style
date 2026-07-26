@@ -18,7 +18,7 @@ def map_product(row: dict) -> dict:
     sale_end_str = row.get("sale_end")
     
     is_sale_active = False
-    if sale_price is not None:
+    if sale_price is not None and float(sale_price) > 0:
         is_sale_active = True
         if sale_start_str:
             sale_start = datetime.fromisoformat(sale_start_str.replace("Z", "+00:00"))
@@ -100,9 +100,10 @@ def map_product(row: dict) -> dict:
 @router.get("/", response_model=List[PublicProductResponse])
 def get_products(
     category: Optional[str] = None,
-    sort: Optional[str] = Query(None, description="price_asc, price_desc, newest")
+    sort: Optional[str] = Query(None, description="price_asc, price_desc, newest"),
+    q: Optional[str] = Query(None, description="Search term for name and description")
 ):
-    """Fetch all published products with optional category filtering and sorting."""
+    """Fetch all published products with optional category filtering, sorting, and search."""
     supabase = get_supabase()
     
     # We use inner join on category if filtering, else left join
@@ -112,6 +113,9 @@ def get_products(
     
     if category:
         query = query.eq("categories.slug", category)
+        
+    if q:
+        query = query.or_(f"name.ilike.%{q}%,description.ilike.%{q}%")
         
     if sort == "newest":
         query = query.order("created_at", desc=True)

@@ -130,6 +130,7 @@ export function useBulkUpdateProducts() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-products"] });
+      queryClient.invalidateQueries({ queryKey: ["products"] });
       toast.success("Products updated successfully");
     },
     onError: () => {
@@ -152,6 +153,7 @@ export function useUpdateProductStatus() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-products"] });
+      queryClient.invalidateQueries({ queryKey: ["products"] });
       toast.success("Status updated");
     },
     onError: () => {
@@ -177,6 +179,7 @@ export function useDeleteProducts() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-products"] });
+      queryClient.invalidateQueries({ queryKey: ["products"] });
       toast.success("Products archived successfully");
     },
   });
@@ -322,9 +325,13 @@ export function useSaveProduct() {
 
       return productId;
     },
-    onSuccess: async (id) => {
+    onSuccess: async (id, variables) => {
       await queryClient.refetchQueries({ queryKey: ["admin-products"] });
       queryClient.invalidateQueries({ queryKey: ["admin-product", id] });
+      queryClient.invalidateQueries({ queryKey: ["products"] });
+      if (variables.slug) {
+        queryClient.invalidateQueries({ queryKey: ["product", variables.slug] });
+      }
       toast.success("Product saved successfully");
     },
     onError: (error: any) => {

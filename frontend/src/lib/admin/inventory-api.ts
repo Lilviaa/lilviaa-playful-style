@@ -26,7 +26,7 @@ export function useInventoryVariants() {
           items.push({
             ...variant,
             product_name: product.name,
-            product_category: product.category,
+            product_category: typeof product.category === 'object' && product.category ? (product.category as any).name : (product.category || "Uncategorized"),
             product_image: product.images?.[0]?.url,
             product_status: product.status,
           });

@@ -52,7 +52,10 @@ export function DiscountFields({ basePrice, salePrice, saleStart, saleEnd, onCha
           onCheckedChange={(checked) => {
             setIsOnSale(checked);
             if (checked) {
-              onChange({ sale_price: Math.floor(basePrice * 0.9) }); // Default 10% off
+              onChange({ 
+                sale_price: Math.floor(basePrice * 0.9), // Default 10% off
+                sale_start: new Date().toISOString()
+              }); 
             } else {
               onChange({ sale_price: null, sale_start: null, sale_end: null });
             }

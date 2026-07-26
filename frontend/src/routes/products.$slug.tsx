@@ -80,11 +80,22 @@ function ProductPage() {
     v.size === size && (!selectedColor || v.color?.toLowerCase() === selectedColor.name.toLowerCase())
   ) || product.variants?.find(v => v.size === size);
 
-  const displayPrice = activeVariant?.price_override ?? product.price;
+  let displayPrice = product.price;
+  let displayCompareAt = product.compareAt;
+
+  if (activeVariant?.price_override) {
+    if (product.compareAt && product.compareAt > 0) {
+      const discountMultiplier = product.price / product.compareAt;
+      displayCompareAt = activeVariant.price_override;
+      displayPrice = Math.floor(activeVariant.price_override * discountMultiplier);
+    } else {
+      displayPrice = activeVariant.price_override;
+      displayCompareAt = undefined;
+    }
+  }
+
   const displayStock = activeVariant?.stock ?? product.stock ?? 0;
   const displaySku = activeVariant?.sku || product.sku;
-  // If price is overridden, the base compareAt might not make sense, but we'll show it if no override exists
-  const displayCompareAt = activeVariant?.price_override ? null : product.compareAt;
   
   const { data: allProducts = [] } = useProducts();
   const related = allProducts.filter((p) => p.slug !== product.slug).slice(0, 4);
