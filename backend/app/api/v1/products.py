@@ -1,8 +1,8 @@
-from fastapi import APIRouter, HTTPException, status, Query
+from fastapi import APIRouter, HTTPException, status, Query, Request
 from typing import List, Optional
 from datetime import datetime, timezone
 from app.models.public_product import PublicProductResponse, ProductColor
-from app.db.supabase import get_supabase
+from app.db.supabase import get_supabase, get_fresh_supabase
 from app.core.exceptions import AppError
 
 router = APIRouter()
@@ -46,8 +46,6 @@ def map_product(row: dict) -> dict:
     variants_raw = row.get("product_variants", [])
     sizes = []
     colors_dict = {}
-    total_stock = 0
-    sku = ""
     for v in variants_raw:
         total_stock += v.get("stock") or 0
         if v.get("sku") and not sku:
@@ -59,17 +57,31 @@ def map_product(row: dict) -> dict:
         if color_name and color_hex and color_name not in colors_dict:
             colors_dict[color_name] = color_hex
             
+        variants.append({
+            "id": v.get("id"),
+            "size": v.get("size"),
+            "color": v.get("color"),
+            "sku": v.get("sku"),
+            "stock": v.get("stock", 0),
+            "price_override": v.get("price_override")
+        })
+        total_stock += v.get("stock", 0)
+            
     colors = [{"name": name, "hex": hex_code} for name, hex_code in colors_dict.items()]
 
     # 4. Category
     category_slug = row.get("category", {}).get("slug", "") if row.get("category") else ""
 
     result = {
+        "id": row.get("id") or "",
         "slug": row.get("slug") or "",
         "name": row.get("name") or "",
         "price": price,
         "image": image,
         "gallery": gallery,
+        "sku": sku or "",
+        "stock": total_stock,
+        "variants": variants,
         "category": category_slug,
         "gender": row.get("gender") or "unisex",
         "ageRange": row.get("age_range") or "",
@@ -78,8 +90,6 @@ def map_product(row: dict) -> dict:
         "description": row.get("description") or "",
         "fabric": row.get("fabric") or "",
         "care": row.get("wash_care") or "",
-        "sku": sku,
-        "stock": total_stock,
     }
     
     if compareAt is not None:
@@ -98,9 +108,9 @@ def get_products(
     supabase = get_supabase()
     
     # We use inner join on category if filtering, else left join
-    query = supabase.table("products").select(
-        "*, category:categories!inner(slug), product_images(*), product_variants(*)"
-    ).eq("status", "published")
+    select_clause = "*, category:categories!inner(slug), product_images(*), product_variants(*)" if category else "*, category:categories(slug), product_images(*), product_variants(*)"
+    
+    query = supabase.table("products").select(select_clause).eq("status", "published")
     
     if category:
         query = query.eq("categories.slug", category)
@@ -132,13 +142,33 @@ def get_featured_products():
     return [map_product(row) for row in result.data]
 
 @router.get("/{slug}", response_model=PublicProductResponse)
-def get_product_by_slug(slug: str):
-    """Fetch a single published product by slug."""
+def get_product_by_slug(slug: str, request: Request):
+    """Fetch a single published product by slug. Admins can view drafts/archived."""
     supabase = get_supabase()
     
-    result = supabase.table("products").select(
+    # Check if admin
+    is_admin = False
+    token = request.cookies.get("access_token")
+    if token:
+        try:
+            fresh = get_fresh_supabase()
+            user_response = fresh.auth.get_user(token)
+            if user_response and user_response.user:
+                user_data = supabase.table("users").select("role").eq("id", str(user_response.user.id)).single().execute()
+                role = user_data.data.get("role") if user_data.data else "customer"
+                if role in ["admin", "owner"]:
+                    is_admin = True
+        except Exception:
+            pass
+
+    query = supabase.table("products").select(
         "*, category:categories(slug), product_images(*), product_variants(*)"
-    ).eq("status", "published").eq("slug", slug).execute()
+    ).eq("slug", slug)
+    
+    if not is_admin:
+        query = query.eq("status", "published")
+        
+    result = query.execute()
     
     if not result.data:
         raise AppError("Product not found", status_code=404)

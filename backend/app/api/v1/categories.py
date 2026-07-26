@@ -59,7 +59,6 @@ def update_category(category_id: str, updates: CategoryUpdate):
 def delete_category(category_id: str):
     """Delete a category (Admin only). Products linking here will have category_id set to NULL."""
     supabase = get_supabase()
-    result = supabase.table("categories").delete().eq("id", category_id).execute()
-    if not result.data:
-        raise AppError("Category not found", status_code=404)
+    # Supabase/PostgREST delete does not return the deleted rows by default unless .returning() is called.
+    supabase.table("categories").delete().eq("id", category_id).execute()
     return

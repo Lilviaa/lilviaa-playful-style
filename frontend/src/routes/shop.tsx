@@ -43,20 +43,19 @@ function ShopPage() {
   const [gender, setGender] = useState<string>("all");
   const [sort, setSort] = useState<string>("featured");
 
-  const { data: products = [], isLoading } = useProducts();
+  const { data: products = [], isLoading } = useProducts(
+    cat === "all" ? undefined : cat, 
+    sort === "featured" ? undefined : sort
+  );
   const { data: dbCategories = [] } = useCategories();
 
   const items = useMemo(() => {
-    let list = products.filter(
+    return products.filter(
       (p) =>
-        (cat === "all" || p.category === cat) &&
         (gender === "all" || p.gender === gender) &&
         (tag === "all" || p.tag === tag),
     );
-    if (sort === "price-asc") list = [...list].sort((a, b) => a.price - b.price);
-    if (sort === "price-desc") list = [...list].sort((a, b) => b.price - a.price);
-    return list;
-  }, [cat, gender, tag, sort, products]);
+  }, [gender, tag, products]);
 
   return (
     <div>
@@ -82,7 +81,15 @@ function ShopPage() {
               onChange={setCat}
               options={[
                 { v: "all", l: "All" },
-                ...dbCategories.map((c) => ({ v: c.slug, l: c.name })),
+                ...dbCategories
+                  .filter(c => 
+                    gender === "all" || 
+                    gender === "unisex" ||
+                    !c.applicable_genders ||
+                    c.applicable_genders.includes(gender) ||
+                    c.applicable_genders.includes("unisex")
+                  )
+                  .map((c) => ({ v: c.slug, l: c.name })),
               ]}
             />
           </div>

@@ -31,9 +31,10 @@ def create_product(product: ProductCreate):
     """Admin: Create a new product."""
     supabase = get_supabase()
     try:
-        result = supabase.table("products").insert(product.model_dump()).execute()
+        result = supabase.table("products").insert(product.model_dump(mode='json')).execute()
         return result.data[0]
     except Exception as e:
+        print(f"Product create error: {repr(e)}")
         if "products_slug_key" in str(e):
             raise AppError("A product with this slug already exists", status_code=400)
         raise AppError(f"Error creating product: {str(e)}")
@@ -42,7 +43,7 @@ def create_product(product: ProductCreate):
 def update_product(product_id: str, updates: ProductUpdate):
     """Admin: Update a product."""
     supabase = get_supabase()
-    update_data = {k: v for k, v in updates.model_dump(exclude_unset=True).items()}
+    update_data = {k: v for k, v in updates.model_dump(mode='json', exclude_unset=True).items()}
     if not update_data:
         raise AppError("No fields to update", status_code=400)
         
@@ -56,6 +57,13 @@ def update_product(product_id: str, updates: ProductUpdate):
             raise AppError("A product with this slug already exists", status_code=400)
         raise AppError(f"Error updating product: {str(e)}")
 
+@router.delete("/{product_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_product(product_id: str):
+    """Admin: Hard delete a product. Used primarily for rollback if variant/image creation fails."""
+    supabase = get_supabase()
+    supabase.table("products").delete().eq("id", product_id).execute()
+    return
+
 # ──────────────────────────────────────────
 # Variants (Admin)
 # ──────────────────────────────────────────
@@ -64,7 +72,7 @@ def update_product(product_id: str, updates: ProductUpdate):
 def add_variant(product_id: str, variant: ProductVariantCreate):
     """Admin: Add a variant to a product."""
     supabase = get_supabase()
-    data = variant.model_dump()
+    data = variant.model_dump(mode='json')
     data["product_id"] = product_id
     try:
         result = supabase.table("product_variants").insert(data).execute()
@@ -78,7 +86,7 @@ def add_variant(product_id: str, variant: ProductVariantCreate):
 def update_variant(variant_id: str, updates: ProductVariantUpdate):
     """Admin: Update a variant."""
     supabase = get_supabase()
-    update_data = {k: v for k, v in updates.model_dump(exclude_unset=True).items()}
+    update_data = {k: v for k, v in updates.model_dump(mode='json', exclude_unset=True).items()}
     try:
         result = supabase.table("product_variants").update(update_data).eq("id", variant_id).execute()
         if not result.data:
@@ -102,8 +110,16 @@ def delete_variant(variant_id: str):
 
 @router.post("/upload/request-url", response_model=R2UploadResponse)
 def request_upload_url(req: R2UploadRequest):
-    """Admin: Request a presigned URL to upload a product image directly to R2."""
+    """Admin: Request a backend URL to upload and compress a product image."""
     return r2_service.generate_presigned_url(req.filename, req.content_type)
+
+from fastapi import Request
+@router.put("/upload/direct/products/{filename}")
+async def direct_upload(filename: str, request: Request):
+    """Admin: Direct upload endpoint for image compression before Supabase."""
+    file_bytes = await request.body()
+    r2_service.process_and_upload_image(file_bytes, f"products/{filename}")
+    return {"status": "ok"}
 
 @router.post("/upload/confirm", response_model=ProductImageResponse)
 def confirm_upload(req: R2UploadConfirmRequest):
@@ -113,7 +129,7 @@ def confirm_upload(req: R2UploadConfirmRequest):
         raise AppError("Image not found in R2. Upload must have failed.", status_code=400)
         
     # 2. Insert into DB
-    public_url = f"{r2_service.public_url}/{req.file_path}"
+    public_url = f"{r2_service.public_url_base}/{req.file_path}"
     supabase = get_supabase()
     
     result = supabase.table("product_images").insert({

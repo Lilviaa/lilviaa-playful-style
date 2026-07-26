@@ -1,74 +1,100 @@
-import boto3
-from botocore.exceptions import ClientError
-from app.core.config import settings
-from app.core.exceptions import AppError
 import mimetypes
 import uuid
+import io
+from app.core.config import settings
+from app.core.exceptions import AppError
+from app.db.supabase import get_supabase
+from PIL import Image, UnidentifiedImageError
 
-class R2Service:
+class StorageService:
     def __init__(self):
-        if not settings.R2_ACCOUNT_ID:
-            self.s3_client = None
-            self.bucket_name = ""
-            self.public_url = ""
-            return
-            
-        self.s3_client = boto3.client(
-            service_name="s3",
-            endpoint_url=f"https://{settings.R2_ACCOUNT_ID}.r2.cloudflarestorage.com",
-            aws_access_key_id=settings.R2_ACCESS_KEY_ID,
-            aws_secret_access_key=settings.R2_SECRET_ACCESS_KEY,
-            region_name="auto",
-        )
-        self.bucket_name = settings.R2_BUCKET_NAME
-        self.public_url = settings.R2_PUBLIC_URL.rstrip('/')
+        self.bucket_name = "product-images"
+        
+        # We need the public URL prefix for Supabase storage
+        # Typically it's: {supabase_url}/storage/v1/object/public/{bucket_name}
+        self.public_url_base = f"{settings.SUPABASE_URL}/storage/v1/object/public/{self.bucket_name}"
 
     def generate_presigned_url(self, filename: str, content_type: str) -> dict:
-        if not self.s3_client:
-            raise AppError("Cloudflare R2 is not configured in the environment.")
-            
+        """
+        Returns a mock 'upload_url' that points to our own backend,
+        so the frontend will send the file to us instead of directly to S3.
+        """
         # Basic file validation
         if not content_type.startswith("image/"):
             raise AppError("Only image files are allowed", status_code=400)
             
-        # Generate a unique object key (path in bucket)
         ext = mimetypes.guess_extension(content_type) or ""
         unique_filename = f"products/{uuid.uuid4().hex}{ext}"
 
-        try:
-            presigned_url = self.s3_client.generate_presigned_url(
-                ClientMethod="put_object",
-                Params={
-                    "Bucket": self.bucket_name,
-                    "Key": unique_filename,
-                    "ContentType": content_type,
-                },
-                ExpiresIn=3600, # 1 hour
-            )
+        # URL to our new FastAPI endpoint for direct upload
+        upload_url = f"/admin/products/upload/direct/{unique_filename}"
+        
+        return {
+            "upload_url": upload_url,
+            "file_path": unique_filename,
+            "public_url": f"{self.public_url_base}/{unique_filename}"
+        }
+
+    def process_and_upload_image(self, file_bytes: bytes, file_path: str):
+        """
+        Resize, compress, and upload the image to Supabase Storage.
+        Enforces a 10MB limit (checked before calling this or inside this).
+        """
+        MAX_SIZE = 10 * 1024 * 1024 # 10MB
+        if len(file_bytes) > MAX_SIZE:
+            raise AppError("File size exceeds 10MB limit", status_code=400)
             
-            return {
-                "upload_url": presigned_url,
-                "file_path": unique_filename,
-                "public_url": f"{self.public_url}/{unique_filename}"
-            }
-        except ClientError as e:
-            raise AppError(f"Failed to generate upload URL: {str(e)}")
+        # Pillow will validate magic bytes automatically on Image.open
+        try:
+            with Image.open(io.BytesIO(file_bytes)) as img:
+                # Convert to RGB (handles RGBA -> RGB for JPEG compatibility)
+                if img.mode in ("RGBA", "P"):
+                    img = img.convert("RGB")
+                    
+                # Resize to max width 1200px maintaining aspect ratio
+                max_width = 1200
+                if img.width > max_width:
+                    ratio = max_width / img.width
+                    new_height = int(img.height * ratio)
+                    img = img.resize((max_width, new_height), Image.Resampling.LANCZOS)
+                
+                # Compress and save to buffer as JPEG
+                output_buffer = io.BytesIO()
+                img.save(output_buffer, format="JPEG", quality=85, optimize=True)
+                compressed_bytes = output_buffer.getvalue()
+        except UnidentifiedImageError:
+            raise AppError("Invalid image format or corrupted file", status_code=400)
+        except Exception as e:
+            raise AppError(f"Error processing image: {str(e)}", status_code=400)
+            
+        # Upload to Supabase Storage
+        supabase = get_supabase()
+        try:
+            res = supabase.storage.from_(self.bucket_name).upload(
+                path=file_path,
+                file=compressed_bytes,
+                file_options={"content-type": "image/jpeg"}
+            )
+        except Exception as e:
+            # Check if it's already exists or other error
+            raise AppError(f"Failed to upload to storage: {str(e)}", status_code=400)
 
     def verify_object_exists(self, file_path: str) -> bool:
-        """Verify that the object actually exists in R2."""
-        if not self.s3_client:
-            # Allow tests to pass if R2 is not configured
-            return True
-            
+        """Verify that the object actually exists in Supabase Storage."""
+        supabase = get_supabase()
         try:
-            self.s3_client.head_object(Bucket=self.bucket_name, Key=file_path)
-            return True
-        except ClientError as e:
-            # If a client error is thrown, then check that it was a 404 error.
-            # If it was a 404 error, then the object does not exist.
-            error_code = e.response['Error']['Code']
-            if error_code == '404':
-                return False
-            raise AppError(f"Error checking R2 object: {str(e)}")
+            # We can check if it exists by listing the directory or checking public URL
+            # but listing is more robust.
+            # path could be "products/uuid.ext"
+            parts = file_path.split("/")
+            if len(parts) == 2:
+                folder, filename = parts
+                files = supabase.storage.from_(self.bucket_name).list(folder)
+                for f in files:
+                    if f.get("name") == filename:
+                        return True
+            return False
+        except Exception:
+            return False
 
-r2_service = R2Service()
+r2_service = StorageService()

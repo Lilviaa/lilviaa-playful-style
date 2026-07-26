@@ -18,7 +18,7 @@ import { ProductWithDetails, ProductStatus, useSaveProduct } from "@/lib/admin/p
 import { VariantEditor } from "./variant-editor";
 import { ImageUploader } from "./image-uploader";
 import { DiscountFields } from "./discount-fields";
-import { Save, ArrowLeft, Plus, X } from "lucide-react";
+import { Save, ArrowLeft, Plus, X, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 interface ProductFormProps {
@@ -57,6 +57,8 @@ export function ProductForm({ initialData }: ProductFormProps) {
     wash_care: initialData?.wash_care || "",
     category_id: initialData?.category_id || "",
     category: initialData?.category || "",
+    gender: initialData?.gender || "unisex",
+    tag: initialData?.tag || null,
     base_price: initialData?.base_price || 0,
     sale_price: initialData?.sale_price || null,
     sale_start: initialData?.sale_start || null,
@@ -121,8 +123,8 @@ export function ProductForm({ initialData }: ProductFormProps) {
         } catch (err: any) {
           return toast.error("Failed to create new category: " + err.message);
         }
-      } else if (!finalCategoryId && categories.length > 0) {
-        finalCategoryId = categories[0].id;
+      } else if (finalCategoryId === "") {
+        finalCategoryId = null;
       }
 
       await saveProduct.mutateAsync({
@@ -176,8 +178,17 @@ export function ProductForm({ initialData }: ProductFormProps) {
             </SelectContent>
           </Select>
 
-          <Button type="submit" className="bg-primary hover:bg-primary/90 text-primary-foreground">
-            <Save className="mr-2 h-4 w-4" /> Save Product
+          <Button 
+            type="submit" 
+            disabled={saveProduct.isPending}
+            className="bg-primary hover:bg-primary/90 text-primary-foreground"
+          >
+            {saveProduct.isPending ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Save className="mr-2 h-4 w-4" />
+            )}
+            {saveProduct.isPending ? "Saving..." : "Save Product"}
           </Button>
         </div>
       </div>
@@ -239,11 +250,13 @@ export function ProductForm({ initialData }: ProductFormProps) {
                     </div>
                   ) : (
                     <Select
-                      value={formData.category_id || (categories.length > 0 ? categories[0].id : "")}
+                      value={formData.category_id || "none"}
                       onValueChange={(val) => {
                         if (val === "NEW_CATEGORY") {
                           setIsNewCategory(true);
                           updateField("category", "");
+                          updateField("category_id", "");
+                        } else if (val === "none") {
                           updateField("category_id", "");
                         } else {
                           updateField("category_id", val);
@@ -254,14 +267,25 @@ export function ProductForm({ initialData }: ProductFormProps) {
                         <SelectValue placeholder="Select category" />
                       </SelectTrigger>
                       <SelectContent>
-                        {categories.map((cat) => (
-                          <SelectItem key={cat.id} value={cat.id}>
-                            {cat.name}
-                          </SelectItem>
+                        {categories
+                          .filter(cat => 
+                            !formData.gender || 
+                            formData.gender === "unisex" || 
+                            !cat.applicable_genders ||
+                            cat.applicable_genders.includes(formData.gender) ||
+                            cat.applicable_genders.includes("unisex")
+                          )
+                          .map((cat) => (
+                            <SelectItem key={cat.id} value={cat.id}>
+                              {cat.name}
+                            </SelectItem>
                         ))}
                         {categories.length === 0 && (
                           <SelectItem value="empty" disabled>No categories found</SelectItem>
                         )}
+                        <SelectItem value="none" className="text-muted-foreground italic">
+                          None (Uncategorized)
+                        </SelectItem>
                         <div className="h-px bg-border my-2" />
                         <SelectItem
                           value="NEW_CATEGORY"
@@ -274,6 +298,43 @@ export function ProductForm({ initialData }: ProductFormProps) {
                       </SelectContent>
                     </Select>
                   )}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="gender">For (Gender)</Label>
+                  <Select
+                    value={formData.gender || "unisex"}
+                    onValueChange={(val) => updateField("gender", val)}
+                  >
+                    <SelectTrigger id="gender">
+                      <SelectValue placeholder="Select gender" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="unisex">Unisex</SelectItem>
+                      <SelectItem value="boys">Boys</SelectItem>
+                      <SelectItem value="girls">Girls</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="tag">Collection (Badge)</Label>
+                  <Select
+                    value={formData.tag || "none"}
+                    onValueChange={(val) => updateField("tag", val === "none" ? null : val)}
+                  >
+                    <SelectTrigger id="tag">
+                      <SelectValue placeholder="Select collection" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none" className="text-muted-foreground italic">None</SelectItem>
+                      <SelectItem value="new">New Arrival</SelectItem>
+                      <SelectItem value="bestseller">Bestseller</SelectItem>
+                      <SelectItem value="sale">Sale</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
 

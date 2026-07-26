@@ -27,7 +27,7 @@ def set_auth_cookies(response: Response, token: Token):
         httponly=False, # Needed by JS to read and send in header
         secure=is_prod,
         samesite=samesite,
-        max_age=30 * 60 # 30 mins
+        max_age=7 * 24 * 60 * 60 # 7 days (must outlive access token to allow refresh)
     )
     
     # Access token - HTTP Only

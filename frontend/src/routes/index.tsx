@@ -1,8 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import { ArrowRight, Sparkles, Truck, ShieldCheck, Ruler, Star, AlertCircle, Heart, Gem, Baby, MapPin } from "lucide-react";
-import { categories } from "@/lib/products";
-import { useFeaturedProducts } from "@/lib/products-api";
+import { useFeaturedProducts, useProducts } from "@/lib/products-api";
+import { useCategories } from "@/lib/categories-api";
 import { ProductCard } from "@/components/product-card";
 import { ScrollReveal } from "@/components/scroll-reveal";
 import logoAsset from "@/assets/lilviaa-logo.png.asset.json";
@@ -25,7 +25,9 @@ const heroImages = [
 
 function HomePage() {
   const [currentHeroImage, setCurrentHeroImage] = useState(0);
-  const { data: featured = [], isLoading } = useFeaturedProducts();
+  const { data: featured = [], isLoading: isLoadingProducts } = useFeaturedProducts();
+  const { data: dbCategories = [], isLoading: isLoadingCategories } = useCategories();
+  const { data: allProducts = [] } = useProducts();
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -153,8 +155,10 @@ function HomePage() {
           </Link>
         </div>
         <div className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          {categories.map((c, i) => {
-            const p = featured[(i + 1) * 2] ?? featured[i];
+          {dbCategories.slice(0, 4).map((c, i) => {
+            const categoryProduct = allProducts.find((prod) => prod.category === c.slug && prod.image);
+            const imageUrl = categoryProduct?.image || "/fallback-image.svg";
+            
             return (
               <ScrollReveal key={c.slug} direction="up" delay={i * 0.1}>
                 <Link
@@ -165,8 +169,8 @@ function HomePage() {
                   {/* Background Image */}
                   <div className="absolute inset-0 z-0 bg-cocoa/20">
                     <img
-                      src={p?.image || "/fallback-image.jpg"}
-                      alt={c.label}
+                      src={imageUrl}
+                      alt={c.name}
                       className="h-full w-full object-cover transition-transform duration-1000 ease-out group-hover:scale-110"
                     />
                   </div>
@@ -174,16 +178,18 @@ function HomePage() {
                   <div className="absolute inset-0 z-10 bg-gradient-to-b from-transparent via-transparent to-cocoa/90 opacity-80 transition-opacity duration-500 group-hover:opacity-100" />
                   
                   {/* Emoji / Tag */}
-                  <div className="relative z-20 self-start rounded-full bg-cream/95 px-4 py-2 text-xl shadow-sm backdrop-blur-md transition-transform duration-500 ease-out group-hover:rotate-[-8deg] group-hover:scale-110">
-                    {c.emoji}
-                  </div>
+                  {c.emoji && (
+                    <div className="relative z-20 self-start rounded-full bg-cream/95 px-4 py-2 text-xl shadow-sm backdrop-blur-md transition-transform duration-500 ease-out group-hover:rotate-[-8deg] group-hover:scale-110">
+                      {c.emoji}
+                    </div>
+                  )}
 
                   {/* Content */}
                   <div className="relative z-20 mt-auto translate-y-4 transition-transform duration-500 ease-out group-hover:translate-y-0">
-                    <h3 className="font-display text-3xl text-cream md:text-4xl">{c.label}</h3>
+                    <h3 className="font-display text-3xl text-cream md:text-4xl">{c.name}</h3>
                     <div className="mt-3 flex items-center gap-2 opacity-0 transition-opacity duration-500 ease-out group-hover:opacity-100">
                       <span className="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2 text-xs font-bold text-primary-foreground shadow-pop">
-                        Explore {c.label.toLowerCase()} <ArrowRight className="h-3 w-3" />
+                        Explore {c.name.toLowerCase()} <ArrowRight className="h-3 w-3" />
                       </span>
                     </div>
                   </div>
@@ -206,7 +212,7 @@ function HomePage() {
           </Link>
         </div>
         <div className="mt-8 grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
-          {isLoading ? (
+          {isLoadingProducts ? (
              <p className="col-span-full text-center text-muted-foreground py-10">Loading bestsellers...</p>
           ) : (
             featured.map((p) => (

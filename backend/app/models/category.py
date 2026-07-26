@@ -7,6 +7,8 @@ class CategoryBase(BaseModel):
     slug: str
     description: Optional[str] = None
     sort_order: int = 0
+    emoji: Optional[str] = None
+    applicable_genders: list[str] = ["boys", "girls", "unisex"]
 
 class CategoryCreate(CategoryBase):
     pass
@@ -16,6 +18,8 @@ class CategoryUpdate(BaseModel):
     slug: Optional[str] = None
     description: Optional[str] = None
     sort_order: Optional[int] = None
+    emoji: Optional[str] = None
+    applicable_genders: Optional[list[str]] = None
 
 class CategoryResponse(CategoryBase):
     id: str
