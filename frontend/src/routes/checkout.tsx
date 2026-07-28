@@ -109,10 +109,73 @@ function CheckoutPage() {
         const err = await res.json();
         throw new Error(err.detail || "Failed to create order");
       }
+      
+      const orderData = await res.json();
 
-      // Success
-      clear();
-      navigate({ to: "/order-success" });
+      if (values.paymentMethod === "cod") {
+        // Success for COD
+        clear();
+        navigate({ to: "/order-success" });
+        return;
+      }
+
+      // Razorpay Flow
+      const resLoad = await new Promise((resolve) => {
+        const script = document.createElement("script");
+        script.src = "https://checkout.razorpay.com/v1/checkout.js";
+        script.onload = () => resolve(true);
+        script.onerror = () => resolve(false);
+        document.body.appendChild(script);
+      });
+
+      if (!resLoad) {
+        throw new Error("Razorpay SDK failed to load. Are you online?");
+      }
+
+      const options = {
+        key: orderData.key_id,
+        amount: orderData.amount,
+        currency: orderData.currency,
+        name: "Lilviaa",
+        description: "Order Payment",
+        order_id: orderData.razorpay_order_id,
+        handler: async function (response: any) {
+          try {
+            const verifyRes = await fetch(`${API_URL}/orders/verify-payment`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                order_id: orderData.id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_signature: response.razorpay_signature,
+              }),
+            });
+            if (!verifyRes.ok) {
+              throw new Error("Payment verification failed");
+            }
+            clear();
+            navigate({ to: "/order-success" });
+          } catch (err: any) {
+            alert(err.message || "Failed to verify payment");
+          }
+        },
+        prefill: {
+          name: values.fullName,
+          email: values.email,
+          contact: values.phone,
+        },
+        theme: {
+          color: "#9C6644", // cocoa
+        },
+      };
+
+      const rzp = new (window as any).Razorpay(options);
+      rzp.on('payment.failed', function (response: any) {
+        alert("Payment failed: " + response.error.description);
+      });
+      rzp.open();
+      
     } catch (error: any) {
       alert(error.message || "Something went wrong during checkout.");
     }
