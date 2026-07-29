@@ -416,10 +416,6 @@ function ProductPage() {
                 <div className="h-8 w-14 bg-white border border-border rounded flex items-center justify-center shadow-sm p-1.5">
                   <img src="/asset/Checkout_logo/pngwing.com (1).png" alt="PhonePe" className="h-full w-full object-contain" />
                 </div>
-                <div className="h-8 px-2.5 bg-white border border-border rounded flex items-center justify-center shadow-sm gap-1.5 text-emerald-700">
-                  <img src="/asset/Checkout_logo/cod.png" alt="COD" className="h-4 w-4 object-contain" />
-                  <span className="text-[11px] font-black tracking-wider">COD</span>
-                </div>
               </div>
             </div>
           </div>

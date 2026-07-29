@@ -1,12 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { CheckCircle2, ShoppingBag } from "lucide-react";
+import { CheckCircle2, ShoppingBag, FileText } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useCart } from "@/lib/cart";
+import { useCart, formatINR } from "@/lib/cart";
 
 export const Route = createFileRoute("/order-success")({
   head: () => ({
     meta: [
-      { title: "Order Successful! — lilviaa" },
+      { title: "Payment Successful! — lilviaa" },
       { name: "robots", content: "noindex" },
     ],
   }),
@@ -16,38 +16,65 @@ export const Route = createFileRoute("/order-success")({
 function OrderSuccessPage() {
   const { clear } = useCart();
   const [orderNumber, setOrderNumber] = useState("");
+  const [amount] = useState(3149); // Placeholder/mock amount
 
   useEffect(() => {
     // Generate order number only once on mount to avoid hydration mismatch
-    setOrderNumber(`LV-${Math.floor(100000 + Math.random() * 900000)}`);
+    setOrderNumber(`LVA-${Math.floor(10000 + Math.random() * 90000)}`);
     // Clear the cart
     clear();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Calculate estimated delivery dates
+  const today = new Date();
+  const deliveryStart = new Date(today);
+  deliveryStart.setDate(deliveryStart.getDate() + 2);
+  const deliveryEnd = new Date(today);
+  deliveryEnd.setDate(deliveryEnd.getDate() + 4);
+  const deliveryString = `${deliveryStart.getDate()} ${deliveryStart.toLocaleString('default', { month: 'short' })} – ${deliveryEnd.getDate()} ${deliveryEnd.toLocaleString('default', { month: 'short' })}`;
+
   return (
-    <div className="mx-auto max-w-lg px-6 py-24 text-center">
-      <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-full bg-butter text-primary shadow-cute animate-in zoom-in duration-500">
+    <div className="mx-auto max-w-lg px-6 py-20 text-center">
+      <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-full bg-green-100 text-green-600 shadow-sm animate-in zoom-in duration-500 mb-8">
         <CheckCircle2 className="h-12 w-12" />
       </div>
-      <h1 className="mt-8 font-display text-4xl text-cocoa md:text-5xl">Yay! Order placed.</h1>
-      <p className="mt-4 text-lg text-muted-foreground">
-        Thank you for shopping with lilviaa. We've received your order and are getting it ready for your little one.
+      <h1 className="font-display text-4xl text-cocoa md:text-5xl mb-3">Payment Successful</h1>
+      <p className="text-lg text-muted-foreground mb-8">
+        Thank you for shopping with Lil Viaa. We've received your order.
       </p>
       
       {orderNumber && (
-        <div className="mt-8 rounded-3xl bg-card p-6 shadow-cute">
-          <h3 className="font-semibold text-cocoa">Order number: #{orderNumber}</h3>
-          <p className="mt-2 text-sm text-muted-foreground">You will receive an email confirmation shortly.</p>
+        <div className="rounded-3xl bg-card border border-border p-6 shadow-cute mb-10 text-left space-y-4">
+          <div className="flex justify-between items-center border-b border-border pb-4">
+            <span className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Order ID</span>
+            <span className="font-bold text-cocoa text-lg">#{orderNumber}</span>
+          </div>
+          <div className="flex justify-between items-center border-b border-border pb-4">
+            <span className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Amount Paid</span>
+            <span className="font-bold text-cocoa text-lg">{formatINR(amount)}</span>
+          </div>
+          <div className="flex justify-between items-center pt-2">
+            <span className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Estimated Delivery</span>
+            <span className="font-bold text-cocoa">{deliveryString}</span>
+          </div>
         </div>
       )}
 
-      <Link
-        to="/shop"
-        className="mt-8 inline-flex items-center gap-2 rounded-full bg-primary px-8 py-4 text-base font-bold text-primary-foreground shadow-pop transition-transform hover:scale-105 active:scale-95"
-      >
-        <ShoppingBag className="h-5 w-5" /> Continue Shopping
-      </Link>
+      <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+        <Link
+          to="/account/orders"
+          className="flex w-full sm:w-auto items-center justify-center gap-2 rounded-full border-2 border-primary bg-transparent px-8 py-4 text-base font-bold text-primary transition-colors hover:bg-primary/5 active:scale-95"
+        >
+          <FileText className="h-5 w-5" /> View Order
+        </Link>
+        <Link
+          to="/shop"
+          className="flex w-full sm:w-auto items-center justify-center gap-2 rounded-full bg-primary px-8 py-4 text-base font-bold text-primary-foreground shadow-pop transition-transform hover:-translate-y-0.5 active:scale-95"
+        >
+          <ShoppingBag className="h-5 w-5" /> Continue Shopping
+        </Link>
+      </div>
     </div>
   );
 }

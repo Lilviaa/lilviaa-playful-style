@@ -38,15 +38,15 @@ const formSchema = z.object({
   city: z.string().min(2, { message: "City is required." }),
   state: z.string().min(2, { message: "State is required." }),
   zip: z.string().min(4, { message: "ZIP code is required." }),
-  paymentMethod: z.enum(["upi", "card", "netbanking", "cod"], {
+  paymentMethod: z.enum(["upi", "card", "netbanking"], {
     required_error: "Please select a payment method.",
   }),
 });
 
 const STEPS = [
-  { id: "step-1", title: "Address" },
-  { id: "step-2", title: "Payment" },
-  { id: "step-3", title: "Review" },
+  { id: "step-1", title: "Address & Payment" },
+  { id: "step-2", title: "Review Order" },
+  { id: "step-3", title: "Secure Payment" },
 ];
 
 function CheckoutPage() {
@@ -125,13 +125,6 @@ function CheckoutPage() {
       
       const orderData = await res.json();
 
-      if (values.paymentMethod === "cod") {
-        // Success for COD
-        clear();
-        navigate({ to: "/order-success" });
-        return;
-      }
-
       // Razorpay Flow
       const resLoad = await new Promise((resolve) => {
         const script = document.createElement("script");
@@ -208,21 +201,36 @@ function CheckoutPage() {
   }
 
   const activeStepIndex = STEPS.findIndex(s => s.id === activeStep);
-  const formData = form.getValues();
+  const formData = form.watch();
   
   // Calculate estimated delivery dates
   const today = new Date();
-  const deliveryStart = new Date(today);
-  deliveryStart.setDate(deliveryStart.getDate() + 2);
-  const deliveryEnd = new Date(today);
-  deliveryEnd.setDate(deliveryEnd.getDate() + 4);
+  
+  const addBusinessDays = (startDate: Date, days: number) => {
+    const date = new Date(startDate);
+    let count = 0;
+    while (count < days) {
+      date.setDate(date.getDate() + 1);
+      if (date.getDay() !== 0 && date.getDay() !== 6) {
+        count++;
+      }
+    }
+    return date;
+  };
+
+  const stateStr = (formData.state || "").toLowerCase();
+  const isTamilNadu = stateStr.includes("tamil nadu") || stateStr === "tn";
+  const minDays = isTamilNadu ? 2 : 3;
+  const maxDays = isTamilNadu ? 4 : 7;
+
+  const deliveryStart = addBusinessDays(today, minDays);
+  const deliveryEnd = addBusinessDays(today, maxDays);
   const deliveryString = `${deliveryStart.getDate()} ${deliveryStart.toLocaleString('default', { month: 'short' })} – ${deliveryEnd.getDate()} ${deliveryEnd.toLocaleString('default', { month: 'short' })}`;
 
   const paymentMethodLabels: Record<string, string> = {
-    upi: "UPI / QR",
+    upi: "UPI",
     card: "Credit / Debit Card",
     netbanking: "Net Banking",
-    cod: "Cash on Delivery"
   };
 
   return (
@@ -284,256 +292,222 @@ function CheckoutPage() {
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                 
-                {/* PAGE 1: Delivery Address */}
+                {/* PAGE 1: Address & Payment */}
                 {activeStep === "step-1" && (
-                  <div className="rounded-3xl bg-card p-6 md:p-8 shadow-cute animate-in fade-in slide-in-from-right-4 duration-300">
-                    <h2 className="font-display text-2xl text-cocoa mb-6">Delivery Address</h2>
-                    <div className="grid gap-5 sm:grid-cols-2">
-                      <FormField
-                        control={form.control}
-                        name="fullName"
-                        render={({ field }) => (
-                          <FormItem className="sm:col-span-2">
-                            <FormLabel className="text-cocoa">Full Name</FormLabel>
-                            <FormControl>
-                              <Input placeholder="Jane Doe" {...field} className="rounded-xl border-border bg-background focus-visible:ring-primary" />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name="email"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-cocoa">Email Address</FormLabel>
-                            <FormControl>
-                              <Input type="email" placeholder="jane@example.com" {...field} className="rounded-xl border-border bg-background focus-visible:ring-primary" />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name="phone"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-cocoa">Phone Number</FormLabel>
-                            <FormControl>
-                              <Input type="tel" placeholder="+91 98765 43210" {...field} className="rounded-xl border-border bg-background focus-visible:ring-primary" />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name="address"
-                        render={({ field }) => (
-                          <FormItem className="sm:col-span-2">
-                            <FormLabel className="text-cocoa">Street Address</FormLabel>
-                            <FormControl>
-                              <Input placeholder="123 Playful Lane, Apt 4B" {...field} className="rounded-xl border-border bg-background focus-visible:ring-primary" />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name="city"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-cocoa">City</FormLabel>
-                            <FormControl>
-                              <Input placeholder="Mumbai" {...field} className="rounded-xl border-border bg-background focus-visible:ring-primary" />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name="state"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-cocoa">State</FormLabel>
-                            <FormControl>
-                              <Input placeholder="Maharashtra" {...field} className="rounded-xl border-border bg-background focus-visible:ring-primary" />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name="zip"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-cocoa">ZIP / Postal Code</FormLabel>
-                            <FormControl>
-                              <Input placeholder="400001" {...field} className="rounded-xl border-border bg-background focus-visible:ring-primary" />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-                    
-                    <div className="mt-5 flex items-center space-x-2">
-                      <input type="checkbox" id="save-address" className="rounded text-primary focus:ring-primary h-4 w-4 border-gray-300" defaultChecked />
-                      <label htmlFor="save-address" className="text-sm text-cocoa cursor-pointer font-medium">Save this address as default</label>
+                  <div className="space-y-6">
+                    <div className="rounded-3xl bg-card p-6 md:p-8 shadow-cute animate-in fade-in slide-in-from-right-4 duration-300">
+                      <h2 className="font-display text-2xl text-cocoa mb-6">Delivery Address</h2>
+                      <div className="grid gap-5 sm:grid-cols-2">
+                        <FormField
+                          control={form.control}
+                          name="fullName"
+                          render={({ field }) => (
+                            <FormItem className="sm:col-span-2">
+                              <FormLabel className="text-cocoa">Full Name</FormLabel>
+                              <FormControl>
+                                <Input placeholder="Jane Doe" {...field} className="rounded-xl border-border bg-background focus-visible:ring-primary" />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="email"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-cocoa">Email Address</FormLabel>
+                              <FormControl>
+                                <Input type="email" placeholder="jane@example.com" {...field} className="rounded-xl border-border bg-background focus-visible:ring-primary" />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="phone"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-cocoa">Phone Number</FormLabel>
+                              <FormControl>
+                                <Input type="tel" placeholder="+91 98765 43210" {...field} className="rounded-xl border-border bg-background focus-visible:ring-primary" />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="address"
+                          render={({ field }) => (
+                            <FormItem className="sm:col-span-2">
+                              <FormLabel className="text-cocoa">Street Address</FormLabel>
+                              <FormControl>
+                                <Input placeholder="123 Playful Lane, Apt 4B" {...field} className="rounded-xl border-border bg-background focus-visible:ring-primary" />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="city"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-cocoa">City</FormLabel>
+                              <FormControl>
+                                <Input placeholder="Mumbai" {...field} className="rounded-xl border-border bg-background focus-visible:ring-primary" />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="state"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-cocoa">State</FormLabel>
+                              <FormControl>
+                                <Input placeholder="Maharashtra" {...field} className="rounded-xl border-border bg-background focus-visible:ring-primary" />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="zip"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-cocoa">ZIP / Postal Code</FormLabel>
+                              <FormControl>
+                                <Input placeholder="400001" {...field} className="rounded-xl border-border bg-background focus-visible:ring-primary" />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                      
+                      <div className="mt-5 flex items-center space-x-2">
+                        <input type="checkbox" id="save-address" className="rounded text-primary focus:ring-primary h-4 w-4 border-gray-300" defaultChecked />
+                        <label htmlFor="save-address" className="text-sm text-cocoa cursor-pointer font-medium">Save this address as default</label>
+                      </div>
                     </div>
 
-                    <div className="mt-8 pt-6">
-                      <button
-                        type="button"
-                        onClick={async () => {
-                          const valid = await form.trigger(["fullName", "email", "phone", "address", "city", "state", "zip"]);
-                          if (valid) {
-                            setCompletedSteps(prev => [...new Set([...prev, "step-1"])]);
-                            setActiveStep("step-2");
-                            window.scrollTo({ top: 0, behavior: 'smooth' });
-                          }
-                        }}
-                        className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-full bg-primary px-8 py-4 text-base font-bold text-primary-foreground shadow-pop transition-transform hover:-translate-y-0.5"
-                      >
-                        Proceed to Payment <ArrowRight className="h-5 w-5" />
-                      </button>
+                    <div className="rounded-3xl bg-card p-6 md:p-8 shadow-cute animate-in fade-in slide-in-from-right-4 duration-300">
+                      <h2 className="font-display text-2xl text-cocoa mb-6">Payment Method</h2>
+                      <FormField
+                        control={form.control}
+                        name="paymentMethod"
+                        render={({ field }) => (
+                          <FormItem className="space-y-4">
+                            <FormControl>
+                              <RadioGroup
+                                onValueChange={field.onChange}
+                                value={field.value}
+                                className="grid grid-cols-1 gap-3"
+                              >
+                                <FormItem className="space-y-0">
+                                <FormLabel 
+                                  className={`flex items-center space-x-3 rounded-2xl border bg-background p-4 shadow-sm hover:border-primary transition-colors cursor-pointer ${field.value === 'upi' ? 'border-primary ring-1 ring-primary bg-primary/5' : 'border-border'}`}
+                                >
+                                  <FormControl>
+                                    <RadioGroupItem value="upi" className="mt-0.5" />
+                                  </FormControl>
+                                  <div className="flex flex-1 items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                      <SmartphoneNfc className={`h-5 w-5 ${field.value === 'upi' ? 'text-primary' : 'text-muted-foreground'}`} />
+                                      <span className="font-bold text-cocoa text-base">UPI</span>
+                                    </div>
+                                    <div className="flex gap-2 text-xs font-bold text-muted-foreground flex-wrap justify-end">
+                                      <img src="/asset/Checkout_logo/pngwing.com.png" alt="GPay" className="h-6 w-auto object-contain bg-white rounded-md p-1 border border-border shadow-sm" />
+                                      <img src="/asset/Checkout_logo/pngwing.com (1).png" alt="PhonePe" className="h-6 w-auto object-contain bg-white rounded-md p-1 border border-border shadow-sm" />
+                                      <img src="/asset/Checkout_logo/upi_logo_icon_169316.png" alt="BHIM UPI" className="h-6 w-auto object-contain bg-white rounded-md p-1 border border-border shadow-sm" />
+                                    </div>
+                                  </div>
+                                </FormLabel>
+                              </FormItem>
+
+                                <FormItem className="space-y-0">
+                                <FormLabel 
+                                  className={`flex items-center space-x-3 rounded-2xl border bg-background p-4 shadow-sm hover:border-primary transition-colors cursor-pointer ${field.value === 'card' ? 'border-primary ring-1 ring-primary bg-primary/5' : 'border-border'}`}
+                                >
+                                  <FormControl>
+                                    <RadioGroupItem value="card" className="mt-0.5" />
+                                  </FormControl>
+                                  <div className="flex flex-1 items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                      <CreditCard className={`h-5 w-5 ${field.value === 'card' ? 'text-primary' : 'text-muted-foreground'}`} />
+                                      <span className="font-bold text-cocoa text-base">Credit / Debit Card</span>
+                                    </div>
+                                    <div className="flex gap-2 text-xs font-bold text-muted-foreground flex-wrap justify-end">
+                                      <img src="/asset/Checkout_logo/VISA-logo-768x432.png" alt="Visa" className="h-6 w-auto object-contain bg-white rounded-md p-1 border border-border shadow-sm" />
+                                      <img src="/asset/Checkout_logo/masterCard.png" alt="Mastercard" className="h-6 w-auto object-contain bg-white rounded-md p-1 border border-border shadow-sm" />
+                                    </div>
+                                  </div>
+                                </FormLabel>
+                              </FormItem>
+
+                                <FormItem className="space-y-0">
+                                <FormLabel 
+                                  className={`flex items-center space-x-3 rounded-2xl border bg-background p-4 shadow-sm hover:border-primary transition-colors cursor-pointer ${field.value === 'netbanking' ? 'border-primary ring-1 ring-primary bg-primary/5' : 'border-border'}`}
+                                >
+                                  <FormControl>
+                                    <RadioGroupItem value="netbanking" className="mt-0.5" />
+                                  </FormControl>
+                                  <div className="flex flex-1 items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                      <Landmark className={`h-5 w-5 ${field.value === 'netbanking' ? 'text-primary' : 'text-muted-foreground'}`} />
+                                      <span className="font-bold text-cocoa text-base">Net Banking</span>
+                                    </div>
+                                    <div className="flex gap-1 text-xs font-semibold text-muted-foreground">
+                                      <span>All Major Indian Banks Supported</span>
+                                    </div>
+                                  </div>
+                                </FormLabel>
+                              </FormItem>
+                              </RadioGroup>
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <div className="mt-8 pt-6 border-t border-border flex flex-col-reverse sm:flex-row items-center justify-between gap-4">
+                        <div className="flex flex-col items-center sm:items-start text-xs font-semibold text-muted-foreground">
+                          <span className="flex items-center gap-1 mb-1"><Lock className="h-3 w-3 text-green-600" /> Secure checkout powered by Razorpay</span>
+                          <span className="flex items-center gap-1"><ShieldCheck className="h-3 w-3 text-green-600" /> 256-bit SSL Encrypted</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            const valid = await form.trigger(["fullName", "email", "phone", "address", "city", "state", "zip", "paymentMethod"]);
+                            if (valid) {
+                              setCompletedSteps(prev => [...new Set([...prev, "step-1"])]);
+                              setActiveStep("step-2");
+                              window.scrollTo({ top: 0, behavior: 'smooth' });
+                            }
+                          }}
+                          className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-full bg-primary px-8 py-4 text-base font-bold text-primary-foreground shadow-pop transition-transform hover:-translate-y-0.5"
+                        >
+                          Continue to Review <ArrowRight className="h-5 w-5" />
+                        </button>
+                      </div>
                     </div>
                   </div>
                 )}
 
-                {/* PAGE 2: Payment Method */}
+                {/* PAGE 2: Review Order */}
                 {activeStep === "step-2" && (
                   <div className="rounded-3xl bg-card p-6 md:p-8 shadow-cute animate-in fade-in slide-in-from-right-4 duration-300">
                     <div className="flex items-center justify-between mb-6">
-                      <h2 className="font-display text-2xl text-cocoa">Payment Method</h2>
+                      <h2 className="font-display text-2xl text-cocoa">Review Order</h2>
                       <button 
                         type="button"
                         onClick={() => setActiveStep("step-1")}
-                        className="text-sm font-semibold text-muted-foreground hover:text-cocoa flex items-center gap-1"
-                      >
-                        <ChevronLeft className="h-4 w-4" /> Back
-                      </button>
-                    </div>
-                    
-                    <FormField
-                      control={form.control}
-                      name="paymentMethod"
-                      render={({ field }) => (
-                        <FormItem className="space-y-4">
-                          <FormControl>
-                            <RadioGroup
-                              onValueChange={field.onChange}
-                              value={field.value}
-                              className="grid grid-cols-1 gap-3"
-                            >
-                              <FormItem 
-                                onClick={() => field.onChange("upi")}
-                                className={`flex items-center space-x-3 space-y-0 rounded-2xl border bg-background p-4 shadow-sm hover:border-primary transition-colors cursor-pointer ${field.value === 'upi' ? 'border-primary ring-1 ring-primary bg-primary/5' : 'border-border'}`}
-                              >
-                                <FormControl>
-                                  <RadioGroupItem value="upi" className="pointer-events-none mt-0.5" />
-                                </FormControl>
-                                <div className="flex flex-1 items-center justify-between">
-                                  <div className="flex items-center gap-3">
-                                    <SmartphoneNfc className={`h-5 w-5 ${field.value === 'upi' ? 'text-primary' : 'text-muted-foreground'}`} />
-                                    <FormLabel className="font-bold text-cocoa cursor-pointer pointer-events-none text-base">UPI</FormLabel>
-                                  </div>
-                                  <div className="flex gap-2 text-xs font-bold text-muted-foreground">
-                                    <span className="bg-muted px-2 py-1 rounded">GPay</span>
-                                    <span className="bg-muted px-2 py-1 rounded">PhonePe</span>
-                                    <span className="bg-muted px-2 py-1 rounded">Paytm</span>
-                                  </div>
-                                </div>
-                              </FormItem>
-
-                              <FormItem 
-                                onClick={() => field.onChange("card")}
-                                className={`flex items-center space-x-3 space-y-0 rounded-2xl border bg-background p-4 shadow-sm hover:border-primary transition-colors cursor-pointer ${field.value === 'card' ? 'border-primary ring-1 ring-primary bg-primary/5' : 'border-border'}`}
-                              >
-                                <FormControl>
-                                  <RadioGroupItem value="card" className="pointer-events-none mt-0.5" />
-                                </FormControl>
-                                <div className="flex flex-1 items-center justify-between">
-                                  <div className="flex items-center gap-3">
-                                    <CreditCard className={`h-5 w-5 ${field.value === 'card' ? 'text-primary' : 'text-muted-foreground'}`} />
-                                    <FormLabel className="font-bold text-cocoa cursor-pointer pointer-events-none text-base">Credit / Debit Card</FormLabel>
-                                  </div>
-                                  <div className="flex gap-1 text-xs font-bold text-muted-foreground">
-                                    <span className="bg-muted px-2 py-1 rounded">Visa</span>
-                                    <span className="bg-muted px-2 py-1 rounded">Mastercard</span>
-                                    <span className="bg-muted px-2 py-1 rounded">RuPay</span>
-                                  </div>
-                                </div>
-                              </FormItem>
-
-                              <FormItem 
-                                onClick={() => field.onChange("netbanking")}
-                                className={`flex items-center space-x-3 space-y-0 rounded-2xl border bg-background p-4 shadow-sm hover:border-primary transition-colors cursor-pointer ${field.value === 'netbanking' ? 'border-primary ring-1 ring-primary bg-primary/5' : 'border-border'}`}
-                              >
-                                <FormControl>
-                                  <RadioGroupItem value="netbanking" className="pointer-events-none mt-0.5" />
-                                </FormControl>
-                                <div className="flex flex-1 items-center gap-3">
-                                  <Landmark className={`h-5 w-5 ${field.value === 'netbanking' ? 'text-primary' : 'text-muted-foreground'}`} />
-                                  <FormLabel className="font-bold text-cocoa cursor-pointer pointer-events-none text-base">Net Banking</FormLabel>
-                                </div>
-                              </FormItem>
-
-                              <FormItem 
-                                onClick={() => field.onChange("cod")}
-                                className={`flex items-center space-x-3 space-y-0 rounded-2xl border bg-background p-4 shadow-sm hover:border-primary transition-colors cursor-pointer ${field.value === 'cod' ? 'border-primary ring-1 ring-primary bg-primary/5' : 'border-border'}`}
-                              >
-                                <FormControl>
-                                  <RadioGroupItem value="cod" className="pointer-events-none mt-0.5" />
-                                </FormControl>
-                                <div className="flex flex-1 items-center gap-3">
-                                  <Banknote className={`h-5 w-5 ${field.value === 'cod' ? 'text-primary' : 'text-muted-foreground'}`} />
-                                  <FormLabel className="font-bold text-cocoa cursor-pointer pointer-events-none text-base">Cash on Delivery</FormLabel>
-                                </div>
-                              </FormItem>
-                            </RadioGroup>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <div className="mt-8 pt-6 border-t border-border flex flex-col-reverse sm:flex-row items-center justify-between gap-4">
-                      <div className="flex flex-col items-center sm:items-start text-xs font-semibold text-muted-foreground">
-                        <span className="flex items-center gap-1 mb-1"><Lock className="h-3 w-3 text-green-600" /> Secure checkout powered by Razorpay</span>
-                        <span className="flex items-center gap-1"><ShieldCheck className="h-3 w-3 text-green-600" /> 256-bit SSL Encrypted</span>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={async () => {
-                          const valid = await form.trigger(["paymentMethod"]);
-                          if (valid) {
-                            setCompletedSteps(prev => [...new Set([...prev, "step-2"])]);
-                            setActiveStep("step-3");
-                            window.scrollTo({ top: 0, behavior: 'smooth' });
-                          }
-                        }}
-                        className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-full bg-primary px-8 py-4 text-base font-bold text-primary-foreground shadow-pop transition-transform hover:-translate-y-0.5"
-                      >
-                        Review Order <ArrowRight className="h-5 w-5" />
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                {/* PAGE 3: Review Order */}
-                {activeStep === "step-3" && (
-                  <div className="rounded-3xl bg-card p-6 md:p-8 shadow-cute animate-in fade-in slide-in-from-right-4 duration-300">
-                    <div className="flex items-center justify-between mb-6">
-                      <h2 className="font-display text-2xl text-cocoa">Review & Place Order</h2>
-                      <button 
-                        type="button"
-                        onClick={() => setActiveStep("step-2")}
                         className="text-sm font-semibold text-muted-foreground hover:text-cocoa flex items-center gap-1"
                       >
                         <ChevronLeft className="h-4 w-4" /> Back
@@ -559,7 +533,7 @@ function CheckoutPage() {
                       <div className="rounded-2xl border border-border p-5 bg-background">
                         <div className="flex justify-between items-start mb-3">
                           <h3 className="font-semibold text-cocoa flex items-center gap-2"><CreditCard className="h-4 w-4" /> Payment Method</h3>
-                          <button type="button" onClick={() => setActiveStep("step-2")} className="text-sm font-bold text-primary hover:underline">Edit</button>
+                          <button type="button" onClick={() => setActiveStep("step-1")} className="text-sm font-bold text-primary hover:underline">Edit</button>
                         </div>
                         <div className="text-sm font-bold text-cocoa">
                           {paymentMethodLabels[formData.paymentMethod] || formData.paymentMethod}
@@ -575,18 +549,109 @@ function CheckoutPage() {
                         </div>
                         
                         <button
-                          type="submit"
-                          disabled={items.some(it => it.qty === 0) || isPlacingOrder}
+                          type="button"
+                          onClick={() => {
+                            setCompletedSteps(prev => [...new Set([...prev, "step-2"])]);
+                            setActiveStep("step-3");
+                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                          }}
+                          disabled={items.some(it => it.qty === 0)}
                           className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-primary px-8 py-4 text-lg font-bold text-primary-foreground shadow-pop transition-transform hover:-translate-y-0.5 active:scale-95 disabled:opacity-50 disabled:pointer-events-none disabled:hover:scale-100"
                         >
-                          {isPlacingOrder ? "Processing..." : "Place Order Now"} <ArrowRight className="h-5 w-5" />
+                          Proceed to Payment <ArrowRight className="h-5 w-5" />
                         </button>
-                        
-                        <p className="text-xs text-muted-foreground mt-4 max-w-sm mx-auto">
-                          By placing your order, you agree to our Terms of Service and Privacy Policy.
-                        </p>
                       </div>
                     </div>
+                  </div>
+                )}
+
+                {/* PAGE 3: Secure Payment */}
+                {activeStep === "step-3" && (
+                  <div className="rounded-3xl bg-card p-6 md:p-8 shadow-cute animate-in fade-in slide-in-from-right-4 duration-300 border border-border">
+                     <div className="py-2">
+                       <h2 className="font-display text-2xl text-cocoa mb-8 text-center border-b border-border pb-4">Secure Payment</h2>
+                       
+                       {isPlacingOrder ? (
+                         <div className="space-y-6 text-center py-12">
+                           <div className="mx-auto w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+                           <p className="font-bold text-cocoa text-xl">Redirecting to Razorpay...</p>
+                           <p className="text-sm text-muted-foreground max-w-xs mx-auto">Please do not refresh or close this page until payment is completed.</p>
+                         </div>
+                       ) : (
+                         <div className="max-w-md mx-auto space-y-6">
+                           
+                           {/* Main Payment Panel */}
+                           <div className="rounded-2xl bg-[#fcf9f2] border border-border p-8 text-center shadow-sm">
+                             <div className="text-sm font-semibold text-muted-foreground mb-2 uppercase tracking-widest">Amount to Pay</div>
+                             <div className="text-5xl font-display font-black text-cocoa mb-2 tracking-tight">{formatINR(total)}</div>
+                             <div className="text-xs text-muted-foreground mb-8">Inclusive of all taxes</div>
+                             
+                             <div className="border-t border-border pt-6">
+                               <div className="text-xs font-semibold text-muted-foreground mb-3 uppercase tracking-wider">Selected Method</div>
+                               <div className="inline-flex items-center justify-center gap-3 bg-white border border-border px-6 py-3 rounded-xl shadow-sm mb-4">
+                                 {formData.paymentMethod === 'upi' && <SmartphoneNfc className="h-5 w-5 text-primary" />}
+                                 {formData.paymentMethod === 'card' && <CreditCard className="h-5 w-5 text-primary" />}
+                                 {formData.paymentMethod === 'netbanking' && <Landmark className="h-5 w-5 text-primary" />}
+                                 <span className="font-bold text-cocoa text-lg">{paymentMethodLabels[formData.paymentMethod] || formData.paymentMethod}</span>
+                               </div>
+                               <div>
+                                 <button type="button" onClick={() => setActiveStep("step-2")} className="text-sm font-bold text-primary hover:underline transition-colors">
+                                   Change Payment Method
+                                 </button>
+                               </div>
+                             </div>
+                           </div>
+
+                           {/* Billing Summary within Step 3 */}
+                           <div className="rounded-2xl border border-border bg-white p-5 space-y-3 text-sm">
+                              <h3 className="font-semibold text-cocoa border-b border-border pb-2 mb-3">Billing Summary</h3>
+                              <div className="flex justify-between text-muted-foreground">
+                                <span>Subtotal</span>
+                                <span>{formatINR(subtotal)}</span>
+                              </div>
+                              <div className="flex justify-between text-muted-foreground">
+                                <span>Shipping</span>
+                                <span>{shipping === 0 ? "Free" : formatINR(shipping)}</span>
+                              </div>
+                              {discount > 0 && (
+                                <div className="flex justify-between text-green-600">
+                                  <span>Discount</span>
+                                  <span>- {formatINR(discount)}</span>
+                                </div>
+                              )}
+                              <div className="flex justify-between font-bold text-cocoa pt-2 border-t border-border text-base">
+                                <span>Total</span>
+                                <span>{formatINR(total)}</span>
+                              </div>
+                           </div>
+                           
+                           {/* Security Badges */}
+                           <div className="flex flex-wrap justify-center items-center gap-x-6 gap-y-3 text-xs font-bold text-green-700 py-2">
+                             <span className="flex items-center gap-1.5"><ShieldCheck className="h-4 w-4" /> 256-bit SSL Encryption</span>
+                             <span className="flex items-center gap-1.5"><Lock className="h-4 w-4" /> Secure Checkout</span>
+                             <span className="flex items-center gap-1.5 text-blue-600">Powered by Razorpay</span>
+                           </div>
+
+                           {/* CTA */}
+                           <div className="space-y-4">
+                             <button
+                               type="submit"
+                               disabled={isPlacingOrder}
+                               className="flex w-full items-center justify-center gap-2 rounded-full bg-primary px-8 py-4 text-xl font-bold text-primary-foreground shadow-pop transition-transform hover:-translate-y-0.5 active:scale-95"
+                             >
+                               Continue to Razorpay <ArrowRight className="h-5 w-5" />
+                             </button>
+                             
+                             <div className="rounded-xl bg-blue-50/50 border border-blue-100 p-4 text-center">
+                               <p className="text-xs text-muted-foreground leading-relaxed">
+                                 After clicking Continue to Razorpay, a secure Razorpay payment window will open. Please do not refresh or close this page until payment is completed.
+                               </p>
+                             </div>
+                           </div>
+                           
+                         </div>
+                       )}
+                     </div>
                   </div>
                 )}
 
@@ -649,7 +714,7 @@ function CheckoutPage() {
                 <div className="font-bold text-cocoa mb-1">Expected Delivery</div>
                 <div className="text-muted-foreground">{deliveryString}</div>
                 <div className="mt-3 font-bold text-cocoa mb-1">Shipping Partner</div>
-                <div className="text-muted-foreground">DTDC / ST Courier</div>
+                <div className="text-muted-foreground">DTDC Courier</div>
                 {shipping > 0 && (
                   <div className="mt-3 text-primary font-bold text-xs">Free Shipping above {formatINR(3000)}</div>
                 )}
