@@ -1,0 +1,281 @@
+import { createFileRoute } from "@tanstack/react-router";
+import { useDashboardStats } from "@/lib/admin/dashboard-api";
+import { RevenueCards } from "@/components/admin/dashboard/revenue-cards";
+import { RevenueChart } from "@/components/admin/dashboard/revenue-chart";
+import { TopProductsWidget } from "@/components/admin/dashboard/top-products-widget";
+import { LowStockBadge } from "@/components/admin/dashboard/low-stock-badge";
+import { PendingOrdersBadge } from "@/components/admin/dashboard/pending-orders-badge";
+import { RecentActivityFeed } from "@/components/admin/dashboard/recent-activity-feed";
+import { Skeleton } from "@/components/ui/skeleton";
+
+export const Route = createFileRoute("/admin/dashboard")({
+  component: DashboardPage,
+});
+
+function DashboardPage() {
+  const { data, isLoading } = useDashboardStats();
+
+  if (isLoading || !data) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="font-display text-3xl font-bold text-cocoa">Dashboard</h1>
+          <p className="text-muted-foreground mt-1">Here's what's happening with your store today.</p>
+        </div>
+        
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <Skeleton className="h-[120px] rounded-xl" />
+          <Skeleton className="h-[120px] rounded-xl" />
+          <Skeleton className="h-[120px] rounded-xl" />
+          <Skeleton className="h-[120px] rounded-xl" />
+        </div>
+
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-5">
+          <Skeleton className="h-[400px] rounded-xl lg:col-span-3" />
+          <Skeleton className="h-[400px] rounded-xl lg:col-span-2" />
+        </div>
+
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+          <div className="flex flex-col gap-6 md:col-span-1">
+            <Skeleton className="h-[120px] rounded-xl" />
+            <Skeleton className="h-[120px] rounded-xl" />
+          </div>
+          <Skeleton className="h-[300px] rounded-xl md:col-span-2" />
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6 pb-12">
+      <div>
+        <h1 className="font-display text-3xl font-bold text-cocoa">Dashboard</h1>
+        <p className="text-muted-foreground mt-1">Here's what's happening with your store today.</p>
+      </div>
+
+      {/* Top Row: Revenue Cards */}
+      <RevenueCards data={data.revenue} />
+
+      {/* Middle Row: Chart & Top Products */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-5">
+        <RevenueChart data={data.chartData} />
+        <TopProductsWidget data={data.topProducts} />
+      </div>
+
+      {/* Bottom Row: Badges & Activity */}
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+        <div className="flex flex-col gap-6 md:col-span-1">
+          <PendingOrdersBadge count={data.pendingOrdersCount} />
+          <LowStockBadge count={data.lowStockCount} />
+        </div>
+        <div className="md:col-span-2">
+          <RecentActivityFeed data={data.recentActivity} />
+        </div>
+      </div>
+    </div>
+  );
+}
+import { createFileRoute } from "@tanstack/react-router";
+import { z } from "zod";
+import { OrderTable } from "@/components/admin/orders/order-table";
+import { OrderFilters } from "@/components/admin/orders/order-filters";
+import { useOrders, OrderFilters as OrderFiltersType } from "@/lib/admin/orders-api";
+import { useState, useEffect } from "react";
+
+const searchSchema = z.object({
+  status: z.string().optional(),
+});
+
+export const Route = createFileRoute("/admin/orders")({
+  component: OrdersPage,
+  validateSearch: searchSchema,
+});
+
+function OrdersPage() {
+  const { status } = Route.useSearch();
+
+  const [filters, setFilters] = useState<OrderFiltersType>({
+    status: status || "all",
+    paymentMethod: "all",
+    search: "",
+  });
+
+  // Sync URL search param with internal state if it changes
+  useEffect(() => {
+    if (status && status !== filters.status) {
+      setFilters((prev) => ({ ...prev, status }));
+    }
+  }, [status]);
+
+  const { data: orders = [], isLoading } = useOrders(filters);
+
+  return (
+    <div className="space-y-6 pb-24">
+      <div className="flex items-center justify-between print:hidden">
+        <div>
+          <h1 className="font-display text-3xl font-bold text-cocoa capitalize">Orders</h1>
+          <p className="text-muted-foreground mt-1">
+            Manage your customer orders, track shipments, and print packing slips.
+          </p>
+        </div>
+      </div>
+
+      <div className="space-y-4 print:hidden">
+        <OrderFilters filters={filters} onChange={setFilters} />
+        <OrderTable data={orders} isLoading={isLoading} />
+      </div>
+    </div>
+  );
+}
+import { createFileRoute } from "@tanstack/react-router";
+import { z } from "zod";
+import { CustomerTable } from "@/components/admin/customers/customer-table";
+import { useCustomers } from "@/lib/admin/customers-api";
+import { useState } from "react";
+import { Input } from "@/components/ui/input";
+import { Search } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
+const searchSchema = z.object({
+  search: z.string().optional(),
+  sort: z.enum(["spend", "recent"]).optional(),
+});
+
+export const Route = createFileRoute("/admin/customers/")({
+  component: CustomersPage,
+  validateSearch: searchSchema,
+});
+
+function CustomersPage() {
+  const { search, sort } = Route.useSearch();
+  const navigate = Route.useNavigate();
+
+  const [localSearch, setLocalSearch] = useState(search || "");
+  const [localSort, setLocalSort] = useState<"spend" | "recent">(sort || "recent");
+
+  const { data: customers = [], isLoading } = useCustomers(localSearch, localSort);
+
+  const handleSearchChange = (val: string) => {
+    setLocalSearch(val);
+    navigate({
+      search: (old) => ({ ...old, search: val || undefined }),
+      replace: true,
+    });
+  };
+
+  const handleSortChange = (val: "spend" | "recent") => {
+    setLocalSort(val);
+    navigate({
+      search: (old) => ({ ...old, sort: val === "recent" ? undefined : val }),
+      replace: true,
+    });
+  };
+
+  return (
+    <div className="space-y-6 pb-24">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="font-display text-3xl font-bold text-cocoa capitalize">Customers</h1>
+          <p className="text-muted-foreground mt-1">
+            Manage your customer list, view their lifetime value, and assign VIP tags.
+          </p>
+        </div>
+
+        <div className="flex gap-2 w-full sm:w-auto">
+          <div className="relative flex-1 sm:w-64">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search by name, email, phone..."
+              value={localSearch}
+              onChange={(e) => handleSearchChange(e.target.value)}
+              className="pl-9 rounded-full border-cocoa/20 bg-white focus-visible:ring-primary h-10 w-full"
+            />
+          </div>
+          <Select value={localSort} onValueChange={handleSortChange}>
+            <SelectTrigger className="w-[160px] rounded-full bg-white border-cocoa/20 shrink-0">
+              <SelectValue placeholder="Sort by" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="recent">Most Recent</SelectItem>
+              <SelectItem value="spend">Highest Spend (LTV)</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      <CustomerTable data={customers} isLoading={isLoading} />
+    </div>
+  );
+}
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useAdminAuth } from "@/lib/admin/admin-auth";
+import { useCoupons } from "@/lib/admin/coupons-api";
+import { CouponTable } from "@/components/admin/coupons/coupon-table";
+import { Button } from "@/components/ui/button";
+import { Plus, Lock } from "lucide-react";
+
+export const Route = createFileRoute("/admin/coupons/")({
+  component: CouponsIndexPage,
+});
+
+function CouponsIndexPage() {
+  const { isOwner, isLoading: authLoading } = useAdminAuth();
+  const { data: coupons = [], isLoading } = useCoupons();
+
+  if (authLoading) {
+    return (
+      <div className="flex items-center justify-center h-64 text-muted-foreground">
+        Checking permissions...
+      </div>
+    );
+  }
+
+  if (!isOwner) {
+    return (
+      <div className="flex flex-col items-center justify-center h-64 gap-4 text-center">
+        <div className="p-4 rounded-full bg-red-50 text-red-600">
+          <Lock className="h-10 w-10" />
+        </div>
+        <h2 className="text-xl font-bold text-cocoa">Owner Access Only</h2>
+        <p className="text-muted-foreground max-w-sm">
+          Coupon management is restricted to the store owner. Please contact your admin.
+        </p>
+      </div>
+    );
+  }
+
+  const active = coupons.filter((c) => c.active).length;
+  const expired = coupons.filter((c) => {
+    const now = new Date();
+    return new Date(c.end_date) < now;
+  }).length;
+
+  return (
+    <div className="space-y-6 pb-24">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="font-display text-3xl font-bold text-cocoa capitalize">Coupons</h1>
+          <p className="text-muted-foreground mt-1">
+            Create and manage discount codes. Active:{" "}
+            <span className="font-semibold text-emerald-700">{active}</span> · Expired:{" "}
+            <span className="font-semibold text-red-600">{expired}</span>
+          </p>
+        </div>
+        <Button asChild className="rounded-full gap-2">
+          <Link to="/admin/coupons/new">
+            <Plus className="h-4 w-4" />
+            New Coupon
+          </Link>
+        </Button>
+      </div>
+
+      <CouponTable data={coupons} isLoading={isLoading} />
+    </div>
+  );
+}

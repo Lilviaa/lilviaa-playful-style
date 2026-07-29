@@ -111,14 +111,14 @@ function ProductPage() {
         name: product.name,
         price: product.price,
         image: product.image,
-        variant_id: activeVariant?.sku || "",
+        variant_id: activeVariant?.id || "",
       });
     }
   };
 
 
 
-  const cartItem = items.find(i => i.variant_id === (activeVariant?.sku || ""));
+  const cartItem = items.find(i => i.variant_id === (activeVariant?.id || ""));
   const inCart = !!cartItem;
   const currentQty = inCart ? cartItem.qty : qty;
 
@@ -155,7 +155,7 @@ function ProductPage() {
       image: product.image,
       size,
       qty,
-      variant_id: activeVariant?.sku || "",
+      variant_id: activeVariant?.id || "",
     });
     toast.success(`${product.name} added to cart`, {
       description: `Size ${size} · Qty ${qty}`,

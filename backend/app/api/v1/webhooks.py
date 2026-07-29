@@ -8,11 +8,12 @@ from app.core.exceptions import AppError
 
 router = APIRouter()
 
-RAZORPAY_WEBHOOK_SECRET = os.environ.get("RAZORPAY_WEBHOOK_SECRET")
-
 @router.post("/razorpay")
 async def razorpay_webhook(request: Request, x_razorpay_signature: str = Header(None)):
-    if not RAZORPAY_WEBHOOK_SECRET:
+    import os
+    webhook_secret = os.environ.get("RAZORPAY_WEBHOOK_SECRET")
+    
+    if not webhook_secret or webhook_secret == "your_razorpay_webhook_secret":
         raise HTTPException(status_code=500, detail="Webhook secret not configured")
     if not x_razorpay_signature:
         raise HTTPException(status_code=400, detail="Missing signature")
@@ -21,7 +22,7 @@ async def razorpay_webhook(request: Request, x_razorpay_signature: str = Header(
     
     # Verify signature
     generated_signature = hmac.new(
-        RAZORPAY_WEBHOOK_SECRET.encode('utf-8'),
+        webhook_secret.encode('utf-8'),
         payload,
         hashlib.sha256
     ).hexdigest()

@@ -11,13 +11,18 @@ from pydantic import BaseModel
 
 router = APIRouter()
 
-RAZORPAY_KEY_ID = os.environ.get("RAZORPAY_KEY_ID")
-RAZORPAY_KEY_SECRET = os.environ.get("RAZORPAY_KEY_SECRET")
-
 def get_razorpay_client():
-    if not RAZORPAY_KEY_ID or not RAZORPAY_KEY_SECRET:
+    import os
+    key_id = os.environ.get("RAZORPAY_KEY_ID")
+    key_secret = os.environ.get("RAZORPAY_KEY_SECRET")
+    
+    # Check if they are still placeholders
+    if not key_id or key_id == "your_razorpay_key_id":
         return None
-    return razorpay.Client(auth=(RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET))
+    if not key_secret or key_secret == "your_razorpay_key_secret":
+        return None
+        
+    return razorpay.Client(auth=(key_id, key_secret))
 
 class VerifyPaymentRequest(BaseModel):
     order_id: str
@@ -183,10 +188,14 @@ def create_order(order: OrderCreate, request: Request):
         raise AppError("Razorpay is not configured on the server.", status_code=500)
 
     amount_in_paise = int(calculated_total * 100)
+    
+    # Receipt max length is 40 chars in Razorpay
+    short_order_id = str(order_id).replace("-", "")[:30]
+    
     rzp_order_data = {
         "amount": amount_in_paise,
         "currency": "INR",
-        "receipt": f"receipt_{order_id}",
+        "receipt": f"rcpt_{short_order_id}",
         "notes": {
             "order_id": str(order_id)
         }
@@ -211,7 +220,7 @@ def create_order(order: OrderCreate, request: Request):
         "razorpay_order_id": razorpay_order_id,
         "amount": amount_in_paise,
         "currency": "INR",
-        "key_id": RAZORPAY_KEY_ID
+        "key_id": os.environ.get("RAZORPAY_KEY_ID")
     }
 
 @router.post("/verify-payment")

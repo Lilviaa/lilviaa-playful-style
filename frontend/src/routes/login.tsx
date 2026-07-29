@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { useAuth } from "@/lib/auth";
-import { LogIn, UserCircle } from "lucide-react";
+import { LogIn, UserCircle, Eye, EyeOff } from "lucide-react";
 import {
   Form,
   FormControl,
@@ -34,6 +34,7 @@ function LoginPage() {
   const navigate = useNavigate();
   const [errorMsg, setErrorMsg] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -96,7 +97,21 @@ function LoginPage() {
                     <Link to="/forgot-password" className="text-xs text-primary hover:underline">Forgot password?</Link>
                   </div>
                   <FormControl>
-                    <Input type="password" placeholder="••••••••" {...field} className="rounded-xl border-border bg-background" />
+                    <div className="relative">
+                      <Input 
+                        type={showPassword ? "text" : "password"} 
+                        placeholder="••••••••" 
+                        {...field} 
+                        className="rounded-xl border-border bg-background pr-10" 
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      >
+                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
+                    </div>
                   </FormControl>
                   <FormMessage />
                 </FormItem>
