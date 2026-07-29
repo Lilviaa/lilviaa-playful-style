@@ -22,7 +22,7 @@ export function SiteFooter() {
           </p>
           <div className="mt-5 space-y-1.5 text-base text-cream/90">
             <p><strong>Store:</strong> Lil Viaa, Mettupalayam Bus Stop, P.N. Road, Tiruppur, Tamil Nadu</p>
-            <p><strong>Phone:</strong> +91 82201 27481</p>
+            <p><strong>Phone:</strong> +91 82201 27481 / +91 82201 27170</p>
           </div>
           <div className="mt-5 relative group cursor-pointer overflow-hidden rounded-2xl">
             <a 

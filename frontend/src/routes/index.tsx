@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
-import { ArrowRight, Sparkles, Truck, ShieldCheck, Ruler, Star, AlertCircle, Heart, Gem, Baby, MapPin } from "lucide-react";
+import { ArrowRight, Sparkles, Truck, ShieldCheck, Ruler, Star, AlertCircle, Heart, Gem, Baby, MapPin, Store, Globe } from "lucide-react";
 import { useFeaturedProducts, useProducts } from "@/lib/products-api";
 import { useCategories } from "@/lib/categories-api";
 import { ProductCard } from "@/components/product-card";
@@ -23,6 +23,14 @@ const heroImages = [
   "/asset/Images/KVR00361-1-scaled-1-1-1.jpg",
 ];
 
+const marqueeItems = [
+  { icon: Store, text: "Wholesale Orders Available" },
+  { icon: Truck, text: "Free Shipping Above ₹3,000" },
+  { icon: Globe, text: "Worldwide Shipping" },
+  { icon: MapPin, text: "Proudly Made in India" },
+  { icon: Baby, text: "Boys Collection (6 Months – 6 Years)" },
+];
+
 function HomePage() {
   const [currentHeroImage, setCurrentHeroImage] = useState(0);
   const { data: featured = [], isLoading: isLoadingProducts } = useFeaturedProducts();
@@ -38,9 +46,35 @@ function HomePage() {
 
   return (
     <main>
+      <style>{`
+        @keyframes scrollMarquee {
+          from { transform: translateX(0); }
+          to { transform: translateX(-50%); }
+        }
+        .animate-marquee {
+          animation: scrollMarquee 90s linear infinite;
+        }
+        .marquee-container:hover .animate-marquee {
+          animation-play-state: paused;
+        }
+      `}</style>
+      
+      {/* MARQUEE */}
+      <div className="marquee-container relative flex h-10 overflow-hidden bg-blush text-cocoa items-center">
+        <div className="animate-marquee flex w-max items-center">
+          {[...marqueeItems, ...marqueeItems, ...marqueeItems, ...marqueeItems].map((item, i) => (
+            <div key={i} className="flex items-center gap-2 px-8 whitespace-nowrap text-sm font-semibold tracking-wide">
+              <item.icon className="h-4 w-4" />
+              <span>{item.text}</span>
+              <span className="mx-4 opacity-40">•</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
       {/* HERO */}
-      <section className="bg-hero relative overflow-hidden">
-        <div className="mx-auto flex flex-col-reverse md:flex-row-reverse items-stretch max-w-[1500px]">
+      <section className="bg-hero relative overflow-hidden rounded-b-[2.5rem] md:rounded-b-[4rem]">
+        <div className="mx-auto flex flex-col-reverse md:flex-row-reverse items-stretch w-full">
           
           {/* IMAGE HALF */}
           <div className="relative w-full md:w-1/2 h-[450px] md:h-auto min-h-[500px] lg:min-h-[700px]">
@@ -61,10 +95,9 @@ function HomePage() {
               </div>
             </ScrollReveal>
             
-            {/* Decorative Badges */}
             <div className="absolute bottom-6 left-8 z-10 flex flex-col gap-3 md:bottom-8 md:left-8 lg:bottom-12 lg:left-12">
               <span className="inline-flex w-fit items-center gap-2 rounded-full border border-cream/40 bg-cream/80 px-5 py-2.5 text-sm font-bold text-cocoa shadow-sm backdrop-blur-md transition-transform hover:scale-105 cursor-default">
-                ✨ Shop favourite
+                ✨ 6M–6Y Boys
               </span>
               <span className="inline-flex w-fit items-center gap-2 rounded-full border border-cream/40 bg-cream/80 px-5 py-2.5 text-sm font-bold text-cocoa shadow-sm backdrop-blur-md transition-transform hover:scale-105 cursor-default">
                 💚 100% cotton
@@ -76,7 +109,7 @@ function HomePage() {
           <div className="relative z-10 flex w-full flex-col justify-center px-6 py-16 md:w-1/2 md:py-24 lg:px-16">
             <ScrollReveal className="max-w-xl mx-auto md:mr-auto md:ml-0">
               <span className="inline-flex items-center gap-2 rounded-full bg-cream/80 px-4 py-1.5 text-xs font-bold uppercase tracking-wider text-cocoa shadow-cute">
-                <Sparkles className="h-3.5 w-3.5 text-primary" /> New drop · Festive '26
+                <Sparkles className="h-3.5 w-3.5 text-primary" /> Premium Kidswear
               </span>
               <h1 className="mt-8 font-display text-5xl leading-[1.05] text-cocoa md:text-6xl lg:text-7xl">
                 Made for{" "}
@@ -108,12 +141,6 @@ function HomePage() {
                   Shop the collection
                   <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
                 </Link>
-                <Link
-                  to="/about"
-                  className="inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-full border-2 border-cocoa/15 bg-cream/60 px-8 py-3.5 text-sm font-bold text-cocoa hover:bg-cream transition-colors"
-                >
-                  Our story
-                </Link>
               </div>
             </ScrollReveal>
           </div>
@@ -121,28 +148,10 @@ function HomePage() {
         </div>
       </section>
 
-      {/* TRUST BAR */}
-      <ScrollReveal className="border-y border-border/60 bg-card">
-        <div className="mx-auto grid max-w-7xl gap-6 px-6 py-6 sm:grid-cols-2 md:grid-cols-5">
-          {[
-            { icon: Heart, label: "Comfort First" },
-            { icon: Gem, label: "Premium Fabric" },
-            { icon: Baby, label: "6M–6Y Boys" },
-            { icon: MapPin, label: "Made in India" },
-            { icon: Truck, label: "Free Shipping ₹3K+" },
-          ].map(({ icon: Icon, label }) => (
-            <div key={label} className="flex items-center gap-3 text-sm font-semibold text-cocoa">
-              <span className="flex h-9 w-9 items-center justify-center rounded-full bg-sand text-primary">
-                <Icon className="h-4 w-4" />
-              </span>
-              {label}
-            </div>
-          ))}
-        </div>
-      </ScrollReveal>
+
 
       {/* CATEGORIES */}
-      <section className="mx-auto max-w-7xl px-6 py-16">
+      <section className="mx-auto max-w-7xl px-6 pt-8 pb-16">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <p className="text-xs font-bold uppercase tracking-widest text-primary">Shop by mood</p>
@@ -226,7 +235,7 @@ function HomePage() {
       <ScrollReveal className="mx-auto mt-20 max-w-7xl overflow-hidden rounded-[2.5rem] bg-cocoa px-6 py-16 text-cream md:px-16 md:py-24 mb-16">
         <div className="grid gap-10 md:grid-cols-2 md:items-center">
           <div>
-            <p className="text-xs font-bold uppercase tracking-widest text-butter">The lilviaa philosophy</p>
+            <p className="text-xs font-bold uppercase tracking-widest text-butter">At Lil Viaa, We Focus On</p>
             <h2 className="mt-3 font-display text-4xl leading-tight md:text-5xl">
               All-day comfort.<br/>Timeless style.<br/>Lasting quality.
             </h2>
@@ -262,6 +271,26 @@ function HomePage() {
               />
             )}
           </div>
+        </div>
+      </ScrollReveal>
+
+      {/* TRUST BAR */}
+      <ScrollReveal className="border-y border-border/60 bg-card">
+        <div className="mx-auto grid max-w-7xl gap-6 px-6 py-6 sm:grid-cols-2 md:grid-cols-5">
+          {[
+            { icon: Heart, label: "Comfort First" },
+            { icon: Gem, label: "Premium Fabric" },
+            { icon: Baby, label: "6M–6Y Boys" },
+            { icon: MapPin, label: "Made in India" },
+            { icon: Truck, label: "Free Shipping ₹3000" },
+          ].map(({ icon: Icon, label }) => (
+            <div key={label} className="flex items-center gap-3 text-sm font-semibold text-cocoa">
+              <span className="flex h-9 w-9 items-center justify-center rounded-full bg-sand text-primary">
+                <Icon className="h-4 w-4" />
+              </span>
+              {label}
+            </div>
+          ))}
         </div>
       </ScrollReveal>
 
