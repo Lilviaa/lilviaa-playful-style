@@ -589,13 +589,13 @@ function CheckoutPage() {
                              <div className="border-t border-border pt-6">
                                <div className="text-xs font-semibold text-muted-foreground mb-3 uppercase tracking-wider">Selected Method</div>
                                <div className="inline-flex items-center justify-center gap-3 bg-white border border-border px-6 py-3 rounded-xl shadow-sm mb-4">
-                                 {formData.paymentMethod === 'upi' && <SmartphoneNfc className="h-5 w-5 text-primary" />}
-                                 {formData.paymentMethod === 'card' && <CreditCard className="h-5 w-5 text-primary" />}
+                                 {formData.paymentMethod === 'upi' && <img src="/asset/Checkout_logo/upi_logo_icon_169316.png" alt="UPI" className="h-6 w-auto object-contain" />}
+                                 {formData.paymentMethod === 'card' && <div className="flex gap-1.5"><img src="/asset/Checkout_logo/VISA-logo-768x432.png" alt="Visa" className="h-5 w-auto object-contain" /><img src="/asset/Checkout_logo/masterCard.png" alt="Mastercard" className="h-5 w-auto object-contain" /></div>}
                                  {formData.paymentMethod === 'netbanking' && <Landmark className="h-5 w-5 text-primary" />}
                                  <span className="font-bold text-cocoa text-lg">{paymentMethodLabels[formData.paymentMethod] || formData.paymentMethod}</span>
                                </div>
                                <div>
-                                 <button type="button" onClick={() => setActiveStep("step-2")} className="text-sm font-bold text-primary hover:underline transition-colors">
+                                 <button type="button" onClick={() => setActiveStep("step-1")} className="text-sm font-bold text-primary hover:underline transition-colors">
                                    Change Payment Method
                                  </button>
                                </div>
