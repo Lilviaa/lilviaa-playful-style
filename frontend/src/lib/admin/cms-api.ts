@@ -12,12 +12,20 @@ export interface Banner {
   image_url: string | null;
   headline: string;
   subtext: string;
+  description?: string;
   cta_text: string;
   cta_link: string;
   active: boolean;
   start_date: string | null;
   end_date: string | null;
   sort_order: number;
+}
+
+export interface HeroSlide {
+  id: string;
+  image_url: string;
+  sort_order: number;
+  file?: File;
 }
 
 export interface CategoryTile {
@@ -36,24 +44,40 @@ export interface FeaturedProduct {
 
 export interface CmsSection {
   id: string;
-  key: "our_story";
+  key: "our_story" | "featured_products_section";
   title: string;
   body: string;
   image_url: string | null;
+  secondary_image_url?: string | null;
 }
 
 // ==========================================
 // MOCK DATABASE STATE
 // ==========================================
-export let MOCK_BANNERS: Banner[] = [
+const STORAGE_KEY = "lilviaa_cms_mock_data";
+
+const loadMockData = () => {
+  try {
+    const data = localStorage.getItem(STORAGE_KEY);
+    if (data) return JSON.parse(data);
+  } catch (e) {}
+  return null;
+};
+
+const saveMockData = (data: any) => {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+};
+
+export let MOCK_BANNERS: Banner[] = loadMockData()?.banners || [
   {
     id: "BAN-1",
     type: "hero",
-    image_url: "https://images.unsplash.com/photo-1519689680058-324335c77eba?auto=format&fit=crop&q=80&w=1200",
-    headline: "Summer Collection 2024",
-    subtext: "Discover the perfect outfits for your little ones.",
-    cta_text: "Shop Now",
-    cta_link: "/collections/summer",
+    image_url: "",
+    headline: "Made for Little Gentlemen.",
+    subtext: "Premium Kidswear",
+    description: "Every garment is thoughtfully crafted using premium-quality fabrics and timeless designs, ensuring your little ones stay comfortable all day.",
+    cta_text: "Shop the collection",
+    cta_link: "/shop",
     active: true,
     start_date: null,
     end_date: null,
@@ -74,37 +98,55 @@ export let MOCK_BANNERS: Banner[] = [
   }
 ];
 
-export let MOCK_CATEGORY_TILES: CategoryTile[] = [
+export let MOCK_HERO_SLIDES: HeroSlide[] = loadMockData()?.heroSlides || [
+  { id: "HS-1", image_url: "/asset/Images/KVR00022-1-scaled-1-1-1.jpg", sort_order: 1 },
+  { id: "HS-2", image_url: "/asset/Images/KVR00026-1-scaled-1-1-1.jpg", sort_order: 2 },
+  { id: "HS-3", image_url: "/asset/Images/KVR00058-1-scaled-1-1-1.jpg", sort_order: 3 },
+  { id: "HS-4", image_url: "/asset/Images/KVR00114-1-scaled-1-1-1.jpg", sort_order: 4 },
+  { id: "HS-5", image_url: "/asset/Images/KVR00130-1-scaled-1-1-1.jpg", sort_order: 5 },
+  { id: "HS-6", image_url: "/asset/Images/KVR00145-1-scaled-1-1-1.jpg", sort_order: 6 },
+  { id: "HS-7", image_url: "/asset/Images/KVR00238-1-scaled-1-1-1.jpg", sort_order: 7 },
+  { id: "HS-8", image_url: "/asset/Images/KVR00248-1-scaled-1-1-1.jpg", sort_order: 8 },
+];
+
+export let MOCK_CATEGORY_TILES: CategoryTile[] = loadMockData()?.categoryTiles || [
   {
     id: "CT-1",
     image_url: "https://images.unsplash.com/photo-1518831959646-742c3a14ebf7?auto=format&fit=crop&q=80&w=400",
-    label: "Boys",
-    link: "/collections/boys",
+    label: "Kurtas",
+    link: "/shop?category=kurta",
     sort_order: 1,
   },
   {
     id: "CT-2",
     image_url: "https://images.unsplash.com/photo-1514090458221-65bb69cf63e6?auto=format&fit=crop&q=80&w=400",
-    label: "Girls",
-    link: "/collections/girls",
+    label: "Shirts",
+    link: "/shop?category=shirt",
     sort_order: 2,
   },
   {
     id: "CT-3",
     image_url: "https://images.unsplash.com/photo-1522771930-78848d9293e8?auto=format&fit=crop&q=80&w=400",
-    label: "Infants",
-    link: "/collections/infants",
+    label: "Ethnic",
+    link: "/shop?category=ethnic",
     sort_order: 3,
+  },
+  {
+    id: "CT-4",
+    image_url: "https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9?auto=format&fit=crop&q=80&w=400",
+    label: "Party",
+    link: "/shop?category=party",
+    sort_order: 4,
   }
 ];
 
-export let MOCK_FEATURED_PRODUCTS: FeaturedProduct[] = [
+export let MOCK_FEATURED_PRODUCTS: FeaturedProduct[] = loadMockData()?.featuredProducts || [
   { id: "FP-1", product_id: "p_1", sort_order: 1 },
   { id: "FP-2", product_id: "p_2", sort_order: 2 },
   { id: "FP-3", product_id: "p_3", sort_order: 3 },
 ];
 
-export let MOCK_CMS_SECTIONS: CmsSection[] = [
+export let MOCK_CMS_SECTIONS: CmsSection[] = loadMockData()?.cmsSections || [
   {
     id: "CMS-1",
     key: "our_story",
@@ -145,6 +187,7 @@ export function useUpdateBanner() {
       } else {
         MOCK_BANNERS.push(updatedBanner);
       }
+      saveMockData({ banners: MOCK_BANNERS, categoryTiles: MOCK_CATEGORY_TILES, featuredProducts: MOCK_FEATURED_PRODUCTS, cmsSections: MOCK_CMS_SECTIONS });
       return updatedBanner;
     },
     onSuccess: () => {
@@ -171,6 +214,7 @@ export function useUpdateCategoryTiles() {
     mutationFn: async (tiles: CategoryTile[]) => {
       await delay(300);
       MOCK_CATEGORY_TILES = [...tiles];
+      saveMockData({ banners: MOCK_BANNERS, categoryTiles: MOCK_CATEGORY_TILES, featuredProducts: MOCK_FEATURED_PRODUCTS, cmsSections: MOCK_CMS_SECTIONS });
       return tiles;
     },
     onSuccess: () => {
@@ -197,6 +241,7 @@ export function useUpdateFeaturedProducts() {
     mutationFn: async (products: FeaturedProduct[]) => {
       await delay(300);
       MOCK_FEATURED_PRODUCTS = [...products];
+      saveMockData({ banners: MOCK_BANNERS, categoryTiles: MOCK_CATEGORY_TILES, featuredProducts: MOCK_FEATURED_PRODUCTS, cmsSections: MOCK_CMS_SECTIONS });
       return products;
     },
     onSuccess: () => {
@@ -219,20 +264,64 @@ export function useCmsSection(key: string) {
 
 export function useUpdateCmsSection() {
   const queryClient = useQueryClient();
+  
   return useMutation({
     mutationFn: async (section: CmsSection) => {
-      await delay(300);
-      const index = MOCK_CMS_SECTIONS.findIndex(s => s.id === section.id);
-      if (index !== -1) {
-        MOCK_CMS_SECTIONS[index] = section;
+      await new Promise(resolve => setTimeout(resolve, 500));
+      const idx = MOCK_CMS_SECTIONS.findIndex(s => s.key === section.key);
+      if (idx !== -1) {
+        MOCK_CMS_SECTIONS[idx] = section;
       } else {
         MOCK_CMS_SECTIONS.push(section);
       }
+      saveMockData({
+        banners: MOCK_BANNERS,
+        categoryTiles: MOCK_CATEGORY_TILES,
+        featuredProducts: MOCK_FEATURED_PRODUCTS,
+        cmsSections: MOCK_CMS_SECTIONS,
+        heroSlides: MOCK_HERO_SLIDES
+      });
       return section;
     },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["admin-cms-section", data.key] });
+    onSuccess: (_, section) => {
+      queryClient.invalidateQueries({ queryKey: ["cms_section", section.key] });
       toast.success("Section content saved.");
+    },
+  });
+}
+
+// ==========================================
+// HERO SLIDES HOOKS
+// ==========================================
+export function useHeroSlides() {
+  return useQuery({
+    queryKey: ["hero_slides"],
+    queryFn: async () => {
+      await new Promise(resolve => setTimeout(resolve, 500));
+      return [...MOCK_HERO_SLIDES].sort((a, b) => a.sort_order - b.sort_order);
+    },
+  });
+}
+
+export function useUpdateHeroSlides() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (slides: HeroSlide[]) => {
+      await new Promise(resolve => setTimeout(resolve, 500));
+      MOCK_HERO_SLIDES = [...slides];
+      saveMockData({
+        banners: MOCK_BANNERS,
+        categoryTiles: MOCK_CATEGORY_TILES,
+        featuredProducts: MOCK_FEATURED_PRODUCTS,
+        cmsSections: MOCK_CMS_SECTIONS,
+        heroSlides: MOCK_HERO_SLIDES
+      });
+      return slides;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["hero_slides"] });
+      toast.success("Default slides saved successfully!");
     },
   });
 }

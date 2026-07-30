@@ -40,10 +40,42 @@ export function PromoStripEditor() {
     return <div className="p-8 text-center text-muted-foreground animate-pulse bg-sand/20 rounded-2xl">Loading Promo Config...</div>;
   }
 
+  const serverBanner = banners?.find(b => b.type === "promo_strip");
+  const hasUnsavedChanges = serverBanner && localBanner ? (
+    localBanner.headline !== serverBanner.headline ||
+    localBanner.cta_link !== serverBanner.cta_link ||
+    localBanner.active !== serverBanner.active
+  ) : false;
+
   const handleSave = () => {
     updateBanner(localBanner, {
       onSuccess: () => toast.success("Promo strip settings saved!")
     });
+  };
+
+  const handleSetAsDefault = () => {
+    localStorage.setItem('lilviaa_custom_default_promo', JSON.stringify(localBanner));
+    toast.success("Current settings saved as the new default!");
+  };
+
+  const handleResetToDefault = () => {
+    try {
+      const savedDefault = localStorage.getItem('lilviaa_custom_default_promo');
+      if (savedDefault) {
+        setLocalBanner(JSON.parse(savedDefault));
+        toast.info("Restored custom default values.");
+        return;
+      }
+    } catch (e) {}
+
+    setLocalBanner({
+      ...localBanner,
+      headline: "Wholesale Orders Available • 🚚 Free Shipping Above ₹3,000 • 🌍 Worldwide Shipping • 🇮🇳 Proudly Made in India • 👶 Boys Collection (6 Months – 6 Years)",
+      cta_link: "",
+      cta_text: "",
+      active: true,
+    });
+    toast.info("Restored original values. Click 'Save Changes' to apply.");
   };
 
   return (
@@ -74,8 +106,9 @@ export function PromoStripEditor() {
           <Input 
             value={localBanner.headline} 
             onChange={(e) => setLocalBanner({ ...localBanner, headline: e.target.value })} 
-            placeholder="e.g. Free shipping on orders over ₹1000! 🚚" 
+            placeholder="e.g. Free shipping! | New Arrivals | Sale" 
           />
+          <p className="text-[10px] text-muted-foreground">Tip: Use the <code className="bg-sand/30 px-1 py-0.5 rounded font-bold">|</code> (pipe) character to separate sentences. It will automatically become a bullet point!</p>
         </div>
         
         <div className="space-y-1.5">
@@ -95,14 +128,39 @@ export function PromoStripEditor() {
       {localBanner.active && localBanner.headline && (
         <div className="mt-4 border rounded overflow-hidden">
           <div className="text-xs font-semibold text-muted-foreground bg-sand/30 px-3 py-1.5 border-b">Live Preview</div>
-          <div className="bg-primary text-primary-foreground text-center py-2 text-sm font-medium">
-            {localBanner.headline}
+          <div className="bg-primary text-primary-foreground py-2 text-sm font-medium overflow-hidden whitespace-nowrap">
+            <div className="flex animate-[scrollMarquee_15s_linear_infinite] w-max items-center">
+              {Array(3).fill(localBanner.headline).map((text, i) => (
+                <div key={i} className="flex items-center px-8 whitespace-nowrap text-sm font-semibold tracking-wide">
+                  {text.split(/\||•/).map((part: string, idx: number, arr: string[]) => (
+                    <span key={idx} className="flex items-center">
+                      <span>{part.trim()}</span>
+                      {localBanner.cta_text && idx === arr.length - 1 && <span className="underline ml-2 mr-1">{localBanner.cta_text}</span>}
+                      {idx < arr.length - 1 && <span className="mx-6 opacity-40">•</span>}
+                    </span>
+                  ))}
+                  <span className="mx-6 opacity-40">•</span>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       )}
       
-      <div className="pt-4 border-t border-cocoa/10 flex justify-end">
-        <Button onClick={handleSave} disabled={isPending} className="bg-cocoa hover:bg-cocoa/90 text-white rounded-full px-8">
+      <div className="pt-4 border-t border-cocoa/10 flex items-center justify-end gap-3">
+        <Button variant="ghost" onClick={handleSetAsDefault} className="rounded-full px-4 text-xs font-semibold text-cocoa/50 hover:text-cocoa hover:bg-cocoa/5 mr-auto">
+          Set as Default
+        </Button>
+        {hasUnsavedChanges && (
+          <span className="text-[11px] font-medium text-amber-600 mr-2 flex items-center gap-1.5">
+            <span className="h-1.5 w-1.5 rounded-full bg-amber-500"></span>
+            Unsaved changes
+          </span>
+        )}
+        <Button variant="outline" onClick={handleResetToDefault} className="rounded-full px-6 text-cocoa/70 border-cocoa/20 hover:bg-cocoa/5">
+          Reset to Default
+        </Button>
+        <Button onClick={handleSave} disabled={isPending || !hasUnsavedChanges} className="bg-cocoa hover:bg-cocoa/90 disabled:opacity-50 text-white rounded-full px-8 transition-all">
           {isPending ? "Saving..." : "Save Changes"}
         </Button>
       </div>

@@ -14,6 +14,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { CustomerReviews } from "@/components/customer-reviews";
 
 export const Route = createFileRoute("/products/$slug")({
   loader: async ({ params }): Promise<{ product: Product }> => {
@@ -536,6 +537,8 @@ function ProductPage() {
           </Accordion>
         </div>
       </div>
+
+      <CustomerReviews />
 
       <section className="mx-auto max-w-7xl px-6 py-16 border-t border-border mt-8">
         <h2 className="font-display text-2xl text-cocoa md:text-3xl text-center uppercase tracking-widest">You may also love</h2>
