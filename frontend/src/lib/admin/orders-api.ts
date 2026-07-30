@@ -53,10 +53,17 @@ export interface OrderFilters {
   search?: string;
 }
 
+export interface OrdersResponse {
+  orders: Order[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
 export function useOrders(filters?: OrderFilters) {
   return useQuery({
     queryKey: ["admin-orders", filters],
-    queryFn: async (): Promise<Order[]> => {
+    queryFn: async (): Promise<OrdersResponse> => {
       const params = new URLSearchParams();
       if (filters?.status && filters.status !== "all") params.set("status", filters.status);
       if (filters?.paymentMethod && filters.paymentMethod !== "all") params.set("paymentMethod", filters.paymentMethod);

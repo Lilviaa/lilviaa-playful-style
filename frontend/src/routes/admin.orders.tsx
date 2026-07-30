@@ -30,7 +30,8 @@ function OrdersPage() {
     }
   }, [status]);
 
-  const { data: orders = [], isLoading } = useOrders(filters);
+  const { data, isLoading } = useOrders(filters);
+  const orders = data?.orders || [];
 
   return (
     <div className="space-y-6 pb-24">

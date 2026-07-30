@@ -306,6 +306,108 @@ def verify_payment(req: VerifyPaymentRequest):
 
     return {"success": True}
 
+@router.post("/{order_id}/retry-payment")
+def retry_payment(order_id: str, user: dict = Depends(get_current_user_token)):
+    supabase = get_supabase()
+    user_id = user["sub"]
+
+    # 1. Fetch order and verify ownership/state
+    order_res = supabase.table("orders").select("*, order_items(*)").eq("id", order_id).execute()
+    if not order_res.data:
+        raise AppError("Order not found", status_code=404)
+    
+    order = order_res.data[0]
+    if order["user_id"] != user_id:
+        raise AppError("Forbidden", status_code=403)
+        
+    if order["status"] not in ["pending", "cancelled"]:
+        raise AppError(f"Cannot retry payment for order in '{order['status']}' state.", status_code=400)
+        
+    if order["payment_method"] != "razorpay":
+        raise AppError("Retry is only applicable for Razorpay orders", status_code=400)
+
+    # 2. Rate limiting check (max 5 retries)
+    # We count how many failed/pending transactions exist for this order_id
+    tx_count_res = supabase.table("payment_transactions").select("id", count="exact").eq("order_id", order_id).execute()
+    if (tx_count_res.count or 0) >= 5:
+        raise AppError("Maximum retry limit exceeded for this order. Please create a new order.", status_code=429)
+
+    # 3. Check stock availability for all items and re-reserve
+    items = order["order_items"]
+    now = datetime.now(timezone.utc)
+    hold_expiry = now + timedelta(minutes=15)
+    
+    # We must do this carefully. Since they could be out of stock, check all first.
+    variant_updates = []
+    for item in items:
+        var_id = item["product_variant_id"]
+        qty = item["quantity"]
+        v_res = supabase.table("product_variants").select("stock, reserved_stock, products(name)").eq("id", var_id).execute()
+        if not v_res.data:
+            raise AppError("A product in this order no longer exists", status_code=400)
+            
+        variant = v_res.data[0]
+        available = variant["stock"] - variant.get("reserved_stock", 0)
+        pname = variant.get("products", {}).get("name", "Item")
+        
+        # If the order was cancelled, the webhook already released the stock.
+        # If the order is pending but expired, the CRON releases the stock.
+        # So we just check if current available stock >= qty.
+        if available < qty:
+            raise AppError(f"Sorry, '{pname}' is no longer available in the requested quantity.", status_code=400)
+            
+        variant_updates.append({
+            "id": var_id,
+            "new_reserved": variant.get("reserved_stock", 0) + qty
+        })
+
+    # Apply reservations
+    for update in variant_updates:
+        supabase.table("product_variants").update({
+            "reserved_stock": update["new_reserved"],
+            "reservation_expires_at": hold_expiry.isoformat()
+        }).eq("id", update["id"]).execute()
+
+    # 4. Create new Razorpay order
+    rzp_client = get_razorpay_client()
+    if not rzp_client:
+        # Revert reservations if Razorpay is unconfigured
+        for update in variant_updates:
+            v_res = supabase.table("product_variants").select("reserved_stock").eq("id", update["id"]).execute()
+            if v_res.data:
+                supabase.table("product_variants").update({
+                    "reserved_stock": max(0, v_res.data[0].get("reserved_stock", 0) - item["quantity"])
+                }).eq("id", update["id"]).execute()
+        raise AppError("Razorpay is not configured", status_code=500)
+
+    amount_paise = int(float(order["total_amount"]) * 100)
+    rzp_order = rzp_client.order.create({
+        "amount": amount_paise,
+        "currency": "INR",
+        "receipt": f"retry_{order_id[:8]}"
+    })
+    new_rzp_order_id = rzp_order["id"]
+
+    # 5. Save new transaction row
+    supabase.table("payment_transactions").insert({
+        "order_id": order_id,
+        "razorpay_order_id": new_rzp_order_id,
+        "status": "pending",
+        "amount": float(order["total_amount"])
+    }).execute()
+    
+    # 6. Revert order status to pending if it was cancelled
+    if order["status"] == "cancelled":
+        supabase.table("orders").update({"status": "pending"}).eq("id", order_id).execute()
+
+    return {
+        "id": order_id,
+        "razorpay_order_id": new_rzp_order_id,
+        "amount": amount_paise,
+        "currency": "INR",
+        "key_id": os.environ.get("RAZORPAY_KEY_ID")
+    }
+
 
 class ValidateCouponRequest(BaseModel):
     code: str

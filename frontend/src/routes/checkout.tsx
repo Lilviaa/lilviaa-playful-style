@@ -219,6 +219,7 @@ function CheckoutPage() {
           name: values.fullName,
           email: values.email,
           contact: values.phone,
+          method: values.paymentMethod,
         },
         theme: {
           color: "#9C6644", // cocoa
@@ -227,7 +228,11 @@ function CheckoutPage() {
 
       const rzp = new (window as any).Razorpay(options);
       rzp.on('payment.failed', function (response: any) {
-        setPaymentError("Payment failed: " + response.error.description);
+        // Clear cart if desired, but we might want them to retry. For now, leave cart intact.
+        navigate({ 
+          to: "/checkout/payment-failed",
+          search: { order_id: orderData.id, reason: response.error.description }
+        });
       });
       rzp.open();
     } catch (error: any) {

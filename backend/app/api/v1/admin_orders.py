@@ -23,20 +23,33 @@ def list_orders(
     status: Optional[str] = Query(None),
     payment_method: Optional[str] = Query(None, alias="paymentMethod"),
     search: Optional[str] = Query(None),
+    page: int = Query(1, ge=1),
+    limit: int = Query(20, ge=1, le=100)
 ):
     supabase = get_supabase()
 
     query = supabase.table("orders") \
-        .select("*, order_items(*, product_variants(size, color, sku, products(name, slug))), addresses(*), payment_transactions(status, razorpay_payment_id)") \
+        .select("*, order_items(*, product_variants(size, color, sku, products(name, slug))), addresses(*), payment_transactions(status, razorpay_payment_id)", count="exact") \
         .order("created_at", desc=True)
 
     if status and status != "all":
         query = query.eq("status", status)
     if payment_method and payment_method != "all":
         query = query.eq("payment_method", payment_method)
+        
+    if search:
+        # Assuming ID or phone can be searched via DB if possible, but PostgREST doesn't support easy OR across foreign tables
+        # For a truly large DB, we'd use a dedicated RPC. For now, doing an ilike on id directly
+        query = query.ilike("id", f"%{search}%")
+
+    start_idx = (page - 1) * limit
+    end_idx = start_idx + limit - 1
+    
+    query = query.range(start_idx, end_idx)
 
     res = query.execute()
     orders = res.data or []
+    total_count = res.count or 0
 
     # Transform to match frontend Order interface
     result = []
@@ -96,20 +109,14 @@ def list_orders(
             "items": items,
         }
 
-        # Search filter (applied after fetch since Supabase doesn't support OR across joins easily)
-        if search:
-            q = search.lower()
-            searchable = (
-                order_obj["id"].lower() +
-                order_obj["shipping_address"]["fullName"].lower() +
-                order_obj["shipping_address"]["phone"]
-            )
-            if q not in searchable:
-                continue
-
         result.append(order_obj)
 
-    return result
+    return {
+        "orders": result,
+        "total": total_count,
+        "page": page,
+        "limit": limit
+    }
 
 
 @router.patch("/{order_id}/status")

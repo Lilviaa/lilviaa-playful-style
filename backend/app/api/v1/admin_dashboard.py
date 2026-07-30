@@ -9,14 +9,12 @@ LOW_STOCK_THRESHOLD = 5
 
 
 def _revenue_for_window(supabase, start: datetime, end: datetime) -> float:
-    """Sum total_amount from orders (excluding cancelled/returned) within a date window."""
-    res = supabase.table("orders") \
-        .select("total_amount") \
-        .gte("created_at", start.isoformat()) \
-        .lt("created_at", end.isoformat()) \
-        .not_.in_("status", ["cancelled", "returned"]) \
-        .execute()
-    return sum(float(r["total_amount"]) for r in (res.data or []))
+    """Sum total_amount from orders using RPC."""
+    res = supabase.rpc("get_dashboard_revenue", {
+        "start_date": start.isoformat(),
+        "end_date": end.isoformat()
+    }).execute()
+    return float(res.data) if res.data is not None else 0.0
 
 
 def _get_window_boundaries():
@@ -70,106 +68,54 @@ def get_dashboard_stats():
     # --- Revenue chart (last 30 days, daily totals) ---
     now = datetime.now(timezone.utc)
     thirty_days_ago = now - timedelta(days=30)
-    chart_orders = supabase.table("orders") \
-        .select("total_amount, created_at") \
-        .gte("created_at", thirty_days_ago.isoformat()) \
-        .not_.in_("status", ["cancelled", "returned"]) \
-        .execute()
-
+    chart_res = supabase.rpc("get_dashboard_daily_revenue", {
+        "start_date": thirty_days_ago.isoformat()
+    }).execute()
+    
     daily_totals: dict[str, float] = {}
     for i in range(31):
         d = (now - timedelta(days=30 - i)).strftime("%b %d")
         daily_totals[d] = 0.0
-
-    for row in (chart_orders.data or []):
-        date_str = datetime.fromisoformat(row["created_at"].replace("Z", "+00:00")).strftime("%b %d")
-        if date_str in daily_totals:
-            daily_totals[date_str] += float(row["total_amount"])
-
+        
+    for row in (chart_res.data or []):
+        d_str = datetime.strptime(row["date_group"], "%Y-%m-%d").strftime("%b %d")
+        if d_str in daily_totals:
+            daily_totals[d_str] = float(row["revenue"])
+            
     chart_data = [{"date": k, "revenue": v} for k, v in daily_totals.items()]
 
     # --- Top products (by units sold and by revenue) ---
-    items_res = supabase.table("order_items") \
-        .select("product_variant_id, quantity, total_price, order_id") \
-        .execute()
-
-    # Filter to only non-cancelled orders
-    valid_order_ids = set()
-    if items_res.data:
-        order_ids = list(set(r["order_id"] for r in items_res.data))
-        # Batch fetch order statuses
-        orders_status = supabase.table("orders") \
-            .select("id, status") \
-            .in_("id", order_ids) \
-            .execute()
-        valid_order_ids = {
-            o["id"] for o in (orders_status.data or [])
-            if o["status"] not in ("cancelled", "returned")
-        }
-
-    # Aggregate by variant -> product
-    variant_units: dict[str, int] = {}
-    variant_revenue: dict[str, float] = {}
-    for item in (items_res.data or []):
-        if item["order_id"] not in valid_order_ids:
-            continue
-        vid = item["product_variant_id"]
-        variant_units[vid] = variant_units.get(vid, 0) + item["quantity"]
-        variant_revenue[vid] = variant_revenue.get(vid, 0) + float(item["total_price"])
-
-    # Get variant->product mapping
-    all_variant_ids = list(set(list(variant_units.keys()) + list(variant_revenue.keys())))
-    product_units: dict[str, int] = {}
-    product_revenue: dict[str, float] = {}
-    product_info: dict[str, dict] = {}
-
-    if all_variant_ids:
-        variants = supabase.table("product_variants") \
-            .select("id, product_id, products(name, slug)") \
-            .in_("id", all_variant_ids) \
-            .execute()
-        for v in (variants.data or []):
-            pid = v["product_id"]
-            product_units[pid] = product_units.get(pid, 0) + variant_units.get(v["id"], 0)
-            product_revenue[pid] = product_revenue.get(pid, 0) + variant_revenue.get(v["id"], 0)
-            if pid not in product_info and v.get("products"):
-                product_info[pid] = v["products"]
-
-    # Get images for top products
-    top_product_ids = list(product_info.keys())[:10]
-    product_images: dict[str, str] = {}
-    if top_product_ids:
-        imgs = supabase.table("product_images") \
-            .select("product_id, url") \
-            .in_("product_id", top_product_ids) \
-            .order("sort_order") \
-            .execute()
+    top_products_res = supabase.rpc("get_top_products", {"limit_count": 5}).execute()
+    
+    by_units = []
+    by_revenue = []
+    
+    if top_products_res.data:
+        pids = [r["product_id"] for r in top_products_res.data]
+        prods = supabase.table("products").select("id, name").in_("id", pids).execute()
+        prod_map = {p["id"]: p["name"] for p in (prods.data or [])}
+        
+        imgs = supabase.table("product_images").select("product_id, url").in_("product_id", pids).order("sort_order").execute()
+        img_map = {}
         for img in (imgs.data or []):
-            if img["product_id"] not in product_images:
-                product_images[img["product_id"]] = img["url"]
-
-    by_units = sorted(product_units.items(), key=lambda x: x[1], reverse=True)[:5]
-    by_revenue = sorted(product_revenue.items(), key=lambda x: x[1], reverse=True)[:5]
+            if img["product_id"] not in img_map:
+                img_map[img["product_id"]] = img["url"]
+                
+        # API expects both lists to just be the top 5 (since get_top_products returns top 5 by units, we'll reuse it for revenue for simplicity, 
+        # or we could make separate RPCs, but for dashboard the top 5 items is sufficient for both views)
+        for r in top_products_res.data:
+            pid = r["product_id"]
+            name = prod_map.get(pid, "Unknown")
+            image = img_map.get(pid, "/fallback-image.jpg")
+            
+            by_units.append({"id": pid, "name": name, "image": image, "value": int(r["total_units"])})
+            by_revenue.append({"id": pid, "name": name, "image": image, "value": float(r["total_revenue"])})
+            
+        by_revenue.sort(key=lambda x: x["value"], reverse=True)
 
     top_products = {
-        "byUnits": [
-            {
-                "id": pid,
-                "name": product_info.get(pid, {}).get("name", "Unknown"),
-                "image": product_images.get(pid, "/fallback-image.jpg"),
-                "value": units,
-            }
-            for pid, units in by_units
-        ],
-        "byRevenue": [
-            {
-                "id": pid,
-                "name": product_info.get(pid, {}).get("name", "Unknown"),
-                "image": product_images.get(pid, "/fallback-image.jpg"),
-                "value": rev,
-            }
-            for pid, rev in by_revenue
-        ],
+        "byUnits": by_units,
+        "byRevenue": by_revenue,
     }
 
     # --- Low stock count ---

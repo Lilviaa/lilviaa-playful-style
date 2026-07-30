@@ -59,15 +59,19 @@ def map_product(row: dict) -> dict:
         if color_name and color_hex and color_name not in colors_dict:
             colors_dict[color_name] = color_hex
             
+        stock = v.get("stock") or 0
+        reserved = v.get("reserved_stock") or 0
+        available_stock = max(0, stock - reserved)
+
         variants.append({
             "id": v.get("id"),
             "size": v.get("size"),
             "color": v.get("color"),
             "sku": v.get("sku"),
-            "stock": v.get("stock") or 0,
+            "stock": available_stock,
             "price_override": v.get("price_override")
         })
-        total_stock += v.get("stock") or 0
+        total_stock += available_stock
             
     colors = [{"name": name, "hex": hex_code} for name, hex_code in colors_dict.items()]
 
@@ -105,9 +109,11 @@ def map_product(row: dict) -> dict:
 def get_products(
     category: Optional[str] = None,
     sort: Optional[str] = Query(None, description="price_asc, price_desc, newest"),
-    q: Optional[str] = Query(None, description="Search term for name and description")
+    q: Optional[str] = Query(None, description="Search term for name and description"),
+    limit: int = Query(100, ge=1, le=500),
+    offset: int = Query(0, ge=0)
 ):
-    """Fetch all published products with optional category filtering, sorting, and search."""
+    """Fetch published products with optional filtering, sorting, search, and pagination."""
     supabase = get_supabase()
     
     # We use inner join on category if filtering, else left join
@@ -123,6 +129,8 @@ def get_products(
         
     if sort == "newest":
         query = query.order("created_at", desc=True)
+        
+    query = query.range(offset, offset + limit - 1)
         
     result = query.execute()
     products = [map_product(row) for row in result.data]

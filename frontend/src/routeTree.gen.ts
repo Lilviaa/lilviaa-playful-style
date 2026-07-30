@@ -32,6 +32,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AccountIndexRouteImport } from './routes/account.index'
 import { Route as ProductsSlugRouteImport } from './routes/products.$slug'
+import { Route as CheckoutPaymentFailedRouteImport } from './routes/checkout/payment-failed'
 import { Route as AdminSettingsRouteImport } from './routes/admin.settings'
 import { Route as AdminReviewsRouteImport } from './routes/admin.reviews'
 import { Route as AdminReturnsRouteImport } from './routes/admin.returns'
@@ -168,6 +169,11 @@ const ProductsSlugRoute = ProductsSlugRouteImport.update({
   path: '/products/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CheckoutPaymentFailedRoute = CheckoutPaymentFailedRouteImport.update({
+  id: '/payment-failed',
+  path: '/payment-failed',
+  getParentRoute: () => CheckoutRoute,
+} as any)
 const AdminSettingsRoute = AdminSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -276,7 +282,7 @@ export interface FileRoutesByFullPath {
   '/account': typeof AccountRouteWithChildren
   '/admin': typeof AdminRouteWithChildren
   '/cart': typeof CartRoute
-  '/checkout': typeof CheckoutRoute
+  '/checkout': typeof CheckoutRouteWithChildren
   '/contact': typeof ContactRoute
   '/faq': typeof FaqRoute
   '/forgot-password': typeof ForgotPasswordRoute
@@ -301,6 +307,7 @@ export interface FileRoutesByFullPath {
   '/admin/returns': typeof AdminReturnsRouteWithChildren
   '/admin/reviews': typeof AdminReviewsRoute
   '/admin/settings': typeof AdminSettingsRoute
+  '/checkout/payment-failed': typeof CheckoutPaymentFailedRoute
   '/products/$slug': typeof ProductsSlugRoute
   '/account/': typeof AccountIndexRoute
   '/admin/': typeof AdminIndexRoute
@@ -319,7 +326,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/cart': typeof CartRoute
-  '/checkout': typeof CheckoutRoute
+  '/checkout': typeof CheckoutRouteWithChildren
   '/contact': typeof ContactRoute
   '/faq': typeof FaqRoute
   '/forgot-password': typeof ForgotPasswordRoute
@@ -343,6 +350,7 @@ export interface FileRoutesByTo {
   '/admin/pos-connect': typeof AdminPosConnectRoute
   '/admin/reviews': typeof AdminReviewsRoute
   '/admin/settings': typeof AdminSettingsRoute
+  '/checkout/payment-failed': typeof CheckoutPaymentFailedRoute
   '/products/$slug': typeof ProductsSlugRoute
   '/account': typeof AccountIndexRoute
   '/admin': typeof AdminIndexRoute
@@ -364,7 +372,7 @@ export interface FileRoutesById {
   '/account': typeof AccountRouteWithChildren
   '/admin': typeof AdminRouteWithChildren
   '/cart': typeof CartRoute
-  '/checkout': typeof CheckoutRoute
+  '/checkout': typeof CheckoutRouteWithChildren
   '/contact': typeof ContactRoute
   '/faq': typeof FaqRoute
   '/forgot-password': typeof ForgotPasswordRoute
@@ -389,6 +397,7 @@ export interface FileRoutesById {
   '/admin/returns': typeof AdminReturnsRouteWithChildren
   '/admin/reviews': typeof AdminReviewsRoute
   '/admin/settings': typeof AdminSettingsRoute
+  '/checkout/payment-failed': typeof CheckoutPaymentFailedRoute
   '/products/$slug': typeof ProductsSlugRoute
   '/account/': typeof AccountIndexRoute
   '/admin/': typeof AdminIndexRoute
@@ -436,6 +445,7 @@ export interface FileRouteTypes {
     | '/admin/returns'
     | '/admin/reviews'
     | '/admin/settings'
+    | '/checkout/payment-failed'
     | '/products/$slug'
     | '/account/'
     | '/admin/'
@@ -478,6 +488,7 @@ export interface FileRouteTypes {
     | '/admin/pos-connect'
     | '/admin/reviews'
     | '/admin/settings'
+    | '/checkout/payment-failed'
     | '/products/$slug'
     | '/account'
     | '/admin'
@@ -523,6 +534,7 @@ export interface FileRouteTypes {
     | '/admin/returns'
     | '/admin/reviews'
     | '/admin/settings'
+    | '/checkout/payment-failed'
     | '/products/$slug'
     | '/account/'
     | '/admin/'
@@ -544,7 +556,7 @@ export interface RootRouteChildren {
   AccountRoute: typeof AccountRouteWithChildren
   AdminRoute: typeof AdminRouteWithChildren
   CartRoute: typeof CartRoute
-  CheckoutRoute: typeof CheckoutRoute
+  CheckoutRoute: typeof CheckoutRouteWithChildren
   ContactRoute: typeof ContactRoute
   FaqRoute: typeof FaqRoute
   ForgotPasswordRoute: typeof ForgotPasswordRoute
@@ -724,6 +736,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/products/$slug'
       preLoaderRoute: typeof ProductsSlugRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/checkout/payment-failed': {
+      id: '/checkout/payment-failed'
+      path: '/payment-failed'
+      fullPath: '/checkout/payment-failed'
+      preLoaderRoute: typeof CheckoutPaymentFailedRouteImport
+      parentRoute: typeof CheckoutRoute
     }
     '/admin/settings': {
       id: '/admin/settings'
@@ -939,13 +958,25 @@ const AdminRouteChildren: AdminRouteChildren = {
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
+interface CheckoutRouteChildren {
+  CheckoutPaymentFailedRoute: typeof CheckoutPaymentFailedRoute
+}
+
+const CheckoutRouteChildren: CheckoutRouteChildren = {
+  CheckoutPaymentFailedRoute: CheckoutPaymentFailedRoute,
+}
+
+const CheckoutRouteWithChildren = CheckoutRoute._addFileChildren(
+  CheckoutRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
   AccountRoute: AccountRouteWithChildren,
   AdminRoute: AdminRouteWithChildren,
   CartRoute: CartRoute,
-  CheckoutRoute: CheckoutRoute,
+  CheckoutRoute: CheckoutRouteWithChildren,
   ContactRoute: ContactRoute,
   FaqRoute: FaqRoute,
   ForgotPasswordRoute: ForgotPasswordRoute,
