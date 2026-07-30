@@ -16,7 +16,7 @@ export const Route = createFileRoute("/cart")({
 
 function CartPage() {
   const { items, setQty, remove, subtotal, clear } = useCart();
-  const shipping = subtotal === 0 ? 0 : subtotal >= 999 ? 0 : 79;
+  const shipping = subtotal === 0 ? 0 : subtotal >= 3000 ? 0 : 79;
   const total = subtotal + shipping;
 
   if (items.length === 0) {
@@ -70,10 +70,10 @@ function CartPage() {
                   </div>
                   <button
                     onClick={() => {
-                      remove(it.slug, it.size);
-                      toast("Removed from cart");
+                      remove(it.slug, it.size, it.variant_id);
+                      toast.success("Removed from cart");
                     }}
-                    className="rounded-full p-2 text-muted-foreground hover:bg-sand hover:text-primary"
+                    className="flex items-center gap-1.5 text-xs font-bold text-red-500 hover:text-red-600 transition-colors"
                     aria-label="Remove"
                   >
                     <Trash2 className="h-4 w-4" />
@@ -82,7 +82,7 @@ function CartPage() {
                 <div className="mt-auto flex items-center justify-between">
                   <div className="flex items-center rounded-full bg-sand">
                     <button
-                      onClick={() => setQty(it.slug, it.size, it.qty - 1)}
+                      onClick={() => setQty(it.slug, it.size, it.qty - 1, it.variant_id)}
                       className="p-2 text-cocoa"
                     >
                       <Minus className="h-3.5 w-3.5" />
@@ -91,7 +91,13 @@ function CartPage() {
                       {it.qty}
                     </span>
                     <button
-                      onClick={() => setQty(it.slug, it.size, it.qty + 1)}
+                      onClick={() => {
+                        if (it.qty < it.max_qty) {
+                          setQty(it.slug, it.size, it.qty + 1, it.variant_id);
+                        } else {
+                          toast.error(`Only ${it.max_qty} items available in stock`);
+                        }
+                      }}
                       className="p-2 text-cocoa"
                     >
                       <Plus className="h-3.5 w-3.5" />
@@ -129,10 +135,10 @@ function CartPage() {
               </dd>
             </div>
           </dl>
-          {subtotal < 999 && (
-            <p className="mt-3 rounded-xl bg-butter px-3 py-2 text-xs font-semibold text-cocoa">
-              Add {formatINR(999 - subtotal)} more for free shipping ✨
-            </p>
+          {subtotal < 3000 && (
+            <div className="text-center text-sm font-bold text-cocoa bg-sand py-2 rounded-xl mb-4 shadow-sm border border-border">
+              Add {formatINR(3000 - subtotal)} more for free shipping ✨
+            </div>
           )}
           <div className="mt-4 border-t border-border pt-4 flex justify-between text-lg font-bold text-cocoa">
             <span>Total</span>

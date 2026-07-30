@@ -94,7 +94,7 @@ function CouponDetailPage() {
           defaultValues={coupon}
           onSubmit={(data) =>
             updateCoupon(
-              { id: couponId, data },
+              { id: couponId, ...data },
               { onSuccess: () => setIsEditing(false) }
             )
           }

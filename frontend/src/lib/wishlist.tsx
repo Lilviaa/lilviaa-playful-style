@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { type CartItem } from "./cart";
 
-export type WishlistItem = Omit<CartItem, "size" | "qty">;
+export type WishlistItem = Omit<CartItem, "size" | "qty" | "max_qty">;
 
 type WishlistCtx = {
   items: WishlistItem[];
@@ -21,7 +21,10 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     try {
       const raw = localStorage.getItem(KEY);
-      if (raw) setItems(JSON.parse(raw));
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) setItems(parsed);
+      }
     } catch {}
   }, []);
 

@@ -21,7 +21,7 @@ import { Info } from "lucide-react";
 // ==========================================
 const couponSchema = z.object({
   code: z.string().min(3, "Min 3 characters").max(20, "Max 20 characters"),
-  type: z.enum(["flat", "percent", "free_shipping", "bogo"]),
+  type: z.enum(["flat", "percent", "free_shipping"]),
   value: z.coerce.number().min(0),
   max_discount_cap: z.coerce.number().nullable(),
   min_cart_value: z.coerce.number().min(0),
@@ -144,7 +144,7 @@ export function CouponForm({ defaultValues, onSubmit, isPending, submitLabel = "
                     <SelectItem value="flat">Flat (₹)</SelectItem>
                     <SelectItem value="percent">Percent (%)</SelectItem>
                     <SelectItem value="free_shipping">Free Shipping</SelectItem>
-                    <SelectItem value="bogo">Buy 1 Get 1 (BOGO)</SelectItem>
+
                   </SelectContent>
                 </Select>
               )}
@@ -153,17 +153,10 @@ export function CouponForm({ defaultValues, onSubmit, isPending, submitLabel = "
         </div>
 
         {/* Conditional value fields */}
-        {type !== "free_shipping" && type !== "bogo" && (
+        {type !== "free_shipping" && (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
             {field(type === "percent" ? "Discount (%)" : "Discount Amount (₹)", "value", "number")}
             {type === "percent" && field("Max Discount Cap (₹, optional)", "max_discount_cap", "number", "e.g. 500")}
-          </div>
-        )}
-
-        {type === "bogo" && (
-          <div className="flex items-start gap-2 p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-sm">
-            <Info className="h-4 w-4 mt-0.5 shrink-0" />
-            BOGO discounts the cheapest item in the cart automatically.
           </div>
         )}
 

@@ -3,12 +3,12 @@ from typing import List
 from app.models.product import (
     ProductCreate, ProductUpdate, ProductResponse,
     ProductVariantCreate, ProductVariantUpdate, ProductVariantResponse,
-    ProductImageResponse, R2UploadRequest, R2UploadResponse, R2UploadConfirmRequest
+    ProductImageResponse, UploadRequest, UploadResponse, UploadConfirmRequest
 )
 from app.db.supabase import get_supabase
 from app.api.dependencies import require_admin
 from app.core.exceptions import AppError
-from app.services.r2_service import r2_service
+from app.services.storage_service import storage_service
 
 router = APIRouter(dependencies=[Depends(require_admin)])
 
@@ -105,31 +105,31 @@ def delete_variant(variant_id: str):
     return
 
 # ──────────────────────────────────────────
-# Images (Admin & R2 Uploads)
+# Images (Admin Uploads)
 # ──────────────────────────────────────────
 
-@router.post("/upload/request-url", response_model=R2UploadResponse)
-def request_upload_url(req: R2UploadRequest):
+@router.post("/upload/request-url", response_model=UploadResponse)
+def request_upload_url(req: UploadRequest):
     """Admin: Request a backend URL to upload and compress a product image."""
-    return r2_service.generate_presigned_url(req.filename, req.content_type)
+    return storage_service.generate_presigned_url(req.filename, req.content_type)
 
 from fastapi import Request
 @router.put("/upload/direct/products/{filename}")
 async def direct_upload(filename: str, request: Request):
     """Admin: Direct upload endpoint for image compression before Supabase."""
     file_bytes = await request.body()
-    r2_service.process_and_upload_image(file_bytes, f"products/{filename}")
+    storage_service.process_and_upload_image(file_bytes, f"products/{filename}")
     return {"status": "ok"}
 
 @router.post("/upload/confirm", response_model=ProductImageResponse)
-def confirm_upload(req: R2UploadConfirmRequest):
-    """Admin: Verify the image was uploaded to R2 and add it to the product_images table."""
-    # 1. Verify object exists in R2
-    if not r2_service.verify_object_exists(req.file_path):
-        raise AppError("Image not found in R2. Upload must have failed.", status_code=400)
+def confirm_upload(req: UploadConfirmRequest):
+    """Admin: Verify the image was uploaded to storage and add it to the product_images table."""
+    # 1. Verify object exists in storage
+    if not storage_service.verify_object_exists(req.file_path):
+        raise AppError("Image not found in storage. Upload must have failed.", status_code=400)
         
     # 2. Insert into DB
-    public_url = f"{r2_service.public_url_base}/{req.file_path}"
+    public_url = f"{storage_service.public_url_base}/{req.file_path}"
     supabase = get_supabase()
     
     result = supabase.table("product_images").insert({
@@ -143,8 +143,7 @@ def confirm_upload(req: R2UploadConfirmRequest):
 @router.delete("/images/{image_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_image(image_id: str):
     """Admin: Delete an image from the database."""
-    # MVP Note: This only deletes the DB row. In a full system, you would also 
-    # delete the object from R2 via s3_client.delete_object.
+    # Note: This only deletes the DB row. Storage cleanup can be added later.
     supabase = get_supabase()
     supabase.table("product_images").delete().eq("id", image_id).execute()
     return

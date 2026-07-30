@@ -31,7 +31,6 @@ const typeLabel: Record<string, string> = {
   flat: "Flat",
   percent: "Percent",
   free_shipping: "Free Ship",
-  bogo: "BOGO",
 };
 
 const statusBadge = (status: ReturnType<typeof getCouponStatus>) => {
@@ -90,9 +89,7 @@ export function CouponTable({ data, isLoading }: CouponTableProps) {
                 ? formatINR(coupon.value)
                 : coupon.type === "percent"
                 ? `${coupon.value}%`
-                : coupon.type === "free_shipping"
-                ? "—"
-                : "Buy 1 Get 1";
+                : "—";
 
             return (
               <tr

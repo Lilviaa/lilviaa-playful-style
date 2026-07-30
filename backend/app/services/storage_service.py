@@ -10,23 +10,20 @@ class StorageService:
     def __init__(self):
         self.bucket_name = "product-images"
         
-        # We need the public URL prefix for Supabase storage
-        # Typically it's: {supabase_url}/storage/v1/object/public/{bucket_name}
+        # Public URL prefix for Supabase storage
         self.public_url_base = f"{settings.SUPABASE_URL}/storage/v1/object/public/{self.bucket_name}"
 
     def generate_presigned_url(self, filename: str, content_type: str) -> dict:
         """
-        Returns a mock 'upload_url' that points to our own backend,
-        so the frontend will send the file to us instead of directly to S3.
+        Returns an upload URL that points to our own backend,
+        so the frontend will send the file to us for processing.
         """
-        # Basic file validation
         if not content_type.startswith("image/"):
             raise AppError("Only image files are allowed", status_code=400)
             
         ext = mimetypes.guess_extension(content_type) or ""
         unique_filename = f"products/{uuid.uuid4().hex}{ext}"
 
-        # URL to our new FastAPI endpoint for direct upload
         upload_url = f"/admin/products/upload/direct/{unique_filename}"
         
         return {
@@ -38,27 +35,23 @@ class StorageService:
     def process_and_upload_image(self, file_bytes: bytes, file_path: str):
         """
         Resize, compress, and upload the image to Supabase Storage.
-        Enforces a 10MB limit (checked before calling this or inside this).
+        Enforces a 10MB limit.
         """
         MAX_SIZE = 10 * 1024 * 1024 # 10MB
         if len(file_bytes) > MAX_SIZE:
             raise AppError("File size exceeds 10MB limit", status_code=400)
             
-        # Pillow will validate magic bytes automatically on Image.open
         try:
             with Image.open(io.BytesIO(file_bytes)) as img:
-                # Convert to RGB (handles RGBA -> RGB for JPEG compatibility)
                 if img.mode in ("RGBA", "P"):
                     img = img.convert("RGB")
                     
-                # Resize to max width 1200px maintaining aspect ratio
                 max_width = 1200
                 if img.width > max_width:
                     ratio = max_width / img.width
                     new_height = int(img.height * ratio)
                     img = img.resize((max_width, new_height), Image.Resampling.LANCZOS)
                 
-                # Compress and save to buffer as JPEG
                 output_buffer = io.BytesIO()
                 img.save(output_buffer, format="JPEG", quality=85, optimize=True)
                 compressed_bytes = output_buffer.getvalue()
@@ -67,7 +60,6 @@ class StorageService:
         except Exception as e:
             raise AppError(f"Error processing image: {str(e)}", status_code=400)
             
-        # Upload to Supabase Storage
         supabase = get_supabase()
         try:
             res = supabase.storage.from_(self.bucket_name).upload(
@@ -76,16 +68,12 @@ class StorageService:
                 file_options={"content-type": "image/jpeg"}
             )
         except Exception as e:
-            # Check if it's already exists or other error
             raise AppError(f"Failed to upload to storage: {str(e)}", status_code=400)
 
     def verify_object_exists(self, file_path: str) -> bool:
         """Verify that the object actually exists in Supabase Storage."""
         supabase = get_supabase()
         try:
-            # We can check if it exists by listing the directory or checking public URL
-            # but listing is more robust.
-            # path could be "products/uuid.ext"
             parts = file_path.split("/")
             if len(parts) == 2:
                 folder, filename = parts
@@ -97,4 +85,4 @@ class StorageService:
         except Exception:
             return False
 
-r2_service = StorageService()
+storage_service = StorageService()

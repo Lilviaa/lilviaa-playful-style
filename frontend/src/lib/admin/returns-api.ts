@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { MOCK_ORDERS, Order, OrderItem } from "./orders-api";
+import { Order, OrderItem } from "./orders-api";
 
 // ==========================================
 // TYPES
@@ -146,9 +146,9 @@ export const STATUS_STEPS: ReturnStatus[] = [
   "refund_processed",
 ];
 
-/** Look up an order from our shared mock orders */
-export function getOrderForReturn(orderId: string): Order | undefined {
-  return MOCK_ORDERS.find((o) => o.id === orderId);
+/** Look up an order for a return — returns page is still mock, so this is a placeholder */
+export function getOrderForReturn(_orderId: string): Order | undefined {
+  return undefined;
 }
 
 // ==========================================

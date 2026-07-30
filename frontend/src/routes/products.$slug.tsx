@@ -155,6 +155,7 @@ function ProductPage() {
       image: product.image,
       size,
       qty,
+      max_qty: displayStock,
       variant_id: activeVariant?.id || "",
     });
     toast.success(`${product.name} added to cart`, {

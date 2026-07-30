@@ -3,11 +3,12 @@ import { formatINR, useCart } from "@/lib/cart";
 import { useAuth } from "@/lib/auth";
 import { useAddresses } from "@/lib/addresses-api";
 import { API_URL } from "@/lib/products-api";
+import { apiFetch } from "@/lib/api";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { useEffect, useState } from "react";
-import { ArrowRight, CreditCard, Landmark, Banknote, SmartphoneNfc, Check, Lock, ChevronLeft, ShieldCheck, Truck, ShieldAlert, ChevronDown, ChevronUp } from "lucide-react";
+import { ArrowRight, CreditCard, Landmark, Banknote, SmartphoneNfc, Check, Lock, ChevronLeft, ShieldCheck, Truck, ShieldAlert, ChevronDown, ChevronUp, Loader2 } from "lucide-react";
 import {
   Form,
   FormControl,
@@ -54,14 +55,60 @@ function CheckoutPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { data: addresses } = useAddresses();
-  const shipping = subtotal === 0 ? 0 : subtotal >= 3000 ? 0 : 79;
-  const discount = 0; // Future enhancement: Apply coupon logic here
+  const [couponCodeInput, setCouponCodeInput] = useState("");
+  const [appliedCoupon, setAppliedCoupon] = useState<any>(null);
+  const [isApplyingCoupon, setIsApplyingCoupon] = useState(false);
+  const [couponError, setCouponError] = useState("");
+  const [couponSuccess, setCouponSuccess] = useState("");
+
+  const discount = appliedCoupon?.valid ? appliedCoupon.discountAmount : 0;
+  const freeShipping = appliedCoupon?.valid ? appliedCoupon.freeShipping : false;
+  const shipping = freeShipping ? 0 : (subtotal === 0 ? 0 : subtotal >= 3000 ? 0 : 79);
   const total = subtotal + shipping - discount;
 
   const [activeStep, setActiveStep] = useState("step-1");
   const [completedSteps, setCompletedSteps] = useState<string[]>([]);
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
+  const [isVerifyingPayment, setIsVerifyingPayment] = useState(false);
+  const [paymentError, setPaymentError] = useState<string | null>(null);
   const [isSummaryExpanded, setIsSummaryExpanded] = useState(false);
+
+  async function handleApplyCoupon() {
+    if (!couponCodeInput.trim()) return;
+    setIsApplyingCoupon(true);
+    setCouponError("");
+    setCouponSuccess("");
+    try {
+      const res = await fetch(`${API_URL}/orders/validate-coupon`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          code: couponCodeInput.trim(),
+          cart_total: subtotal,
+          user_id: user?.id || null,
+        }),
+      });
+      const data = await res.json();
+      if (data.valid) {
+        setAppliedCoupon(data);
+        setCouponSuccess(data.message);
+      } else {
+        setAppliedCoupon(null);
+        setCouponError(data.message || "Invalid coupon");
+      }
+    } catch (err: any) {
+      setCouponError(err.message || "Failed to apply coupon");
+    } finally {
+      setIsApplyingCoupon(false);
+    }
+  }
+
+  function handleRemoveCoupon() {
+    setAppliedCoupon(null);
+    setCouponCodeInput("");
+    setCouponError("");
+    setCouponSuccess("");
+  }
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -93,8 +140,9 @@ function CheckoutPage() {
   }, [addresses, form]);
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
+    setIsPlacingOrder(true);
+    setPaymentError(null);
     try {
-      setIsPlacingOrder(true);
       const payload = {
         full_name: values.fullName,
         phone: values.phone,
@@ -109,12 +157,12 @@ function CheckoutPage() {
           product_variant_id: it.variant_id,
           quantity: it.qty,
           unit_price: it.price
-        }))
+        })),
+        coupon_code: appliedCoupon?.valid ? couponCodeInput.trim() : null
       };
 
-      const res = await fetch(`${API_URL}/orders/`, {
+      const res = await apiFetch("/orders/", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
 
@@ -146,10 +194,10 @@ function CheckoutPage() {
         description: "Order Payment",
         order_id: orderData.razorpay_order_id,
         handler: async function (response: any) {
+          setIsVerifyingPayment(true);
           try {
-            const verifyRes = await fetch(`${API_URL}/orders/verify-payment`, {
+            const verifyRes = await apiFetch("/orders/verify-payment", {
               method: "POST",
-              headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
                 order_id: orderData.id,
                 razorpay_payment_id: response.razorpay_payment_id,
@@ -163,7 +211,8 @@ function CheckoutPage() {
             clear();
             navigate({ to: "/order-success" });
           } catch (err: any) {
-            alert(err.message || "Failed to verify payment");
+            setPaymentError(err.message || "Failed to verify payment");
+            setIsVerifyingPayment(false);
           }
         },
         prefill: {
@@ -178,14 +227,26 @@ function CheckoutPage() {
 
       const rzp = new (window as any).Razorpay(options);
       rzp.on('payment.failed', function (response: any) {
-        alert("Payment failed: " + response.error.description);
+        setPaymentError("Payment failed: " + response.error.description);
       });
       rzp.open();
     } catch (error: any) {
-      alert(error.message || "Something went wrong during checkout.");
+      setPaymentError(error.message || "Something went wrong during checkout.");
     } finally {
       setIsPlacingOrder(false);
     }
+  }
+
+  if (isVerifyingPayment) {
+    return (
+      <div className="mx-auto max-w-lg px-6 py-24 text-center animate-in fade-in duration-500">
+        <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-full bg-primary/10 text-primary shadow-sm mb-8">
+          <Loader2 className="h-12 w-12 animate-spin" />
+        </div>
+        <h1 className="font-display text-3xl text-cocoa animate-pulse">Verifying Payment...</h1>
+        <p className="mt-2 text-muted-foreground">Please do not close this window.</p>
+      </div>
+    );
   }
 
   if (items.length === 0) {
@@ -571,14 +632,7 @@ function CheckoutPage() {
                      <div className="py-2">
                        <h2 className="font-display text-2xl text-cocoa mb-8 text-center border-b border-border pb-4">Secure Payment</h2>
                        
-                       {isPlacingOrder ? (
-                         <div className="space-y-6 text-center py-12">
-                           <div className="mx-auto w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-                           <p className="font-bold text-cocoa text-xl">Redirecting to Razorpay...</p>
-                           <p className="text-sm text-muted-foreground max-w-xs mx-auto">Please do not refresh or close this page until payment is completed.</p>
-                         </div>
-                       ) : (
-                         <div className="max-w-md mx-auto space-y-6">
+                       <div className="max-w-md mx-auto space-y-6">
                            
                            {/* Main Payment Panel */}
                            <div className="rounded-2xl bg-[#fcf9f2] border border-border p-8 text-center shadow-sm">
@@ -635,13 +689,32 @@ function CheckoutPage() {
                            {/* CTA */}
                            <div className="space-y-4">
                              <button
-                               type="submit"
-                               disabled={isPlacingOrder}
-                               className="flex w-full items-center justify-center gap-2 rounded-full bg-primary px-8 py-4 text-xl font-bold text-primary-foreground shadow-pop transition-transform hover:-translate-y-0.5 active:scale-95"
+                                type="submit" 
+                                disabled={isPlacingOrder || isVerifyingPayment}
+                                className="w-full rounded-2xl bg-[#9C6644] px-8 py-4 font-bold text-white transition-all hover:bg-[#8A5A3C] disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_4px_14px_0_rgba(156,102,68,0.39)] hover:shadow-[0_6px_20px_rgba(156,102,68,0.23)] hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center space-x-2 relative overflow-hidden"
                              >
-                               Continue to Razorpay <ArrowRight className="h-5 w-5" />
+                               {isPlacingOrder ? (
+                                 <>
+                                   <Loader2 className="w-5 h-5 animate-spin" />
+                                   <span>Processing...</span>
+                                 </>
+                               ) : (
+                                 <>
+                                   <span>Continue to Razorpay</span>
+                                   <ArrowRight className="w-5 h-5" />
+                                 </>
+                               )}
+                               {/* Glossy overlay effect */}
+                               <div className="absolute inset-0 bg-gradient-to-tr from-white/0 via-white/20 to-white/0 opacity-0 hover:opacity-100 transition-opacity"></div>
                              </button>
                              
+                             {paymentError && (
+                               <div className="mt-4 flex items-start gap-3 rounded-xl bg-red-50 p-4 text-sm text-red-800">
+                                 <ShieldAlert className="h-5 w-5 shrink-0 text-red-500 mt-0.5" />
+                                 <p>{paymentError}</p>
+                               </div>
+                             )}
+
                              <div className="rounded-xl bg-blue-50/50 border border-blue-100 p-4 text-center">
                                <p className="text-xs text-muted-foreground leading-relaxed">
                                  After clicking Continue to Razorpay, a secure Razorpay payment window will open. Please do not refresh or close this page until payment is completed.
@@ -649,8 +722,7 @@ function CheckoutPage() {
                              </div>
                            </div>
                            
-                         </div>
-                       )}
+                       </div>
                      </div>
                   </div>
                 )}
@@ -681,9 +753,34 @@ function CheckoutPage() {
               </ul>
 
               {/* Coupon Field Enhancement */}
-              <div className="mb-6 flex gap-2">
-                <Input placeholder="Coupon code" className="rounded-xl border-border bg-background" />
-                <button className="rounded-xl bg-cocoa px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-cocoa/90">Apply</button>
+              <div className="mb-6 flex gap-2 flex-col">
+                <div className="flex gap-2">
+                  <Input 
+                    placeholder="Coupon code" 
+                    className="rounded-xl border-border bg-background uppercase" 
+                    value={couponCodeInput}
+                    onChange={(e) => setCouponCodeInput(e.target.value.toUpperCase())}
+                    disabled={isApplyingCoupon || appliedCoupon?.valid}
+                  />
+                  {appliedCoupon?.valid ? (
+                    <button 
+                      onClick={handleRemoveCoupon}
+                      className="rounded-xl bg-red-100 px-4 py-2 text-sm font-bold text-red-600 transition-colors hover:bg-red-200"
+                    >
+                      Remove
+                    </button>
+                  ) : (
+                    <button 
+                      onClick={handleApplyCoupon}
+                      disabled={isApplyingCoupon || !couponCodeInput.trim()}
+                      className="rounded-xl bg-cocoa px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-cocoa/90 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
+                    >
+                      {isApplyingCoupon ? "..." : "Apply"}
+                    </button>
+                  )}
+                </div>
+                {couponError && <div className="text-xs text-red-500 font-medium px-1">{couponError}</div>}
+                {couponSuccess && <div className="text-xs text-green-600 font-medium px-1">{couponSuccess}</div>}
               </div>
 
               <dl className="mt-4 space-y-3 text-sm text-muted-foreground border-t border-border pt-4">

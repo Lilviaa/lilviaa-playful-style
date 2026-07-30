@@ -18,16 +18,16 @@ class ProductImageResponse(ProductImageBase):
     created_at: datetime
     model_config = ConfigDict(from_attributes=True)
 
-class R2UploadRequest(BaseModel):
+class UploadRequest(BaseModel):
     filename: str
     content_type: str
 
-class R2UploadResponse(BaseModel):
+class UploadResponse(BaseModel):
     upload_url: str
     file_path: str
     public_url: str
 
-class R2UploadConfirmRequest(BaseModel):
+class UploadConfirmRequest(BaseModel):
     file_path: str
     product_id: str
     sort_order: int = 0

@@ -23,6 +23,8 @@ class OrderCreate(BaseModel):
     total_amount: float
     shipping_amount: float
     items: List[OrderItemCreate]
+    
+    coupon_code: Optional[str] = None
 
 class OrderItemResponse(BaseModel):
     id: str
@@ -43,6 +45,8 @@ class OrderResponse(BaseModel):
     shipping_amount: float
     payment_method: str
     shipping_address_id: Optional[str] = None
+    coupon_code: Optional[str] = None
+    coupon_discount: float = 0.0
     created_at: datetime
     updated_at: datetime
     

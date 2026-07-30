@@ -1,8 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useAuth } from "@/lib/auth";
-import { Package, Truck, FileText, Star, Download, MapPin, CheckCircle2 } from "lucide-react";
+import { Package, Truck, FileText, Star, Download, MapPin, CheckCircle2, Loader2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { formatINR } from "@/lib/cart";
+import { apiFetch } from "@/lib/api";
+import { useEffect, useState } from "react";
 
 export const Route = createFileRoute("/account/orders")({
   head: () => ({
@@ -13,41 +15,26 @@ export const Route = createFileRoute("/account/orders")({
   component: AccountOrdersPage,
 });
 
-const dummyOrders = [
-  {
-    id: "#LV-928374",
-    date: "July 12, 2026",
-    status: "Delivered",
-    total: 2499,
-    items: [
-      { name: "Sunshine Linen Kurta", qty: 1, size: "2-3Y", image: "https://images.unsplash.com/photo-1622290291468-a28f7a7dc6a8?w=200&h=200&fit=crop" },
-      { name: "Playful Prints Shirt", qty: 2, size: "3-4Y", image: "https://images.unsplash.com/photo-1519241047957-be31d7379a5d?w=200&h=200&fit=crop" }
-    ]
-  },
-  {
-    id: "#LV-482910",
-    date: "July 16, 2026",
-    status: "Processing",
-    total: 1299,
-    items: [
-      { name: "Festive Silk Set", qty: 1, size: "4-5Y", image: "https://images.unsplash.com/photo-1518831959646-742c3a14ebf7?w=200&h=200&fit=crop" }
-    ]
-  },
-  {
-    id: "#LV-102945",
-    date: "June 05, 2026",
-    status: "Delivered",
-    total: 3150,
-    items: [
-      { name: "Midnight Leaf Mandarin Kurta", qty: 1, size: "5-6Y", image: "https://images.unsplash.com/photo-1503919545889-aef636e10ad4?w=200&h=200&fit=crop" },
-      { name: "Sunny Picnic Shirt", qty: 1, size: "5-6Y", image: "https://images.unsplash.com/photo-1622290319146-7b63df48a635?w=200&h=200&fit=crop" },
-      { name: "Blossom Blush Frock", qty: 1, size: "1-2Y", image: "https://images.unsplash.com/photo-1519241047957-be31d7379a5d?w=200&h=200&fit=crop" }
-    ]
-  }
-];
 
 function AccountOrdersPage() {
   const { user } = useAuth();
+  const [orders, setOrders] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (user) {
+      apiFetch("/orders/me")
+        .then(res => res.json())
+        .then(data => {
+          setOrders(data);
+          setLoading(false);
+        })
+        .catch(err => {
+          console.error(err);
+          setLoading(false);
+        });
+    }
+  }, [user]);
 
   if (!user) return null;
 
@@ -58,20 +45,33 @@ function AccountOrdersPage() {
           <Package className="h-6 w-6 text-primary" /> Order History
         </h2>
 
-        <div className="space-y-6">
-          {dummyOrders.map((order) => (
+        {loading ? (
+          <div className="flex justify-center py-12">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        ) : orders.length === 0 ? (
+          <div className="text-center py-12">
+            <p className="text-muted-foreground">You haven't placed any orders yet.</p>
+          </div>
+        ) : (
+          <div className="space-y-6">
+            {orders.map((order) => {
+              const statusFormatted = order.status ? order.status.charAt(0).toUpperCase() + order.status.slice(1) : "Pending";
+              const isDelivered = order.status === 'delivered';
+              
+              return (
             <div key={order.id} className="rounded-2xl border border-border bg-background p-5">
               <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border pb-4">
                 <div>
-                  <p className="text-sm font-semibold text-cocoa">{order.id}</p>
-                  <p className="text-xs text-muted-foreground">{order.date}</p>
+                  <p className="text-sm font-semibold text-cocoa">#{order.id.split('-')[0].toUpperCase()}</p>
+                  <p className="text-xs text-muted-foreground">{new Date(order.created_at).toLocaleDateString()}</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-sm font-bold text-cocoa">{formatINR(order.total)}</p>
+                  <p className="text-sm font-bold text-cocoa">{formatINR(order.total_amount)}</p>
                   <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${
-                    order.status === 'Delivered' ? 'bg-green-100 text-green-800' : 'bg-butter text-primary'
+                    isDelivered ? 'bg-green-100 text-green-800' : 'bg-butter text-primary'
                   }`}>
-                    {order.status}
+                    {statusFormatted}
                   </span>
                 </div>
               </div>
@@ -79,19 +79,26 @@ function AccountOrdersPage() {
               <div className="flex flex-col md:flex-row gap-6 mt-4">
                 <div className="flex-1">
                   <ul className="space-y-3">
-                    {order.items.map((item, idx) => (
-                      <li key={idx} className="flex justify-between text-sm">
-                        <span className="text-cocoa">
-                          <span className="font-medium">{item.qty}x</span> {item.name} <span className="text-muted-foreground">(Size: {item.size})</span>
-                        </span>
-                      </li>
-                    ))}
+                    {order.order_items?.map((item: any) => {
+                      const variant = item.product_variants;
+                      const product = variant?.products;
+                      return (
+                        <li key={item.id} className="flex justify-between text-sm">
+                          <span className="text-cocoa">
+                            <span className="font-medium">{item.quantity}x</span> {product?.name || 'Product'} <span className="text-muted-foreground">(Size: {variant?.size})</span>
+                          </span>
+                        </li>
+                      );
+                    })}
                   </ul>
                 </div>
                 <div className="flex gap-2 shrink-0 flex-wrap">
-                  {order.items.map((item, idx) => (
-                    <img key={idx} src={item.image} alt={item.name} className="h-16 w-16 md:h-20 md:w-20 object-cover rounded-xl border border-border shadow-sm" />
-                  ))}
+                  {order.order_items?.map((item: any) => {
+                    const imgUrl = item.product_variants?.products?.image_urls?.[0];
+                    return imgUrl ? (
+                      <img key={item.id} src={imgUrl} alt="Product" className="h-16 w-16 md:h-20 md:w-20 object-cover rounded-xl border border-border shadow-sm" />
+                    ) : null;
+                  })}
                 </div>
               </div>
               
@@ -148,7 +155,7 @@ function AccountOrdersPage() {
                   </DialogTrigger>
                   <DialogContent>
                     <DialogHeader>
-                      <DialogTitle>Invoice for {order.id}</DialogTitle>
+                      <DialogTitle>Invoice for #{order.id.split('-')[0].toUpperCase()}</DialogTitle>
                     </DialogHeader>
                     <div className="py-6 flex flex-col items-center justify-center space-y-4 text-center">
                       <FileText className="h-16 w-16 text-muted-foreground opacity-50" />
@@ -160,7 +167,7 @@ function AccountOrdersPage() {
                   </DialogContent>
                 </Dialog>
 
-                {order.status === 'Delivered' && (
+                {isDelivered && (
                   <Dialog>
                     <DialogTrigger asChild>
                       <button className="inline-flex items-center gap-2 rounded-xl border border-border bg-background px-5 py-2.5 text-sm font-semibold text-cocoa transition-colors hover:bg-sand">
@@ -196,8 +203,9 @@ function AccountOrdersPage() {
                 )}
               </div>
             </div>
-          ))}
-        </div>
+            )})}
+          </div>
+        )}
 
         <div className="mt-8 text-center border-t border-border pt-8">
           <Link to="/shop" className="inline-flex items-center justify-center rounded-full bg-butter px-6 py-3 text-sm font-bold text-cocoa shadow-sm hover:bg-sand transition-colors">

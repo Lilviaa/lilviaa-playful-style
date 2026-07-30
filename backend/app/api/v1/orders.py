@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Request
+from app.api.dependencies import get_current_user_token
 from typing import List, Dict, Any
 from app.models.order import OrderCreate, OrderResponse
 from app.db.supabase import get_supabase, get_fresh_supabase
@@ -121,8 +122,23 @@ def create_order(order: OrderCreate, request: Request):
         item.unit_price = true_unit_price
         calculated_subtotal += (true_unit_price * item.quantity)
         
-    shipping_amount = 0 if calculated_subtotal >= 999 else 79
-    calculated_total = calculated_subtotal + shipping_amount
+    coupon_id = None
+    discount_amount = 0.0
+
+    if order.coupon_code:
+        validation = _validate_coupon_logic(order.coupon_code, calculated_subtotal, user_id, supabase)
+        if not validation.get("valid"):
+            raise AppError(validation.get("message", "Invalid coupon"), status_code=400)
+        
+        discount_amount = validation.get("discountAmount", 0)
+        coupon_id = validation.get("coupon_id")
+        
+        shipping_amount = 0 if validation.get("freeShipping") else (0 if calculated_subtotal >= 3000 else 79)
+    else:
+        shipping_amount = 0 if calculated_subtotal >= 3000 else 79
+
+    calculated_total = calculated_subtotal + shipping_amount - discount_amount
+    calculated_total = max(0.0, calculated_total)
 
     if abs(calculated_total - order.total_amount) > 1.0:
         raise AppError(f"Price mismatch: Server calculated ₹{calculated_total}, but frontend sent ₹{order.total_amount}. Please refresh the cart.", status_code=400)
@@ -137,7 +153,9 @@ def create_order(order: OrderCreate, request: Request):
         "shipping_amount": shipping_amount,
         "payment_method": order.payment_method,
         "shipping_address_id": shipping_address_id,
-        "order_source": "online"
+        "order_source": "online",
+        "coupon_id": coupon_id,
+        "discount_amount": discount_amount,
     }
     
     try:
@@ -175,6 +193,15 @@ def create_order(order: OrderCreate, request: Request):
     try:
         items_res = supabase.table("order_items").insert(order_items_data).execute()
         created_order["items"] = items_res.data
+        
+        if coupon_id:
+            supabase.table("coupon_usages").insert({
+                "coupon_id": coupon_id,
+                "user_id": user_id,
+                "order_id": order_id,
+                "discount_applied": discount_amount
+            }).execute()
+            
     except Exception as e:
         supabase.table("orders").delete().eq("id", order_id).execute()
         raise AppError(f"Failed to create order items: {str(e)}")
@@ -278,3 +305,109 @@ def verify_payment(req: VerifyPaymentRequest):
             }).eq("id", var_id).execute()
 
     return {"success": True}
+
+
+class ValidateCouponRequest(BaseModel):
+    code: str
+    cart_total: float
+    user_id: str | None = None
+
+@router.get("/me")
+def get_my_orders(user: dict = Depends(get_current_user_token)):
+    supabase = get_supabase()
+    user_id = user["sub"]
+    
+    res = supabase.table("orders") \
+        .select("*, order_items(*, product_variants(*, products(*)))") \
+        .eq("user_id", user_id) \
+        .order("created_at", desc=True) \
+        .execute()
+        
+    return res.data
+
+def _validate_coupon_logic(code: str, cart_total: float, user_id: str | None, supabase) -> dict:
+    # Find coupon by code
+    coupon_res = supabase.table("coupons") \
+        .select("*") \
+        .eq("code", code.upper().strip()) \
+        .execute()
+
+    if not coupon_res.data:
+        return {"valid": False, "discountAmount": 0, "freeShipping": False, "message": "Coupon not found."}
+
+    coupon = coupon_res.data[0]
+
+    # Check active
+    if not coupon["active"]:
+        return {"valid": False, "discountAmount": 0, "freeShipping": False, "message": "This coupon is not active."}
+
+    # Check dates
+    now = datetime.now(timezone.utc)
+    start = datetime.fromisoformat(coupon["start_date"].replace("Z", "+00:00"))
+    end = datetime.fromisoformat(coupon["end_date"].replace("Z", "+00:00"))
+
+    if now > end:
+        return {"valid": False, "discountAmount": 0, "freeShipping": False, "message": "This coupon has expired."}
+    if now < start:
+        return {"valid": False, "discountAmount": 0, "freeShipping": False, "message": "This coupon is not yet valid."}
+
+    # Check min cart value
+    if cart_total < float(coupon["min_cart_value"]):
+        return {
+            "valid": False, "discountAmount": 0, "freeShipping": False,
+            "message": f"Minimum cart value of ₹{int(coupon['min_cart_value'])} required."
+        }
+
+    # Check total usage limit
+    if coupon["usage_limit_total"] is not None:
+        usage_count_res = supabase.table("coupon_usages") \
+            .select("id", count="exact") \
+            .eq("coupon_id", coupon["id"]) \
+            .execute()
+        if (usage_count_res.count or 0) >= coupon["usage_limit_total"]:
+            return {"valid": False, "discountAmount": 0, "freeShipping": False, "message": "This coupon has reached its usage limit."}
+
+    # Check per-customer usage limit
+    if coupon["usage_limit_per_customer"] is not None and user_id:
+        user_usage_res = supabase.table("coupon_usages") \
+            .select("id", count="exact") \
+            .eq("coupon_id", coupon["id"]) \
+            .eq("user_id", user_id) \
+            .execute()
+        if (user_usage_res.count or 0) >= coupon["usage_limit_per_customer"]:
+            return {"valid": False, "discountAmount": 0, "freeShipping": False, "message": "You have already used this coupon the maximum number of times."}
+
+    # Calculate discount
+    discount_amount = 0.0
+    free_shipping = False
+
+    if coupon["type"] == "flat":
+        discount_amount = min(float(coupon["value"]), cart_total)
+    elif coupon["type"] == "percent":
+        discount_amount = (cart_total * float(coupon["value"])) / 100
+        if coupon["max_discount_cap"] is not None:
+            discount_amount = min(discount_amount, float(coupon["max_discount_cap"]))
+    elif coupon["type"] == "free_shipping":
+        free_shipping = True
+        discount_amount = 0
+
+    discount_amount = round(discount_amount)
+
+    msg = f"Coupon applied! You saved ₹{discount_amount}" if discount_amount > 0 else "Coupon applied!"
+    if free_shipping:
+        msg += " + free shipping"
+
+    return {
+        "valid": True,
+        "discountAmount": discount_amount,
+        "freeShipping": free_shipping,
+        "message": msg,
+        "coupon_id": coupon["id"],
+    }
+
+
+@router.post("/validate-coupon")
+def validate_coupon(req: ValidateCouponRequest):
+    """Validate a coupon code and return the discount amount."""
+    supabase = get_supabase()
+    return _validate_coupon_logic(req.code, req.cart_total, req.user_id, supabase)

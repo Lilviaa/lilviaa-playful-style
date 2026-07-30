@@ -74,7 +74,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     // Now fetch the profile
-    return await checkSession();
+    const userSession = await checkSession();
+    
+    // Attempt cart merge
+    try {
+      const rawCart = localStorage.getItem("lilviaa-cart-v1-guest");
+      if (rawCart) {
+        const parsed = JSON.parse(rawCart);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          const items = parsed.map((item: any) => ({
+            product_variant_id: item.variant_id,
+            quantity: item.qty
+          }));
+          const mergeRes = await apiFetch("/cart/merge", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ items })
+          });
+          if (mergeRes.ok) {
+            const data = await mergeRes.json();
+            if (data.message && data.message.includes("adjusted")) {
+              console.warn(data.message);
+            }
+          }
+        }
+        localStorage.removeItem("lilviaa-cart-v1-guest");
+      }
+    } catch (e) {
+      console.error("Cart merge failed", e);
+    }
+    
+    return userSession;
   };
 
   const registerUser = async (userData: Record<string, string>) => {
@@ -95,7 +125,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     // Registration also logs us in, so fetch profile
-    return await checkSession();
+    const userSession = await checkSession();
+    
+    // Attempt cart merge
+    try {
+      const rawCart = localStorage.getItem("lilviaa-cart-v1-guest");
+      if (rawCart) {
+        const parsed = JSON.parse(rawCart);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          const items = parsed.map((item: any) => ({
+            product_variant_id: item.variant_id,
+            quantity: item.qty
+          }));
+          const mergeRes = await apiFetch("/cart/merge", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ items })
+          });
+          if (mergeRes.ok) {
+            const data = await mergeRes.json();
+            if (data.message && data.message.includes("adjusted")) {
+              console.warn(data.message);
+            }
+          }
+        }
+        localStorage.removeItem("lilviaa-cart-v1-guest");
+      }
+    } catch (e) {
+      console.error("Cart merge failed", e);
+    }
+    
+    return userSession;
   };
 
   const logout = async () => {
@@ -105,6 +165,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.error("Logout error", e);
     } finally {
       setUser(null);
+      localStorage.removeItem("lilviaa-cart-v1-guest");
     }
   };
 

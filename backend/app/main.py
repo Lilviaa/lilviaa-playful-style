@@ -5,7 +5,8 @@ load_dotenv()
 #hello
 from app.core.config import settings
 from app.core.exceptions import AppError, app_error_handler
-from app.api.v1 import auth, addresses, categories, products, admin_products, orders, webhooks
+from app.api.v1 import auth, addresses, categories, products, admin_products, orders, webhooks, cart
+from app.api.v1 import admin_dashboard, admin_orders, admin_customers, admin_coupons
 
 app = FastAPI(
     title="Lilviaa E-Commerce API",
@@ -37,11 +38,16 @@ app.add_exception_handler(AppError, app_error_handler)
 # Include Routers
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["Auth"])
 app.include_router(addresses.router, prefix="/api/v1/addresses", tags=["Addresses"])
+app.include_router(cart.router, prefix="/api/v1/cart", tags=["Cart"])
 app.include_router(categories.router, prefix="/api/v1/categories", tags=["Categories"])
 app.include_router(products.router, prefix="/api/v1/products", tags=["Products"])
 app.include_router(admin_products.router, prefix="/api/v1/admin/products", tags=["Admin Products"])
 app.include_router(orders.router, prefix="/api/v1/orders", tags=["Orders"])
 app.include_router(webhooks.router, prefix="/api/v1/webhooks", tags=["Webhooks"])
+app.include_router(admin_dashboard.router, prefix="/api/v1/admin/dashboard", tags=["Admin Dashboard"])
+app.include_router(admin_orders.router, prefix="/api/v1/admin/orders", tags=["Admin Orders"])
+app.include_router(admin_customers.router, prefix="/api/v1/admin/customers", tags=["Admin Customers"])
+app.include_router(admin_coupons.router, prefix="/api/v1/admin/coupons", tags=["Admin Coupons"])
 
 @app.get("/health")
 def health_check():
