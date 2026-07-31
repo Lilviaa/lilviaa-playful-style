@@ -52,6 +52,9 @@ def create_order(order: OrderCreate, request: Request):
     shipping_address_id = order.shipping_address_id
     if not shipping_address_id and user_id and order.full_name:
         try:
+            if order.save_as_default:
+                supabase.table("addresses").update({"is_default": False}).eq("user_id", user_id).execute()
+                
             addr_res = supabase.table("addresses").insert({
                 "user_id": user_id,
                 "full_name": order.full_name,
@@ -60,7 +63,7 @@ def create_order(order: OrderCreate, request: Request):
                 "city": order.city,
                 "state": order.state,
                 "zip": order.zip,
-                "is_default": False
+                "is_default": order.save_as_default
             }).execute()
             if addr_res.data:
                 shipping_address_id = addr_res.data[0]["id"]

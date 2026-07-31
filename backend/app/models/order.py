@@ -18,6 +18,7 @@ class OrderCreate(BaseModel):
     city: Optional[str] = None
     state: Optional[str] = None
     zip: Optional[str] = None
+    save_as_default: Optional[bool] = False
     
     payment_method: str
     total_amount: float

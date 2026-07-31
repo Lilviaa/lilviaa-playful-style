@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 load_dotenv()
-#hello
+# hello!
 from app.core.config import settings
 from app.core.exceptions import AppError, app_error_handler
 from app.api.v1 import auth, addresses, categories, products, admin_products, orders, webhooks, cart
