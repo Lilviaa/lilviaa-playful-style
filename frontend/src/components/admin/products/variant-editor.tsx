@@ -102,9 +102,13 @@ export function VariantEditor({ variants, onChange, basePrice }: VariantEditorPr
                   <td className="p-2">
                     <Input 
                       type="number"
+                      min="0"
                       placeholder="e.g. 50"
                       value={v.stock} 
-                      onChange={e => updateVariant(i, 'stock', parseInt(e.target.value) || 0)}
+                      onChange={e => {
+                        const val = parseInt(e.target.value) || 0;
+                        updateVariant(i, 'stock', val < 0 ? 0 : val);
+                      }}
                       className="h-8"
                     />
                   </td>

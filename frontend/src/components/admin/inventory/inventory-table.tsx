@@ -68,6 +68,7 @@ export function InventoryTable({ data, isLoading, filterLowStock }: InventoryTab
     {
       id: "variant",
       header: "Variant",
+      enableGlobalFilter: false,
       accessorFn: (row) => `${row.color} ${row.size}`,
       cell: ({ row }) => (
         <div className="flex flex-col">
@@ -85,6 +86,7 @@ export function InventoryTable({ data, isLoading, filterLowStock }: InventoryTab
     },
     {
       accessorKey: "stock",
+      enableGlobalFilter: false,
       header: ({ column }) => {
         return (
           <Button
@@ -101,6 +103,7 @@ export function InventoryTable({ data, isLoading, filterLowStock }: InventoryTab
     },
     {
       accessorKey: "sales",
+      enableGlobalFilter: false,
       header: ({ column }) => {
         return (
           <Button
@@ -118,6 +121,7 @@ export function InventoryTable({ data, isLoading, filterLowStock }: InventoryTab
     {
       id: "status",
       header: "Status",
+      enableGlobalFilter: false,
       accessorFn: (row) => row.stock,
       cell: ({ row }) => {
         const stock = row.original.stock;

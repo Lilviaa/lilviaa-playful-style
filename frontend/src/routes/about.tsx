@@ -77,8 +77,8 @@ function AboutPage() {
               d: "We don't promise perfection—we promise thoughtfulness. From selecting the right fabric to perfecting the fit, we create clothing children genuinely enjoy wearing.",
             },
           ].map(({ i: Icon, t, d }) => (
-            <div key={t} className="rounded-3xl bg-card p-6 shadow-cute flex flex-col">
-              <span className="flex h-10 w-10 items-center justify-center rounded-full bg-butter text-cocoa">
+            <div key={t} className="group rounded-3xl bg-card p-6 shadow-cute flex flex-col transition-all duration-300 hover:-translate-y-2 hover:shadow-pop cursor-default">
+              <span className="flex h-10 w-10 items-center justify-center rounded-full bg-butter text-cocoa transition-transform duration-300 group-hover:scale-110">
                 <Icon className="h-5 w-5" />
               </span>
               <h3 className="mt-4 font-display text-xl text-cocoa">{t}</h3>

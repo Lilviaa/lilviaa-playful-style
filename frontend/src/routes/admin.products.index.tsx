@@ -49,11 +49,13 @@ function AdminProductsPage() {
       return matchesSearch && matchesCategory && matchesStatus;
     }) || [];
 
-  // Map tanstack table row indices to product IDs for bulk actions
-  const selectedIds = Object.keys(rowSelection)
+  // Map tanstack table row indices to products for bulk actions
+  const selectedProducts = Object.keys(rowSelection)
     .filter((idx) => rowSelection[idx])
-    .map((idx) => filteredProducts[parseInt(idx)]?.id)
+    .map((idx) => filteredProducts[parseInt(idx)])
     .filter(Boolean);
+
+  const selectedIds = selectedProducts.map(p => p.id);
 
   // Extract unique categories from products and db
   const uniqueCategories = Array.from(new Set([
@@ -150,7 +152,7 @@ function AdminProductsPage() {
         setRowSelection={setRowSelection}
       />
 
-      <BulkActionsBar selectedIds={selectedIds} clearSelection={() => setRowSelection({})} />
+      <BulkActionsBar selectedIds={selectedIds} selectedProducts={selectedProducts} clearSelection={() => setRowSelection({})} />
     </div>
   );
 }

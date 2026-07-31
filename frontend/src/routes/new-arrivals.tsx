@@ -4,6 +4,7 @@ import { useProducts } from "@/lib/products-api";
 import { ProductCard } from "@/components/product-card";
 import { ArrowRight } from "lucide-react";
 import { Link } from "@tanstack/react-router";
+import { CustomSelect } from "@/components/ui/custom-select";
 
 export const Route = createFileRoute("/new-arrivals")({
   head: () => ({
@@ -46,17 +47,17 @@ function NewArrivalsPage() {
       <section className="mx-auto max-w-7xl px-6 py-8">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <p className="text-sm font-bold text-muted-foreground">{newArrivals.length} new styles</p>
-          <div className="ml-auto">
-            <label className="mr-2 text-sm font-semibold text-cocoa">Sort</label>
-            <select
+          <div className="ml-auto flex flex-col gap-2 sm:flex-row sm:items-center z-10">
+            <span className="text-sm font-semibold text-cocoa">Sort:</span>
+            <CustomSelect
               value={sort}
-              onChange={(e) => setSort(e.target.value)}
-              className="rounded-full border-2 border-border bg-card px-4 py-2 text-sm font-semibold text-cocoa focus:border-primary focus:outline-none"
-            >
-              <option value="featured">Featured</option>
-              <option value="price-asc">Price: low to high</option>
-              <option value="price-desc">Price: high to low</option>
-            </select>
+              onChange={setSort}
+              options={[
+                { v: "featured", l: "Featured" },
+                { v: "price-asc", l: "Price: low to high" },
+                { v: "price-desc", l: "Price: high to low" },
+              ]}
+            />
           </div>
         </div>
 

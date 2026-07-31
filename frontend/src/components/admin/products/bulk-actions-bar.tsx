@@ -35,10 +35,11 @@ import { Label } from "@/components/ui/label";
 
 interface BulkActionsBarProps {
   selectedIds: string[];
+  selectedProducts: any[];
   clearSelection: () => void;
 }
 
-export function BulkActionsBar({ selectedIds, clearSelection }: BulkActionsBarProps) {
+export function BulkActionsBar({ selectedIds, selectedProducts, clearSelection }: BulkActionsBarProps) {
   const count = selectedIds.length;
   const bulkUpdate = useBulkUpdateProducts();
   const deleteProducts = useDeleteProducts();
@@ -51,6 +52,10 @@ export function BulkActionsBar({ selectedIds, clearSelection }: BulkActionsBarPr
     return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
   });
   const [saleEnd, setSaleEnd] = useState("");
+
+  const allPublished = count > 0 && selectedProducts.every(p => p.status === "published");
+  const allDraft = count > 0 && selectedProducts.every(p => p.status === "draft");
+  const allArchived = count > 0 && selectedProducts.every(p => p.status === "archived");
 
   if (count === 0) return null;
 
@@ -134,23 +139,23 @@ export function BulkActionsBar({ selectedIds, clearSelection }: BulkActionsBarPr
             <DropdownMenuContent align="center">
               <DropdownMenuLabel>Change status...</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => handleAction({ status: "published" })}>
-                Publish
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleAction({ status: "draft" })}>
-                Set to Draft
-              </DropdownMenuItem>
+              {!allPublished && (
+                <DropdownMenuItem onClick={() => handleAction({ status: "published" })}>
+                  Publish
+                </DropdownMenuItem>
+              )}
+              {!allDraft && (
+                <DropdownMenuItem onClick={() => handleAction({ status: "draft" })}>
+                  Set to Draft
+                </DropdownMenuItem>
+              )}
+              {!allArchived && (
+                <DropdownMenuItem onClick={() => handleAction({ status: "archived" })}>
+                  Archive
+                </DropdownMenuItem>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
-
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-9 rounded-full px-4 text-amber-600 hover:bg-amber-50 hover:text-amber-700 font-medium"
-            onClick={() => handleAction({ status: "archived" })}
-          >
-            <Archive className="mr-2 h-4 w-4" /> Archive
-          </Button>
 
           <AlertDialog>
             <AlertDialogTrigger asChild>
