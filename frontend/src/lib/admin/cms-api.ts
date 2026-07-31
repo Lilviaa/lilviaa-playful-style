@@ -187,7 +187,7 @@ export function useUpdateBanner() {
       } else {
         MOCK_BANNERS.push(updatedBanner);
       }
-      saveMockData({ banners: MOCK_BANNERS, categoryTiles: MOCK_CATEGORY_TILES, featuredProducts: MOCK_FEATURED_PRODUCTS, cmsSections: MOCK_CMS_SECTIONS });
+      saveMockData({ banners: MOCK_BANNERS, categoryTiles: MOCK_CATEGORY_TILES, featuredProducts: MOCK_FEATURED_PRODUCTS, cmsSections: MOCK_CMS_SECTIONS, heroSlides: MOCK_HERO_SLIDES });
       return updatedBanner;
     },
     onSuccess: () => {
@@ -214,7 +214,7 @@ export function useUpdateCategoryTiles() {
     mutationFn: async (tiles: CategoryTile[]) => {
       await delay(300);
       MOCK_CATEGORY_TILES = [...tiles];
-      saveMockData({ banners: MOCK_BANNERS, categoryTiles: MOCK_CATEGORY_TILES, featuredProducts: MOCK_FEATURED_PRODUCTS, cmsSections: MOCK_CMS_SECTIONS });
+      saveMockData({ banners: MOCK_BANNERS, categoryTiles: MOCK_CATEGORY_TILES, featuredProducts: MOCK_FEATURED_PRODUCTS, cmsSections: MOCK_CMS_SECTIONS, heroSlides: MOCK_HERO_SLIDES });
       return tiles;
     },
     onSuccess: () => {
@@ -241,7 +241,7 @@ export function useUpdateFeaturedProducts() {
     mutationFn: async (products: FeaturedProduct[]) => {
       await delay(300);
       MOCK_FEATURED_PRODUCTS = [...products];
-      saveMockData({ banners: MOCK_BANNERS, categoryTiles: MOCK_CATEGORY_TILES, featuredProducts: MOCK_FEATURED_PRODUCTS, cmsSections: MOCK_CMS_SECTIONS });
+      saveMockData({ banners: MOCK_BANNERS, categoryTiles: MOCK_CATEGORY_TILES, featuredProducts: MOCK_FEATURED_PRODUCTS, cmsSections: MOCK_CMS_SECTIONS, heroSlides: MOCK_HERO_SLIDES });
       return products;
     },
     onSuccess: () => {

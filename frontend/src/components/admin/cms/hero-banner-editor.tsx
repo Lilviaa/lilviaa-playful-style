@@ -106,7 +106,12 @@ export function HeroBannerEditor() {
     setLocalBanner({
       ...localBanner,
       image_url: "",
-      active: false,
+      headline: "Made for Little Gentlemen.",
+      subtext: "Premium Kidswear",
+      description: "Every garment is thoughtfully crafted using premium-quality fabrics and timeless designs, ensuring your little ones stay comfortable all day.",
+      cta_text: "Shop the collection",
+      cta_link: "/shop",
+      active: true,
       start_date: null,
       end_date: null,
     });
@@ -192,6 +197,7 @@ export function HeroBannerEditor() {
                   onChange={(e) => setLocalBanner({ ...localBanner, headline: e.target.value })} 
                   placeholder="e.g. Made for Little Gentlemen." 
                 />
+                <p className="text-[10px] text-cocoa/50 font-medium">Tip: Wrap text in *asterisks* to highlight it with the pink color and yellow underline (e.g. Test The *HomeHero.*)</p>
               </div>
               <div className="space-y-1.5">
                 <Label>Description</Label>

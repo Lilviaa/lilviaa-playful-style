@@ -18,6 +18,7 @@ import { Route as ReturnsRouteImport } from './routes/returns'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as OrderSuccessRouteImport } from './routes/order-success'
+import { Route as OrderFailedRouteImport } from './routes/order-failed'
 import { Route as NewArrivalsRouteImport } from './routes/new-arrivals'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
@@ -97,6 +98,11 @@ const PrivacyRoute = PrivacyRouteImport.update({
 const OrderSuccessRoute = OrderSuccessRouteImport.update({
   id: '/order-success',
   path: '/order-success',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OrderFailedRoute = OrderFailedRouteImport.update({
+  id: '/order-failed',
+  path: '/order-failed',
   getParentRoute: () => rootRouteImport,
 } as any)
 const NewArrivalsRoute = NewArrivalsRouteImport.update({
@@ -288,6 +294,7 @@ export interface FileRoutesByFullPath {
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/new-arrivals': typeof NewArrivalsRoute
+  '/order-failed': typeof OrderFailedRoute
   '/order-success': typeof OrderSuccessRoute
   '/privacy': typeof PrivacyRoute
   '/register': typeof RegisterRoute
@@ -332,6 +339,7 @@ export interface FileRoutesByTo {
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/new-arrivals': typeof NewArrivalsRoute
+  '/order-failed': typeof OrderFailedRoute
   '/order-success': typeof OrderSuccessRoute
   '/privacy': typeof PrivacyRoute
   '/register': typeof RegisterRoute
@@ -378,6 +386,7 @@ export interface FileRoutesById {
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/new-arrivals': typeof NewArrivalsRoute
+  '/order-failed': typeof OrderFailedRoute
   '/order-success': typeof OrderSuccessRoute
   '/privacy': typeof PrivacyRoute
   '/register': typeof RegisterRoute
@@ -426,6 +435,7 @@ export interface FileRouteTypes {
     | '/forgot-password'
     | '/login'
     | '/new-arrivals'
+    | '/order-failed'
     | '/order-success'
     | '/privacy'
     | '/register'
@@ -470,6 +480,7 @@ export interface FileRouteTypes {
     | '/forgot-password'
     | '/login'
     | '/new-arrivals'
+    | '/order-failed'
     | '/order-success'
     | '/privacy'
     | '/register'
@@ -515,6 +526,7 @@ export interface FileRouteTypes {
     | '/forgot-password'
     | '/login'
     | '/new-arrivals'
+    | '/order-failed'
     | '/order-success'
     | '/privacy'
     | '/register'
@@ -562,6 +574,7 @@ export interface RootRouteChildren {
   ForgotPasswordRoute: typeof ForgotPasswordRoute
   LoginRoute: typeof LoginRoute
   NewArrivalsRoute: typeof NewArrivalsRoute
+  OrderFailedRoute: typeof OrderFailedRoute
   OrderSuccessRoute: typeof OrderSuccessRoute
   PrivacyRoute: typeof PrivacyRoute
   RegisterRoute: typeof RegisterRoute
@@ -637,6 +650,13 @@ declare module '@tanstack/react-router' {
       path: '/order-success'
       fullPath: '/order-success'
       preLoaderRoute: typeof OrderSuccessRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/order-failed': {
+      id: '/order-failed'
+      path: '/order-failed'
+      fullPath: '/order-failed'
+      preLoaderRoute: typeof OrderFailedRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/new-arrivals': {
@@ -982,6 +1002,7 @@ const rootRouteChildren: RootRouteChildren = {
   ForgotPasswordRoute: ForgotPasswordRoute,
   LoginRoute: LoginRoute,
   NewArrivalsRoute: NewArrivalsRoute,
+  OrderFailedRoute: OrderFailedRoute,
   OrderSuccessRoute: OrderSuccessRoute,
   PrivacyRoute: PrivacyRoute,
   RegisterRoute: RegisterRoute,

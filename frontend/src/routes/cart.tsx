@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Minus, Plus, ShoppingBag, Trash2, ArrowRight } from "lucide-react";
+import { Minus, Plus, ShoppingBag, Trash2, ArrowRight, Truck } from "lucide-react";
 import { toast } from "sonner";
 import { formatINR, useCart } from "@/lib/cart";
 
@@ -135,10 +135,11 @@ function CartPage() {
               </dd>
             </div>
           </dl>
-          {subtotal < 3000 && (
-            <div className="text-center text-sm font-bold text-cocoa bg-sand py-2 rounded-xl mb-4 shadow-sm border border-border">
-              Add {formatINR(3000 - subtotal)} more for free shipping ✨
-            </div>
+          {subtotal >= 2500 && subtotal < 3000 && (
+            <p className="mt-3 rounded-xl bg-butter px-3 py-2 text-xs font-semibold text-cocoa flex items-center justify-between">
+              <span>Add {formatINR(3000 - subtotal)} more for free shipping</span>
+              <Truck className="h-4 w-4" />
+            </p>
           )}
           <div className="mt-4 border-t border-border pt-4 flex justify-between text-lg font-bold text-cocoa">
             <span>Total</span>

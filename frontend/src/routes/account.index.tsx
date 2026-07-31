@@ -3,33 +3,9 @@ import { useAuth } from "@/lib/auth";
 import { MapPin, Package, User, Save, Edit2, CheckCircle2, Plus, Trash2, AlertCircle } from "lucide-react";
 import { formatINR } from "@/lib/cart";
 import { useState } from "react";
+import { useAddresses, useCreateAddress, useUpdateAddress, useDeleteAddress, type Address } from "@/lib/addresses-api";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { toast } from "sonner";
-
-type Address = {
-  id: string;
-  type: string;
-  street: string;
-  landmark?: string;
-  city: string;
-  state: string;
-  pin: string;
-  country: string;
-  isDefault: boolean;
-};
-
-const defaultAddresses: Address[] = [
-  {
-    id: "1",
-    type: "Home",
-    street: "123 Playful Lane, Apt 4B",
-    city: "Mumbai",
-    state: "Maharashtra",
-    pin: "400001",
-    country: "India",
-    isDefault: true,
-  }
-];
 
 export const Route = createFileRoute("/account/")({
   component: AccountIndexPage,
@@ -52,7 +28,11 @@ function AccountIndexPage() {
   const [isAddressOpen, setIsAddressOpen] = useState(false);
   const [isPhoneOpen, setIsPhoneOpen] = useState(false);
 
-  const [addresses, setAddresses] = useState<Address[]>(defaultAddresses);
+  const { data: addresses = [] } = useAddresses();
+  const createAddress = useCreateAddress();
+  const updateAddress = useUpdateAddress();
+  const deleteAddress = useDeleteAddress();
+  
   const [addressView, setAddressView] = useState<"list" | "edit" | "add">("list");
   const [editingAddress, setEditingAddress] = useState<Address | null>(null);
 
@@ -65,44 +45,35 @@ function AccountIndexPage() {
   function handleAddressSave(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
-    const newAddr: Address = {
-      id: addressView === "edit" && editingAddress ? editingAddress.id : Date.now().toString(),
-      type: (formData.get("type") as string) || "Home",
-      street: formData.get("street") as string,
-      landmark: formData.get("landmark") as string,
+    const data = {
+      type: "Home",
+      full_name: formData.get("full_name") as string,
+      phone: formData.get("phone") as string,
+      address: formData.get("address") as string,
       city: formData.get("city") as string,
       state: formData.get("state") as string,
-      pin: formData.get("pin") as string,
-      country: formData.get("country") as string,
-      isDefault: addresses.length === 0 ? true : (addressView === "edit" && editingAddress ? editingAddress.isDefault : false),
+      zip: formData.get("zip") as string,
+      is_default: addresses.length === 0 ? true : (addressView === "edit" && editingAddress ? editingAddress.is_default : false),
     };
 
     if (addressView === "edit" && editingAddress) {
-      setAddresses(addresses.map(a => a.id === editingAddress.id ? newAddr : a));
-      toast.success("Address updated successfully");
+      updateAddress.mutate({ id: editingAddress.id, data });
     } else {
-      setAddresses([...addresses, newAddr]);
-      toast.success("Address added successfully");
+      createAddress.mutate(data);
     }
     
     setAddressView("list");
   }
 
   function handleSetDefault(id: string) {
-    setAddresses(addresses.map(a => ({ ...a, isDefault: a.id === id })));
-    toast.success("Default address updated");
+    updateAddress.mutate({ id, data: { is_default: true } });
   }
 
   function handleDeleteAddress(id: string) {
-    const updated = addresses.filter(a => a.id !== id);
-    if (updated.length > 0 && !updated.find(a => a.isDefault)) {
-      updated[0].isDefault = true;
-    }
-    setAddresses(updated);
-    toast.success("Address deleted successfully");
+    deleteAddress.mutate(id);
   }
 
-  const defaultAddr = addresses.find(a => a.isDefault) || addresses[0];
+  const defaultAddr = addresses.find(a => a.is_default) || addresses[0];
 
   if (!user) return null;
 
@@ -252,15 +223,15 @@ function AccountIndexPage() {
                 {addressView === "list" ? (
                   <div className="space-y-4 pt-4">
                     {addresses.map(addr => (
-                      <div key={addr.id} className={`p-4 rounded-xl border-2 ${addr.isDefault ? 'border-primary bg-primary/5' : 'border-border bg-background'} flex justify-between items-start gap-4`}>
+                      <div key={addr.id} className={`p-4 rounded-xl border-2 ${addr.is_default ? 'border-primary bg-primary/5' : 'border-border bg-background'} flex justify-between items-start gap-4`}>
                         <div className="space-y-1 text-sm">
                           <div className="flex items-center gap-2">
-                            <span className="font-bold text-cocoa">{addr.type}</span>
-                            {addr.isDefault && <span className="bg-primary text-white text-[10px] uppercase font-bold px-2 py-0.5 rounded-full">Default</span>}
+                            <span className="font-bold text-cocoa">{addr.full_name}</span>
+                            {addr.is_default && <span className="bg-primary text-white text-[10px] uppercase font-bold px-2 py-0.5 rounded-full">Default</span>}
                           </div>
-                          <p className="text-muted-foreground">{addr.street}</p>
-                          {addr.landmark && <p className="text-muted-foreground">{addr.landmark}</p>}
-                          <p className="text-muted-foreground">{addr.city}, {addr.state} {addr.pin}</p>
+                          <p className="text-muted-foreground">{addr.phone}</p>
+                          <p className="text-muted-foreground">{addr.address}</p>
+                          <p className="text-muted-foreground">{addr.city}, {addr.state} {addr.zip}</p>
                         </div>
                         <div className="flex flex-col gap-3 items-end">
                           <button 
@@ -275,7 +246,7 @@ function AccountIndexPage() {
                           >
                             <Trash2 className="h-3 w-3" /> Delete
                           </button>
-                          {!addr.isDefault && (
+                          {!addr.is_default && (
                             <button onClick={() => handleSetDefault(addr.id)} className="text-muted-foreground hover:text-primary text-xs flex items-center gap-1">
                               <CheckCircle2 className="h-3 w-3" /> Set Default
                             </button>
@@ -295,33 +266,35 @@ function AccountIndexPage() {
                   </div>
                 ) : (
                   <form onSubmit={handleAddressSave} className="space-y-4 pt-4">
-                    <div className="space-y-1.5">
-                      <label className="text-sm font-semibold text-cocoa">Address Type (e.g. Home, Work)</label>
-                      <input
-                        name="type"
-                        required
-                        type="text"
-                        defaultValue={addressView === "edit" ? editingAddress?.type : ""}
-                        className="w-full rounded-xl border-2 border-border bg-background px-4 py-2 text-sm text-cocoa focus:border-primary focus:outline-none"
-                      />
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <div className="space-y-1.5">
+                        <label className="text-sm font-semibold text-cocoa">Full Name</label>
+                        <input
+                          name="full_name"
+                          required
+                          type="text"
+                          defaultValue={addressView === "edit" ? editingAddress?.full_name : ""}
+                          className="w-full rounded-xl border-2 border-border bg-background px-4 py-2 text-sm text-cocoa focus:border-primary focus:outline-none"
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="text-sm font-semibold text-cocoa">Phone</label>
+                        <input
+                          name="phone"
+                          required
+                          type="text"
+                          defaultValue={addressView === "edit" ? editingAddress?.phone : ""}
+                          className="w-full rounded-xl border-2 border-border bg-background px-4 py-2 text-sm text-cocoa focus:border-primary focus:outline-none"
+                        />
+                      </div>
                     </div>
                     <div className="space-y-1.5">
-                      <label className="text-sm font-semibold text-cocoa">Street Address</label>
+                      <label className="text-sm font-semibold text-cocoa">Address</label>
                       <input
-                        name="street"
+                        name="address"
                         required
                         type="text"
-                        defaultValue={addressView === "edit" ? editingAddress?.street : ""}
-                        className="w-full rounded-xl border-2 border-border bg-background px-4 py-2 text-sm text-cocoa focus:border-primary focus:outline-none"
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <label className="text-sm font-semibold text-cocoa">Landmark (Optional)</label>
-                      <input
-                        name="landmark"
-                        type="text"
-                        defaultValue={addressView === "edit" ? editingAddress?.landmark : ""}
-                        placeholder="e.g. Opposite Central Mall"
+                        defaultValue={addressView === "edit" ? editingAddress?.address : ""}
                         className="w-full rounded-xl border-2 border-border bg-background px-4 py-2 text-sm text-cocoa focus:border-primary focus:outline-none"
                       />
                     </div>
@@ -347,22 +320,12 @@ function AccountIndexPage() {
                         />
                       </div>
                       <div className="space-y-1.5">
-                        <label className="text-sm font-semibold text-cocoa">PIN Code</label>
+                        <label className="text-sm font-semibold text-cocoa">ZIP / Postal Code</label>
                         <input
-                          name="pin"
+                          name="zip"
                           required
                           type="text"
-                          defaultValue={addressView === "edit" ? editingAddress?.pin : ""}
-                          className="w-full rounded-xl border-2 border-border bg-background px-4 py-2 text-sm text-cocoa focus:border-primary focus:outline-none"
-                        />
-                      </div>
-                      <div className="space-y-1.5">
-                        <label className="text-sm font-semibold text-cocoa">Country</label>
-                        <input
-                          name="country"
-                          required
-                          type="text"
-                          defaultValue={addressView === "edit" ? editingAddress?.country : ""}
+                          defaultValue={addressView === "edit" ? editingAddress?.zip : ""}
                           className="w-full rounded-xl border-2 border-border bg-background px-4 py-2 text-sm text-cocoa focus:border-primary focus:outline-none"
                         />
                       </div>
@@ -390,11 +353,10 @@ function AccountIndexPage() {
           <div className="space-y-1 text-sm text-cocoa">
             {defaultAddr ? (
               <>
-                <p className="font-medium">{defaultAddr.type}</p>
-                <p className="text-muted-foreground">{defaultAddr.street}</p>
-                {defaultAddr.landmark && <p className="text-muted-foreground">{defaultAddr.landmark}</p>}
-                <p className="text-muted-foreground">{defaultAddr.city}, {defaultAddr.state} {defaultAddr.pin}</p>
-                <p className="text-muted-foreground">{defaultAddr.country}</p>
+                <p className="font-medium">{defaultAddr.full_name}</p>
+                <p className="text-muted-foreground">{defaultAddr.phone}</p>
+                <p className="text-muted-foreground">{defaultAddr.address}</p>
+                <p className="text-muted-foreground">{defaultAddr.city}, {defaultAddr.state} {defaultAddr.zip}</p>
               </>
             ) : (
               <p className="text-muted-foreground">No addresses saved.</p>

@@ -113,7 +113,7 @@ function CheckoutPage() {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      fullName: user?.name || "",
+      fullName: user?.full_name || "",
       email: user?.email || "",
       phone: user?.phone || "",
       address: "",
@@ -123,6 +123,14 @@ function CheckoutPage() {
       paymentMethod: "upi",
     },
   });
+
+  useEffect(() => {
+    if (user) {
+      if (!form.getValues("email")) form.setValue("email", user.email);
+      if (!form.getValues("fullName")) form.setValue("fullName", user.full_name);
+      if (!form.getValues("phone") && user.phone) form.setValue("phone", user.phone);
+    }
+  }, [user, form]);
 
   useEffect(() => {
     if (addresses && addresses.length > 0) {
@@ -153,6 +161,7 @@ function CheckoutPage() {
         payment_method: values.paymentMethod,
         total_amount: total,
         shipping_amount: shipping,
+        save_as_default: (document.getElementById("save-address") as HTMLInputElement)?.checked ?? false,
         items: items.map(it => ({
           product_variant_id: it.variant_id,
           quantity: it.qty,
@@ -224,15 +233,16 @@ function CheckoutPage() {
         theme: {
           color: "#9C6644", // cocoa
         },
+        modal: {
+          ondismiss: function() {
+            navigate({ to: "/order-failed" });
+          }
+        }
       };
 
       const rzp = new (window as any).Razorpay(options);
       rzp.on('payment.failed', function (response: any) {
-        // Clear cart if desired, but we might want them to retry. For now, leave cart intact.
-        navigate({ 
-          to: "/checkout/payment-failed",
-          search: { order_id: orderData.id, reason: response.error.description }
-        });
+        navigate({ to: "/order-failed" });
       });
       rzp.open();
     } catch (error: any) {

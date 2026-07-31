@@ -33,15 +33,15 @@ function HomePage() {
 
   // CMS Hooks
   const { data: banners = [] } = useBanners();
-  const heroBanner = banners.find(b => b.type === "hero" && b.active);
+  const heroBanner = banners.find(b => b.type === "hero");
   const promoStrip = banners.find(b => b.type === "promo_strip" && b.active);
   const { data: cmsCategoryTiles = [] } = useCategoryTiles();
   const { data: cmsFeaturedProducts = [] } = useCmsFeaturedProducts();
   const { data: heroSlides = [] } = useHeroSlides();
   const { data: featuredSection } = useCmsSection("featured_products_section");
-  
+
   // Merge CMS featured with actual product data
-  const featured = cmsFeaturedProducts.length > 0 
+  const featured = cmsFeaturedProducts.length > 0
     ? cmsFeaturedProducts.map(fp => allProducts.find(p => p.id === fp.product_id)).filter(Boolean) as Product[]
     : dbFeatured;
 
@@ -57,8 +57,8 @@ function HomePage() {
   };
 
   const defaultHeroImageUrls = heroSlides.map(s => s.image_url).filter(Boolean);
-  const activeHeroImages = isEventBannerActive() && heroBanner?.image_url 
-    ? [heroBanner.image_url, ...defaultHeroImageUrls] 
+  const activeHeroImages = isEventBannerActive() && heroBanner?.image_url
+    ? [heroBanner.image_url, ...defaultHeroImageUrls]
     : defaultHeroImageUrls;
 
   // Fallback if no images
@@ -115,112 +115,143 @@ function HomePage() {
       )}
 
       {/* HERO */}
-      <section className="bg-hero relative overflow-hidden rounded-b-[2.5rem] md:rounded-b-[4rem]">
-        <div className="mx-auto flex flex-col-reverse md:flex-row-reverse items-stretch w-full">
-          
-          {/* IMAGE HALF */}
-          <div className="relative w-full md:w-1/2 h-[450px] md:h-auto min-h-[500px] lg:min-h-[700px]">
-            {/* The Arched Image Container */}
-            <div className="absolute bottom-0 right-0 top-0 left-4 md:left-8 lg:left-12 overflow-hidden rounded-tl-[10rem] rounded-bl-3xl rounded-tr-3xl rounded-br-[4rem] shadow-2xl group">
-              {/* Sliding Images */}
-              <div 
-                className="flex h-full w-full transition-transform duration-1000 ease-in-out"
-                style={{ transform: `translateX(-${currentHeroImage * 100}%)` }}
-              >
-                {activeHeroImages.map((src, index) => (
-                  <img
-                    key={src}
-                    src={src}
-                    alt="Lilviaa clothing"
-                    className="h-full w-full min-w-full flex-shrink-0 object-cover object-top"
-                  />
-                ))}
-              </div>
+      {(!heroBanner || heroBanner.active) && (
+        <section className="bg-hero relative overflow-hidden rounded-b-[2.5rem] md:rounded-b-[4rem]">
+          <div className="mx-auto flex flex-col-reverse md:flex-row-reverse items-stretch w-full">
 
-              {/* Navigation Overlay */}
-              <div className="absolute inset-0 z-20 flex flex-col justify-between p-4 sm:p-6 lg:p-8 pointer-events-none">
-                {/* Arrows */}
-                <div className="flex h-full items-center justify-between w-full">
-                  <button 
-                    onClick={(e) => { e.preventDefault(); prevHeroImage(); }}
-                    className="pointer-events-auto flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-full bg-cream/40 text-cream backdrop-blur-md transition-all hover:bg-cream hover:text-cocoa hover:scale-110 opacity-0 group-hover:opacity-100 shadow-sm"
-                  >
-                    <ChevronLeft className="h-6 w-6" />
-                  </button>
-                  <button 
-                    onClick={(e) => { e.preventDefault(); nextHeroImage(); }}
-                    className="pointer-events-auto flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-full bg-cream/40 text-cream backdrop-blur-md transition-all hover:bg-cream hover:text-cocoa hover:scale-110 opacity-0 group-hover:opacity-100 shadow-sm"
-                  >
-                    <ChevronRight className="h-6 w-6" />
-                  </button>
-                </div>
-                
-                {/* Dots Indicator */}
-                <div className="pointer-events-auto absolute bottom-6 sm:bottom-8 left-1/2 -translate-x-1/2 flex items-center gap-2">
-                  {activeHeroImages.map((_, idx) => (
-                    <button
-                      key={idx}
-                      onClick={() => setCurrentHeroImage(idx)}
-                      className={`h-2 rounded-full transition-all duration-500 ${
-                        idx === currentHeroImage ? "w-8 bg-cream shadow-sm" : "w-2 bg-cream/40 hover:bg-cream/70"
-                      }`}
-                      aria-label={`Go to slide ${idx + 1}`}
+            {/* IMAGE HALF */}
+            <div className="relative w-full md:w-1/2 h-[450px] md:h-auto min-h-[500px] lg:min-h-[700px]">
+              {/* The Arched Image Container */}
+              <div className="absolute bottom-0 right-0 top-0 left-4 md:left-8 lg:left-12 overflow-hidden rounded-tl-[10rem] rounded-bl-3xl rounded-tr-3xl rounded-br-[4rem] shadow-2xl group">
+                {/* Sliding Images */}
+                <div
+                  className="flex h-full w-full transition-transform duration-1000 ease-in-out"
+                  style={{ transform: `translateX(-${currentHeroImage * 100}%)` }}
+                >
+                  {activeHeroImages.map((src, index) => (
+                    <img
+                      key={src}
+                      src={src}
+                      alt="Lilviaa clothing"
+                      className="h-full w-full min-w-full flex-shrink-0 object-cover object-top"
                     />
                   ))}
                 </div>
+
+                {/* Navigation Overlay */}
+                <div className="absolute inset-0 z-20 flex flex-col justify-between p-4 sm:p-6 lg:p-8 pointer-events-none">
+                  {/* Arrows */}
+                  <div className="flex h-full items-center justify-between w-full">
+                    <button
+                      onClick={(e) => { e.preventDefault(); prevHeroImage(); }}
+                      className="pointer-events-auto flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-full bg-cream/40 text-cream backdrop-blur-md transition-all hover:bg-cream hover:text-cocoa hover:scale-110 opacity-0 group-hover:opacity-100 shadow-sm"
+                    >
+                      <ChevronLeft className="h-6 w-6" />
+                    </button>
+                    <button
+                      onClick={(e) => { e.preventDefault(); nextHeroImage(); }}
+                      className="pointer-events-auto flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-full bg-cream/40 text-cream backdrop-blur-md transition-all hover:bg-cream hover:text-cocoa hover:scale-110 opacity-0 group-hover:opacity-100 shadow-sm"
+                    >
+                      <ChevronRight className="h-6 w-6" />
+                    </button>
+                  </div>
+
+                  {/* Dots Indicator */}
+                  <div className="pointer-events-auto absolute bottom-6 sm:bottom-8 left-1/2 -translate-x-1/2 flex items-center gap-2">
+                    {activeHeroImages.map((_, idx) => (
+                      <button
+                        key={idx}
+                        onClick={() => setCurrentHeroImage(idx)}
+                        className={`h-2 rounded-full transition-all duration-500 ${idx === currentHeroImage ? "w-8 bg-cream shadow-sm" : "w-2 bg-cream/40 hover:bg-cream/70"
+                          }`}
+                        aria-label={`Go to slide ${idx + 1}`}
+                      />
+                    ))}
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* TEXT HALF */}
-          <div className="relative z-10 flex w-full flex-col justify-center px-6 py-16 md:w-1/2 md:py-24 lg:px-16">
-            <ScrollReveal className="max-w-xl mx-auto md:mr-auto md:ml-0">
-              <span className="mb-4 inline-flex items-center gap-2 rounded-full border border-sand bg-sand/30 px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-primary/80">
-              <Sparkles className="h-3 w-3" />
-              {heroBanner?.subtext || "Premium Kidswear"}
-            </span>
-            <h1 className="mt-8 font-display text-5xl leading-[1.05] text-cocoa md:text-6xl lg:text-7xl">
-              {(!heroBanner || heroBanner.headline === "Made for Little Gentlemen.") ? (
-                <>
-                  Made for <br />
-                  <span className="relative inline-block text-primary">
-                    Little Gentlemen
-                    <svg
-                      className="absolute -bottom-2 left-0 w-full text-butter"
-                      viewBox="0 0 200 12"
-                      fill="none"
-                    >
-                      <path
-                        d="M2 8C50 2 150 2 198 8"
-                        stroke="currentColor"
-                        strokeWidth="5"
-                        strokeLinecap="round"
-                      />
-                    </svg>
-                  </span>
-                  .
-                </>
-              ) : (
-                heroBanner.headline
-              )}
-            </h1>
-            <p className="mt-8 text-lg text-cocoa/80 leading-relaxed max-w-md">
-                {heroBanner?.description || "Every garment is thoughtfully crafted using premium-quality fabrics and timeless designs, ensuring your little ones stay comfortable all day."}
-              </p>
-              <div className="mt-10 flex flex-wrap gap-3 sm:gap-4">
-                <Link
-                  to={heroBanner?.cta_link || "/shop"}
-                  className="group inline-flex h-14 w-full items-center justify-center gap-2 rounded-full bg-primary px-8 text-base font-bold text-primary-foreground shadow-pop transition-all hover:scale-105 active:scale-95 sm:w-auto"
-                >
-                  {heroBanner?.cta_text || "Shop the collection"}
-                  <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
-                </Link>
-              </div>
-            </ScrollReveal>
-          </div>
+            {/* TEXT HALF */}
+            <div className="relative z-10 flex w-full flex-col justify-center px-6 py-16 md:w-1/2 md:py-24 lg:px-16">
+              <ScrollReveal className="max-w-xl mx-auto md:mr-auto md:ml-0">
+                <span className="mb-4 inline-flex items-center gap-2 rounded-full border border-cream/40 bg-cream/60 px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-cocoa/80 backdrop-blur-sm shadow-sm">
+                  <Sparkles className="h-3 w-3 text-primary/90" />
+                  {heroBanner?.subtext || "Premium Kidswear"}
+                </span>
+                <h1 className="mt-8 font-display text-5xl leading-[1.05] text-cocoa md:text-6xl lg:text-7xl">
+                  {(() => {
+                    const text = heroBanner?.headline || "Made for Little Gentlemen.";
+                    
+                    if (text === "Made for Little Gentlemen.") {
+                      return (
+                        <>
+                          Made for <br />
+                          <span className="relative inline-block text-primary">
+                            Little Gentlemen
+                            <svg
+                              className="absolute -bottom-2 left-0 w-full text-butter"
+                              viewBox="0 0 200 12"
+                              fill="none"
+                            >
+                              <path
+                                d="M2 8C50 2 150 2 198 8"
+                                stroke="currentColor"
+                                strokeWidth="5"
+                                strokeLinecap="round"
+                              />
+                            </svg>
+                          </span>
+                          .
+                        </>
+                      );
+                    }
+                    
+                    const parts = text.split('*');
+                    if (parts.length >= 3) {
+                      return (
+                        <>
+                          {parts[0]}
+                          <span className="relative inline-block text-primary">
+                            {parts[1]}
+                            <svg
+                              className="absolute -bottom-2 left-0 w-full text-butter"
+                              viewBox="0 0 200 12"
+                              fill="none"
+                            >
+                              <path
+                                d="M2 8C50 2 150 2 198 8"
+                                stroke="currentColor"
+                                strokeWidth="5"
+                                strokeLinecap="round"
+                              />
+                            </svg>
+                          </span>
+                          {parts.slice(2).join('*')}
+                        </>
+                      );
+                    }
+                    return text;
+                  })()}
+                </h1>
+                <p className="mt-8 text-lg text-cocoa/80 leading-relaxed max-w-md">
+                  {heroBanner?.description || "Every garment is thoughtfully crafted using premium-quality fabrics and timeless designs, ensuring your little ones stay comfortable all day."}
+                </p>
+                <div className="mt-10 flex flex-wrap gap-3 sm:gap-4">
+                  <Link
+                    to={heroBanner?.cta_link || "/shop"}
+                    className="group inline-flex h-14 w-full items-center justify-center gap-2 rounded-full bg-primary px-8 text-base font-bold text-primary-foreground shadow-pop transition-all hover:scale-105 active:scale-95 sm:w-auto"
+                  >
+                    {heroBanner?.cta_text || "Shop the collection"}
+                    <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
+                  </Link>
+                </div>
+              </ScrollReveal>
+            </div>
 
-        </div>
-      </section>
+          </div>
+        </section>
+      )}
 
 
 
@@ -244,7 +275,7 @@ function HomePage() {
             const link = isCms ? c.link : `/shop?category=${c.slug}`;
             const imageUrl = isCms ? c.image_url : (allProducts.find((prod) => prod.category === c.slug && prod.image)?.image || "/fallback-image.svg");
             const slugOrId = isCms ? c.id : c.slug;
-            
+
             return (
               <ScrollReveal key={slugOrId} direction="up" delay={i * 0.1}>
                 <Link
@@ -261,7 +292,7 @@ function HomePage() {
                   </div>
                   {/* Gradient Overlay for Text Readability */}
                   <div className="absolute inset-0 z-10 bg-gradient-to-b from-transparent via-transparent to-cocoa/90 opacity-80 transition-opacity duration-500 group-hover:opacity-100" />
-                  
+
                   {/* Emoji / Tag */}
                   {!isCms && c.emoji && (
                     <div className="relative z-20 self-start rounded-full bg-cream/95 px-4 py-2 text-xl shadow-sm backdrop-blur-md transition-transform duration-500 ease-out group-hover:rotate-[-8deg] group-hover:scale-110">
@@ -302,7 +333,7 @@ function HomePage() {
         </div>
         <div className="mt-8 grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
           {isLoadingProducts ? (
-             <p className="col-span-full text-center text-muted-foreground py-10">Loading bestsellers...</p>
+            <p className="col-span-full text-center text-muted-foreground py-10">Loading bestsellers...</p>
           ) : (
             featured.map((p) => (
               <ProductCard key={p.slug} product={p} />
@@ -317,7 +348,7 @@ function HomePage() {
           <div>
             <p className="text-xs font-bold uppercase tracking-widest text-butter">At Lil Viaa, We Focus On</p>
             <h2 className="mt-3 font-display text-4xl leading-tight md:text-5xl">
-              All-day comfort.<br/>Timeless style.<br/>Lasting quality.
+              All-day comfort.<br />Timeless style.<br />Lasting quality.
             </h2>
             <p className="mt-5 max-w-md text-cream/80">
               We don't promise perfection—we promise thoughtfulness. Every collection is designed to be versatile, long-lasting, and made to be worn and loved repeatedly.
@@ -349,7 +380,7 @@ function HomePage() {
                 className="aspect-[3/4] w-full rounded-3xl object-cover shadow-cute rotate-[-3deg]"
               />
             ) : null}
-            
+
             {featuredSection?.secondary_image_url ? (
               <img
                 src={featuredSection.secondary_image_url}
