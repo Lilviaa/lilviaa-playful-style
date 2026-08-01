@@ -550,7 +550,7 @@ def _validate_coupon_logic(code: str, cart_total: float, user_id: str | None, su
         discount_amount = min(float(coupon["value"]), scoped_subtotal)
     elif coupon["type"] == "percent":
         discount_amount = (scoped_subtotal * float(coupon["value"])) / 100
-        if coupon["max_discount_cap"] is not None:
+        if coupon["max_discount_cap"] is not None and float(coupon["max_discount_cap"]) > 0:
             discount_amount = min(discount_amount, float(coupon["max_discount_cap"]))
     elif coupon["type"] == "free_shipping":
         free_shipping = True

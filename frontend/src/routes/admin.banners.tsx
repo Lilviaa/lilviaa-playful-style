@@ -4,7 +4,7 @@ import { useAdminBanners, useCreateBanner, useUpdateBanner, useDeleteBanner, use
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Loader2, Plus, GripVertical, Trash2, Edit, Save, X, Image as ImageIcon } from "lucide-react";
-import { supabase } from "@/lib/supabase";
+import { apiFetch } from "@/lib/api";
 
 export const Route = createFileRoute("/admin/banners")({
   component: AdminBannersPage,
@@ -21,20 +21,23 @@ function AdminBannersPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
 
   const handleUploadImage = async (file: File) => {
-    const fileExt = file.name.split('.').pop();
-    const fileName = `${Math.random()}.${fileExt}`;
-    const filePath = `banners/${fileName}`;
-
-    const { error: uploadError } = await supabase.storage
-      .from('public')
-      .upload(filePath, file);
-
-    if (uploadError) {
-      throw uploadError;
-    }
-
-    const { data } = supabase.storage.from('public').getPublicUrl(filePath);
-    return data.publicUrl;
+    // 1. Request presigned URL
+    const reqRes = await apiFetch('/admin/products/upload/request-url', {
+      method: 'POST',
+      body: JSON.stringify({ filename: file.name, content_type: file.type })
+    });
+    if (!reqRes.ok) throw new Error("Failed to get upload URL");
+    const { upload_url, public_url } = await reqRes.json();
+    
+    // 2. PUT to backend upload endpoint
+    const uploadRes = await apiFetch(upload_url, {
+      method: 'PUT',
+      body: file,
+      headers: { 'Content-Type': file.type }
+    });
+    if (!uploadRes.ok) throw new Error("Failed to upload image");
+    
+    return public_url;
   };
 
   const handleCreate = async (e: React.FormEvent<HTMLFormElement>) => {
