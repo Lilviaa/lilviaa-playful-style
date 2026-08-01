@@ -80,3 +80,10 @@ class ResetPasswordOTPRequest(BaseModel):
     @classmethod
     def new_password_strength(cls, v: str) -> str:
         return _validate_password(v)
+
+class VerifyAccountRequest(BaseModel):
+    email: EmailStr
+    otp: str
+
+class ResendVerifyOTPRequest(BaseModel):
+    email: EmailStr

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Request, BackgroundTasks
+from fastapi import APIRouter, Depends, HTTPException, status, Request, BackgroundTasks, Response
 from app.api.dependencies import get_current_user_token
 from typing import List, Dict, Any
 from app.models.order import OrderCreate, OrderResponse
@@ -78,11 +78,12 @@ def create_order(order: OrderCreate, request: Request, background_tasks: Backgro
     if not variant_ids:
         raise AppError("Order must contain at least one item", status_code=400)
         
-    variants_res = supabase.table("product_variants").select("id, stock, reserved_stock, price_override, products(base_price, sale_price, sale_start, sale_end)").in_("id", variant_ids).execute()
+    variants_res = supabase.table("product_variants").select("id, stock, reserved_stock, price_override, products(id, category_id, base_price, sale_price, sale_start, sale_end)").in_("id", variant_ids).execute()
     variant_map = {v["id"]: v for v in variants_res.data}
     
     now = datetime.now(timezone.utc)
     calculated_subtotal = 0.0
+    enriched_items = []
 
     for item in order.items:
         v_data = variant_map.get(item.product_variant_id)
@@ -126,13 +127,20 @@ def create_order(order: OrderCreate, request: Request, background_tasks: Backgro
             true_unit_price = float(sale_price) if is_sale_active else base_price
 
         item.unit_price = true_unit_price
-        calculated_subtotal += (true_unit_price * item.quantity)
+        item_total = true_unit_price * item.quantity
+        calculated_subtotal += item_total
+        
+        enriched_items.append({
+            "product_id": prod.get("id"),
+            "category_id": prod.get("category_id"),
+            "total_price": item_total
+        })
         
     coupon_id = None
     discount_amount = 0.0
 
     if order.coupon_code:
-        validation = _validate_coupon_logic(order.coupon_code, calculated_subtotal, user_id, supabase)
+        validation = _validate_coupon_logic(order.coupon_code, calculated_subtotal, user_id, supabase, enriched_items)
         if not validation.get("valid"):
             raise AppError(validation.get("message", "Invalid coupon"), status_code=400)
         
@@ -435,8 +443,8 @@ class ValidateCouponRequest(BaseModel):
     code: str
     cart_total: float
     user_id: str | None = None
+    items: List[Dict[str, Any]] | None = None
 
-from fastapi import APIRouter, Depends, HTTPException, status, Request, Response
 
 @router.get("/me")
 def get_my_orders(response: Response, user: dict = Depends(get_current_user_token)):
@@ -454,7 +462,7 @@ def get_my_orders(response: Response, user: dict = Depends(get_current_user_toke
         
     return res.data
 
-def _validate_coupon_logic(code: str, cart_total: float, user_id: str | None, supabase) -> dict:
+def _validate_coupon_logic(code: str, cart_total: float, user_id: str | None, supabase, enriched_items: list[dict] = None) -> dict:
     # Find coupon by code
     coupon_res = supabase.table("coupons") \
         .select("*") \
@@ -480,7 +488,7 @@ def _validate_coupon_logic(code: str, cart_total: float, user_id: str | None, su
     if now < start:
         return {"valid": False, "discountAmount": 0, "freeShipping": False, "message": "This coupon is not yet valid."}
 
-    # Check min cart value
+    # Check min cart value against the FULL cart total
     if cart_total < float(coupon["min_cart_value"]):
         return {
             "valid": False, "discountAmount": 0, "freeShipping": False,
@@ -506,14 +514,32 @@ def _validate_coupon_logic(code: str, cart_total: float, user_id: str | None, su
         if (user_usage_res.count or 0) >= coupon["usage_limit_per_customer"]:
             return {"valid": False, "discountAmount": 0, "freeShipping": False, "message": "You have already used this coupon the maximum number of times."}
 
+    # Calculate scoped subtotal
+    scope = coupon.get("scope", "store_wide")
+    scope_ids = coupon.get("scope_ids") or []
+    
+    if scope == "store_wide":
+        scoped_subtotal = cart_total
+    else:
+        scoped_subtotal = 0.0
+        if enriched_items:
+            for item in enriched_items:
+                if scope == "product" and item.get("product_id") in scope_ids:
+                    scoped_subtotal += item.get("total_price", 0)
+                elif scope == "category" and item.get("category_id") in scope_ids:
+                    scoped_subtotal += item.get("total_price", 0)
+        
+        if scoped_subtotal == 0:
+            return {"valid": False, "discountAmount": 0, "freeShipping": False, "message": "This coupon doesn't apply to any items in your cart."}
+
     # Calculate discount
     discount_amount = 0.0
     free_shipping = False
 
     if coupon["type"] == "flat":
-        discount_amount = min(float(coupon["value"]), cart_total)
+        discount_amount = min(float(coupon["value"]), scoped_subtotal)
     elif coupon["type"] == "percent":
-        discount_amount = (cart_total * float(coupon["value"])) / 100
+        discount_amount = (scoped_subtotal * float(coupon["value"])) / 100
         if coupon["max_discount_cap"] is not None:
             discount_amount = min(discount_amount, float(coupon["max_discount_cap"]))
     elif coupon["type"] == "free_shipping":
@@ -539,4 +565,25 @@ def _validate_coupon_logic(code: str, cart_total: float, user_id: str | None, su
 def validate_coupon(req: ValidateCouponRequest):
     """Validate a coupon code and return the discount amount."""
     supabase = get_supabase()
-    return _validate_coupon_logic(req.code, req.cart_total, req.user_id, supabase)
+    
+    enriched_items = []
+    if req.items:
+        variant_ids = [it.get("product_variant_id") for it in req.items if it.get("product_variant_id")]
+        if variant_ids:
+            variants_res = supabase.table("product_variants").select("id, products(id, category_id)").in_("id", variant_ids).execute()
+            variant_map = {v["id"]: v for v in variants_res.data}
+            
+            for it in req.items:
+                vid = it.get("product_variant_id")
+                qty = float(it.get("quantity") or 1)
+                unit_price = float(it.get("unit_price") or 0)
+                v_data = variant_map.get(vid, {})
+                prod = v_data.get("products") or {}
+                
+                enriched_items.append({
+                    "product_id": prod.get("id"),
+                    "category_id": prod.get("category_id"),
+                    "total_price": qty * unit_price
+                })
+                
+    return _validate_coupon_logic(req.code, req.cart_total, req.user_id, supabase, enriched_items)

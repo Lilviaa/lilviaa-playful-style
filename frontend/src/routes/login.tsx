@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -30,11 +30,22 @@ const formSchema = z.object({
 });
 
 function LoginPage() {
-  const { login } = useAuth();
+  const { login, user } = useAuth();
   const navigate = useNavigate();
   const [errorMsg, setErrorMsg] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+
+  // Guard: If already logged in, redirect away from login page
+  useEffect(() => {
+    if (user) {
+      if (user.role === "admin") {
+        navigate({ to: "/admin", replace: true });
+      } else {
+        navigate({ to: "/account", replace: true });
+      }
+    }
+  }, [user, navigate]);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -48,13 +59,17 @@ function LoginPage() {
     setErrorMsg("");
     setIsLoading(true);
     try {
-      const user = await login(values);
-      if (user?.role === "admin") {
-        navigate({ to: "/admin" });
+      const loggedUser = await login(values);
+      if (loggedUser?.role === "admin") {
+        navigate({ to: "/admin", replace: true });
       } else {
-        navigate({ to: "/" });
+        navigate({ to: "/account", replace: true });
       }
     } catch (e: any) {
+      if (e.message.includes("Account not verified")) {
+         navigate({ to: "/verify-account", search: { email: values.email }, replace: true });
+         return;
+      }
       setErrorMsg(e.message || "Failed to login. Please check your credentials.");
     } finally {
       setIsLoading(false);

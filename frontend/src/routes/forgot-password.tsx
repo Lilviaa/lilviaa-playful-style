@@ -111,7 +111,7 @@ function ForgotPasswordPage() {
       }
       
       toast.success("Password reset successfully!", { description: "You can now log in with your new password." });
-      navigate({ to: "/login" });
+      navigate({ to: "/login", replace: true });
     } catch (err: any) {
       toast.error("Error", { description: err.message || "Failed to reset password." });
     } finally {

@@ -182,27 +182,31 @@ function AccountOrdersPage() {
                     </DialogTrigger>
                     <DialogContent>
                       <DialogHeader>
-                        <DialogTitle>Review {order.id}</DialogTitle>
+                        <DialogTitle>Review Items from #{order.id.split('-')[0].toUpperCase()}</DialogTitle>
                       </DialogHeader>
                       <div className="space-y-4 py-4">
-                        <div>
-                          <label className="text-sm font-semibold text-cocoa">Rate your experience</label>
-                          <div className="flex gap-2 mt-2">
-                            {[1, 2, 3, 4, 5].map((s) => (
-                              <Star key={s} className="h-8 w-8 text-butter hover:fill-butter cursor-pointer transition-colors" />
-                            ))}
-                          </div>
+                        <p className="text-sm text-muted-foreground">Select an item to write a review on its product page:</p>
+                        <div className="flex flex-col gap-3">
+                          {order.order_items?.map((item: any) => {
+                            const product = item.product_variants?.products;
+                            if (!product) return null;
+                            return (
+                              <Link 
+                                key={item.id} 
+                                to={`/products/${product.slug}`}
+                                className="flex items-center justify-between rounded-xl border border-border p-3 hover:bg-sand transition-colors"
+                              >
+                                <div className="flex items-center gap-3">
+                                  {product.image_urls?.[0] && (
+                                    <img src={product.image_urls[0]} alt="" className="h-10 w-10 rounded-md object-cover" />
+                                  )}
+                                  <span className="font-semibold text-cocoa">{product.name}</span>
+                                </div>
+                                <span className="text-sm font-bold text-primary flex items-center gap-1">Review <ArrowRight className="h-3 w-3" /></span>
+                              </Link>
+                            );
+                          })}
                         </div>
-                        <div>
-                          <label className="text-sm font-semibold text-cocoa">Tell us more</label>
-                          <textarea 
-                            className="w-full mt-2 rounded-xl border-2 border-border bg-background px-4 py-3 text-sm text-cocoa focus:border-primary focus:outline-none min-h-[100px]"
-                            placeholder="What did you love about these items?"
-                          />
-                        </div>
-                        <button className="w-full inline-flex justify-center items-center gap-2 rounded-xl bg-primary px-6 py-3 text-sm font-bold text-primary-foreground shadow-pop">
-                          Submit Review
-                        </button>
                       </div>
                     </DialogContent>
                   </Dialog>

@@ -3,34 +3,30 @@ import { useState, useEffect } from "react";
 import { ArrowRight, Sparkles, Truck, ShieldCheck, Ruler, Star, AlertCircle, Heart, Gem, Baby, MapPin, Store, Globe, ChevronLeft, ChevronRight } from "lucide-react";
 import { useFeaturedProducts as useDbFeaturedProducts, useProducts } from "@/lib/products-api";
 import { useCategories } from "@/lib/categories-api";
-import { useReviews } from "@/lib/admin/reviews-api";
 import { useCategoryTiles, useFeaturedProducts as useCmsFeaturedProducts, useCmsSection, useHeroSlides } from "@/lib/admin/cms-api";
 import { usePublicBanners } from "@/lib/admin/banners-api";
 import { ProductCard } from "@/components/product-card";
 import { ScrollReveal } from "@/components/scroll-reveal";
-import logoAsset from "@/assets/lilviaa-logo.png.asset.json";
 
 export const Route = createFileRoute("/")({
   component: HomePage,
 });
 
-// Hardcoded removed. Now uses CMS useHeroSlides().
-
-const marqueeItems = [
-  { icon: Store, text: "Wholesale Orders Available" },
-  { icon: Truck, text: "Free Shipping Above ₹3,000" },
-  { icon: Globe, text: "Worldwide Shipping" },
-  { icon: MapPin, text: "Proudly Made in India" },
-  { icon: Baby, text: "Boys Collection (6 Months – 6 Years)" },
-];
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000/api/v1";
 
 function HomePage() {
   const [currentHeroImage, setCurrentHeroImage] = useState(0);
   const { data: dbFeatured = [], isLoading: isLoadingProducts } = useDbFeaturedProducts();
   const { data: dbCategories = [], isLoading: isLoadingCategories } = useCategories();
   const { data: allProducts = [] } = useProducts();
-  const { data: reviews = [] } = useReviews("approved");
-  const topReviews = reviews.filter(r => r.rating === 5).slice(0, 3);
+  
+  const [topReviews, setTopReviews] = useState<any[]>([]);
+  useEffect(() => {
+    fetch(`${API_URL}/reviews/featured`)
+      .then(res => res.json())
+      .then(data => setTopReviews(data))
+      .catch(err => console.error("Failed to fetch featured reviews:", err));
+  }, []);
 
   // CMS Hooks
   const { data: banners = [] } = usePublicBanners();

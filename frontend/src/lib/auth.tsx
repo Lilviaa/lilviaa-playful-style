@@ -114,18 +114,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       body: JSON.stringify(userData)
     });
 
+    const data = await res.json();
+
     if (!res.ok) {
-      const errData = await res.json();
       let errorMessage = "Registration failed";
-      if (Array.isArray(errData.detail)) {
-        errorMessage = errData.detail.map((e: any) => e.msg).join(", ");
-      } else if (typeof errData.detail === "string") {
-        errorMessage = errData.detail;
+      if (Array.isArray(data.detail)) {
+        errorMessage = data.detail.map((e: any) => e.msg).join(", ");
+      } else if (typeof data.detail === "string") {
+        errorMessage = data.detail;
       }
       throw new Error(errorMessage);
     }
 
-    // Registration also logs us in, so fetch profile
+    // If verification is required, return the data for the caller to handle
+    if (data.requires_verification) {
+      return data; // { message, email, requires_verification }
+    }
+
+    // Fallback: if no verification needed (shouldn't happen with new flow), fetch session
     const userSession = await checkSession();
     
     // Attempt cart merge
@@ -144,9 +150,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             body: JSON.stringify({ items })
           });
           if (mergeRes.ok) {
-            const data = await mergeRes.json();
-            if (data.message && data.message.includes("adjusted")) {
-              console.warn(data.message);
+            const mergeData = await mergeRes.json();
+            if (mergeData.message && mergeData.message.includes("adjusted")) {
+              console.warn(mergeData.message);
             }
           }
         }

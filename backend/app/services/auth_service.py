@@ -1,6 +1,6 @@
 from supabase import Client
 from app.models.auth import UserCreate, UserLogin, Token, UserResponse, UserProfileUpdate
-from app.core.exceptions import AppError, UnauthorizedError
+from app.core.exceptions import AppError, UnauthorizedError, UnverifiedAccountError
 from app.db.supabase import get_supabase, get_fresh_supabase, get_anon_supabase
 
 class AuthService:
@@ -45,6 +45,11 @@ class AuthService:
 
     def login_user(self, user_in: UserLogin) -> Token:
         try:
+            # Check if the account is verified before allowing login
+            user_check = self.supabase.table("users").select("is_verified").eq("email", user_in.email).execute()
+            if user_check.data and not user_check.data[0].get("is_verified", False):
+                raise UnverifiedAccountError(user_in.email)
+            
             # Use ANON client — safe privilege level for user-facing sign-in
             anon_client = get_anon_supabase()
             auth_response = anon_client.auth.sign_in_with_password({
@@ -64,6 +69,8 @@ class AuthService:
                 refresh_token=auth_response.session.refresh_token,
                 token_type="bearer"
             )
+        except UnverifiedAccountError:
+            raise
         except Exception:
             # Sanitized: do not log the raw exception — it can leak whether the email
             # exists, Supabase internal messages, etc.

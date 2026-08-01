@@ -36,8 +36,8 @@ app.add_middleware(SlowAPIMiddleware)
 app.add_exception_handler(AppError, app_error_handler)
 
 # Include Routers
-from app.api.v1 import auth, addresses, categories, products, admin_products, orders, webhooks, cart, banners
-from app.api.v1 import admin_dashboard, admin_orders, admin_customers, admin_coupons, admin_banners
+from app.api.v1 import auth, addresses, categories, products, admin_products, orders, webhooks, cart, banners, reviews
+from app.api.v1 import admin_dashboard, admin_orders, admin_customers, admin_coupons, admin_banners, admin_reviews
 
 # (I will just add them below the others)
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["Auth"])
@@ -49,11 +49,13 @@ app.include_router(admin_products.router, prefix="/api/v1/admin/products", tags=
 app.include_router(orders.router, prefix="/api/v1/orders", tags=["Orders"])
 app.include_router(webhooks.router, prefix="/api/v1/webhooks", tags=["Webhooks"])
 app.include_router(banners.router, prefix="/api/v1/banners", tags=["Banners"])
+app.include_router(reviews.router, prefix="/api/v1/reviews", tags=["Reviews"])
 app.include_router(admin_dashboard.router, prefix="/api/v1/admin/dashboard", tags=["Admin Dashboard"])
 app.include_router(admin_orders.router, prefix="/api/v1/admin/orders", tags=["Admin Orders"])
 app.include_router(admin_customers.router, prefix="/api/v1/admin/customers", tags=["Admin Customers"])
 app.include_router(admin_coupons.router, prefix="/api/v1/admin/coupons", tags=["Admin Coupons"])
 app.include_router(admin_banners.router, prefix="/api/v1/admin/banners", tags=["Admin Banners"])
+app.include_router(admin_reviews.router, prefix="/api/v1/admin/reviews", tags=["Admin Reviews"])
 
 @app.get("/health")
 def health_check():

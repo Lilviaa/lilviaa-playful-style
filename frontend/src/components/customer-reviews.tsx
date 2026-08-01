@@ -1,32 +1,50 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Star, StarHalf, CheckCircle2, ChevronDown, Edit2 } from "lucide-react";
+import { useAuth } from "@/lib/auth";
+import { toast } from "sonner";
 
 interface Review {
   id: string;
   rating: number;
   title?: string;
   text: string;
-  reviewerName: string;
-  date: string;
-  verifiedPurchase: boolean;
+  reviewer_name: string;
+  created_at: string;
+  verified_purchase: boolean;
 }
 
-// Initial mock data
-const initialReviews: Review[] = [];
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000/api/v1";
 
-export function CustomerReviews() {
-  const [reviews, setReviews] = useState<Review[]>(initialReviews);
+export function CustomerReviews({ productId }: { productId: string }) {
+  const { user } = useAuth();
+  const [reviews, setReviews] = useState<Review[]>([]);
   const [isWriting, setIsWriting] = useState(false);
   const [hoverRating, setHoverRating] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
 
   // Form State
   const [rating, setRating] = useState(0);
   const [ratingError, setRatingError] = useState("");
   const [title, setTitle] = useState("");
   const [text, setText] = useState("");
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [verified, setVerified] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    async function fetchReviews() {
+      try {
+        const res = await fetch(`${API_URL}/reviews/product/${productId}`);
+        if (res.ok) {
+          const data = await res.json();
+          setReviews(data.data || []);
+        }
+      } catch (err) {
+        console.error("Failed to fetch reviews", err);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    fetchReviews();
+  }, [productId]);
 
   const averageRating = reviews.length > 0 
     ? (reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length).toFixed(1)
@@ -38,32 +56,50 @@ export function CustomerReviews() {
     return { star, count, percentage };
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!user) {
+      toast.error("You must be logged in to review a product.");
+      return;
+    }
     if (rating === 0) {
       setRatingError("Please select a star rating");
       return;
     }
-    const newReview: Review = {
-      id: Date.now().toString(),
-      rating,
-      title,
-      text,
-      reviewerName: name,
-      date: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
-      verifiedPurchase: verified,
-    };
-    
-    setReviews([newReview, ...reviews]);
-    setIsWriting(false);
-    
-    // Reset form
-    setRating(0);
-    setTitle("");
-    setText("");
-    setName("");
-    setEmail("");
-    setVerified(false);
+
+    setIsSubmitting(true);
+    try {
+      const res = await fetch(`${API_URL}/reviews/`, {
+        method: "POST",
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${localStorage.getItem("access_token")}` 
+        },
+        body: JSON.stringify({
+          product_id: productId,
+          rating,
+          title,
+          text
+        })
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.detail || "Failed to submit review");
+      }
+
+      toast.success("Review submitted! It will appear once approved by our team.");
+      setIsWriting(false);
+      
+      // Reset form
+      setRating(0);
+      setTitle("");
+      setText("");
+    } catch (err: any) {
+      toast.error(err.message);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -105,7 +141,13 @@ export function CustomerReviews() {
           </div>
 
           <button 
-            onClick={() => setIsWriting(!isWriting)}
+            onClick={() => {
+              if (!user) {
+                toast.error("Please log in to write a review.");
+                return;
+              }
+              setIsWriting(!isWriting);
+            }}
             className="w-full flex items-center justify-center gap-2 bg-cocoa text-white font-bold uppercase tracking-widest text-sm py-4 hover:bg-cocoa/90 transition-colors shadow-sm"
           >
             <Edit2 className="h-4 w-4" />
@@ -147,31 +189,6 @@ export function CustomerReviews() {
                   {ratingError && <p className="text-red-500 text-xs font-bold mt-2">{ratingError}</p>}
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-bold text-cocoa uppercase tracking-widest mb-2">Name *</label>
-                    <input 
-                      type="text" 
-                      required
-                      value={name}
-                      onChange={e => setName(e.target.value)}
-                      className="w-full h-12 px-4 bg-white border border-border rounded-md focus:border-cocoa focus:ring-1 focus:ring-cocoa outline-none transition-all"
-                      placeholder="Enter your name"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-bold text-cocoa uppercase tracking-widest mb-2">Email *</label>
-                    <input 
-                      type="email" 
-                      required
-                      value={email}
-                      onChange={e => setEmail(e.target.value)}
-                      className="w-full h-12 px-4 bg-white border border-border rounded-md focus:border-cocoa focus:ring-1 focus:ring-cocoa outline-none transition-all"
-                      placeholder="john@example.com"
-                    />
-                  </div>
-                </div>
-
                 <div>
                   <label className="block text-sm font-bold text-cocoa uppercase tracking-widest mb-2">Review Title</label>
                   <input 
@@ -195,25 +212,13 @@ export function CustomerReviews() {
                   />
                 </div>
 
-                <div className="flex items-center gap-3">
-                  <input 
-                    type="checkbox" 
-                    id="verified"
-                    checked={verified}
-                    onChange={e => setVerified(e.target.checked)}
-                    className="h-5 w-5 rounded border-border text-cocoa focus:ring-cocoa bg-white"
-                  />
-                  <label htmlFor="verified" className="text-sm font-semibold text-cocoa cursor-pointer">
-                    I have purchased this product from Lil Viaaa
-                  </label>
-                </div>
-
                 <div className="flex gap-4 pt-4">
                   <button 
                     type="submit"
-                    className="flex-1 bg-cocoa text-white font-bold uppercase tracking-widest text-sm h-12 hover:bg-cocoa/90 transition-colors shadow-sm"
+                    disabled={isSubmitting}
+                    className="flex-1 bg-cocoa text-white font-bold uppercase tracking-widest text-sm h-12 hover:bg-cocoa/90 transition-colors shadow-sm disabled:opacity-50"
                   >
-                    Submit Review
+                    {isSubmitting ? "Submitting..." : "Submit Review"}
                   </button>
                   <button 
                     type="button"
@@ -227,7 +232,11 @@ export function CustomerReviews() {
             </div>
           )}
 
-          {reviews.length === 0 ? (
+          {isLoading ? (
+            <div className="text-center py-16 px-4 bg-sand/50 rounded-2xl border border-border border-dashed">
+              <h4 className="font-display text-xl text-cocoa mb-2 animate-pulse">Loading reviews...</h4>
+            </div>
+          ) : reviews.length === 0 ? (
             <div className="text-center py-16 px-4 bg-sand/50 rounded-2xl border border-border border-dashed">
               <Star className="h-12 w-12 text-muted-foreground/30 mx-auto mb-4" />
               <h4 className="font-display text-xl text-cocoa mb-2">No reviews yet</h4>
@@ -249,17 +258,19 @@ export function CustomerReviews() {
                       </div>
                       {review.title && <h4 className="font-bold text-cocoa">{review.title}</h4>}
                     </div>
-                    <span className="text-sm text-muted-foreground shrink-0">{review.date}</span>
+                    <span className="text-sm text-muted-foreground shrink-0">
+                      {new Date(review.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+                    </span>
                   </div>
                   
                   <p className="text-muted-foreground leading-relaxed mb-4 whitespace-pre-line">{review.text}</p>
                   
                   <div className="flex items-center gap-3 text-sm mt-4">
                     <div className="h-8 w-8 rounded-full bg-sand border border-border text-cocoa flex items-center justify-center font-bold uppercase shrink-0 shadow-sm">
-                      {review.reviewerName.charAt(0)}
+                      {review.reviewer_name.charAt(0)}
                     </div>
-                    <span className="font-bold text-cocoa">{review.reviewerName}</span>
-                    {review.verifiedPurchase && (
+                    <span className="font-bold text-cocoa">{review.reviewer_name}</span>
+                    {review.verified_purchase && (
                       <span className="flex items-center gap-1 text-emerald-700 font-semibold bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
                         <CheckCircle2 className="h-3.5 w-3.5" /> Verified Purchase
                       </span>
@@ -267,14 +278,6 @@ export function CustomerReviews() {
                   </div>
                 </div>
               ))}
-              
-              {reviews.length > 3 && (
-                <div className="pt-4 text-center">
-                  <button className="inline-flex items-center gap-2 text-sm font-bold text-cocoa hover:text-primary transition-colors uppercase tracking-widest">
-                    Load More <ChevronDown className="h-4 w-4" />
-                  </button>
-                </div>
-              )}
             </div>
           )}
         </div>

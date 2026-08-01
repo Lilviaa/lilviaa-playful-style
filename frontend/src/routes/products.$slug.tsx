@@ -514,7 +514,7 @@ function ProductPage() {
         </div>
       </div>
 
-      <CustomerReviews />
+      <CustomerReviews productId={product.id} />
 
       <section className="mx-auto max-w-7xl px-6 py-16 border-t border-border mt-8">
         <h2 className="font-display text-2xl text-cocoa md:text-3xl text-center uppercase tracking-widest">You may also love</h2>

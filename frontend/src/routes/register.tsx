@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -34,11 +34,22 @@ const formSchema = z.object({
 });
 
 function RegisterPage() {
-  const { registerUser } = useAuth();
+  const { registerUser, user } = useAuth();
   const navigate = useNavigate();
   const [errorMsg, setErrorMsg] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+
+  // Guard: If already logged in, redirect away from register page
+  useEffect(() => {
+    if (user) {
+      if (user.role === "admin") {
+        navigate({ to: "/admin", replace: true });
+      } else {
+        navigate({ to: "/account", replace: true });
+      }
+    }
+  }, [user, navigate]);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -54,16 +65,18 @@ function RegisterPage() {
     setErrorMsg("");
     setIsLoading(true);
     try {
-      const user = await registerUser({
+      const result = await registerUser({
         full_name: values.fullName, // Match backend snake_case key
         email: values.email,
         phone: values.phone,
         password: values.password
       });
-      if (user?.role === "admin") {
-        navigate({ to: "/admin" });
+      if (result?.requires_verification) {
+        navigate({ to: "/verify-account", search: { email: values.email }, replace: true });
+      } else if (result?.role === "admin") {
+        navigate({ to: "/admin", replace: true });
       } else {
-        navigate({ to: "/" });
+        navigate({ to: "/account", replace: true });
       }
     } catch (e: any) {
       setErrorMsg(e.message || "Failed to register. Please check your details.");

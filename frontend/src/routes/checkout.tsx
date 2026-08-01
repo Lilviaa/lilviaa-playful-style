@@ -86,6 +86,11 @@ function CheckoutPage() {
           code: couponCodeInput.trim(),
           cart_total: subtotal,
           user_id: user?.id || null,
+          items: items.map(it => ({
+            product_variant_id: it.variant_id,
+            quantity: it.qty,
+            unit_price: it.price
+          }))
         }),
       });
       const data = await res.json();
@@ -219,7 +224,7 @@ function CheckoutPage() {
               throw new Error("Payment verification failed");
             }
             clear();
-            navigate({ to: "/order-success" });
+            navigate({ to: "/order-success", replace: true });
           } catch (err: any) {
             setPaymentError(err.message || "Failed to verify payment");
             setIsVerifyingPayment(false);
@@ -236,14 +241,14 @@ function CheckoutPage() {
         },
         modal: {
           ondismiss: function() {
-            navigate({ to: "/order-failed" });
+            navigate({ to: "/order-failed", replace: true });
           }
         }
       };
 
       const rzp = new (window as any).Razorpay(options);
       rzp.on('payment.failed', function (response: any) {
-        navigate({ to: "/order-failed" });
+        navigate({ to: "/order-failed", replace: true });
       });
       rzp.open();
     } catch (error: any) {

@@ -52,6 +52,29 @@ def send_otp_email(to_email: str, otp: str):
     """
     _send_email(to_email, subject, html)
 
+def send_verification_email(to_email: str, otp: str):
+    import time
+    from datetime import datetime
+    
+    current_time = datetime.now().strftime("%I:%M:%S %p")
+    subject = f"Verify Your Lilviaa Account - {current_time}"
+    html = f"""
+    <html>
+      <body style="font-family: Arial, sans-serif; color: #333; line-height: 1.6; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <h2 style="color: #d25f5f;">Welcome to Lilviaa!</h2>
+        <p>Hello,</p>
+        <p>Thank you for creating your Lilviaa account! Please verify your email address by entering the code below.</p>
+        <div style="background-color: #f9f9f9; padding: 15px; text-align: center; border-radius: 8px; margin: 20px 0;">
+            <h1 style="letter-spacing: 5px; color: #333; margin: 0;">{otp}</h1>
+        </div>
+        <p>This code is valid for 15 minutes. If you did not create an account, please ignore this email.</p>
+        <p style="font-size: 12px; color: #999; margin-top: 30px;">Code requested at {current_time}</p>
+        <p>Best regards,<br>The Lilviaa Team</p>
+      </body>
+    </html>
+    """
+    _send_email(to_email, subject, html)
+
 def send_order_confirmation_email(to_email: str, order_data: dict, items: list):
     order_id = order_data.get("id")
     total_amount = order_data.get("total_amount")

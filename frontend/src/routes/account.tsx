@@ -20,7 +20,7 @@ function AccountLayout() {
 
   useEffect(() => {
     if (!user) {
-      navigate({ to: "/login" });
+      navigate({ to: "/login", replace: true });
     }
   }, [user, navigate]);
 
@@ -28,7 +28,7 @@ function AccountLayout() {
 
   function handleLogout() {
     logout();
-    navigate({ to: "/login" });
+    navigate({ to: "/login", replace: true });
   }
 
   const navItems = [

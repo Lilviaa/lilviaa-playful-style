@@ -24,3 +24,9 @@ class UnauthorizedError(AppError):
 class ForbiddenError(AppError):
     def __init__(self, message: str = "Not enough permissions"):
         super().__init__(message, status.HTTP_403_FORBIDDEN)
+
+class UnverifiedAccountError(AppError):
+    """Raised when an unverified user attempts to log in."""
+    def __init__(self, email: str):
+        self.email = email
+        super().__init__("Account not verified. Please check your email for the verification code.", status.HTTP_403_FORBIDDEN)
