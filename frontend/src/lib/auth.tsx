@@ -13,6 +13,7 @@ export interface User {
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
+  isLoggingOut: boolean;
   login: (credentials: Record<string, string>) => Promise<User | undefined>;
   registerUser: (userData: Record<string, string>) => Promise<User | undefined>;
   logout: () => Promise<void>;
@@ -24,6 +25,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const checkSession = useCallback(async () => {
     try {
@@ -167,17 +169,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = async () => {
     try {
+      setIsLoggingOut(true);
       await apiFetch("/auth/logout", { method: "POST" });
     } catch (e) {
       console.error("Logout error", e);
     } finally {
       setUser(null);
       localStorage.removeItem("lilviaa-cart-v1-guest");
+      setIsLoggingOut(false);
     }
   };
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, login, registerUser, logout, checkSession }}>
+    <AuthContext.Provider value={{ user, isLoading, isLoggingOut, login, registerUser, logout, checkSession }}>
       {children}
     </AuthContext.Provider>
   );

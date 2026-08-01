@@ -1,7 +1,7 @@
 import { createFileRoute, Outlet, useNavigate, Link, useRouterState } from "@tanstack/react-router";
 import { useAuth } from "@/lib/auth";
 import { useEffect } from "react";
-import { LogOut, Package, User, Settings } from "lucide-react";
+import { LogOut, Package, User, Settings, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/account")({
@@ -14,7 +14,7 @@ export const Route = createFileRoute("/account")({
 });
 
 function AccountLayout() {
-  const { user, logout } = useAuth();
+  const { user, logout, isLoggingOut } = useAuth();
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
@@ -59,9 +59,11 @@ function AccountLayout() {
         </div>
         <button
           onClick={handleLogout}
-          className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-6 py-2 text-sm font-semibold text-cocoa transition-colors hover:bg-sand hover:text-primary w-fit"
+          disabled={isLoggingOut}
+          className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-6 py-2 text-sm font-semibold text-cocoa transition-colors hover:bg-sand hover:text-primary w-fit disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          <LogOut className="h-4 w-4" /> Log out
+          {isLoggingOut ? <Loader2 className="h-4 w-4 animate-spin" /> : <LogOut className="h-4 w-4" />}
+          {isLoggingOut ? "Logging out..." : "Log out"}
         </button>
       </div>
 

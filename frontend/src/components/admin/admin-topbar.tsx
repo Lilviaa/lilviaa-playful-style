@@ -1,4 +1,4 @@
-import { Search, Menu, LogOut } from "lucide-react";
+import { Search, Menu, LogOut, Loader2 } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
@@ -12,7 +12,7 @@ import { AdminSidebar } from "./admin-sidebar";
 import { useState } from "react";
 
 export function AdminTopbar() {
-  const { user, logout } = useAuth();
+  const { user, logout, isLoggingOut } = useAuth();
   const [open, setOpen] = useState(false);
 
   return (
@@ -62,11 +62,17 @@ export function AdminTopbar() {
             </div>
             <div className="h-px bg-border my-1" />
             <DropdownMenuItem 
-              onClick={() => logout()}
-              className="text-red-600 focus:text-red-600 focus:bg-red-50 cursor-pointer"
+              onClick={(e) => {
+                if (isLoggingOut) {
+                  e.preventDefault();
+                  return;
+                }
+                logout();
+              }}
+              className="cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50"
             >
-              <LogOut className="mr-2 h-4 w-4" />
-              Log out
+              {isLoggingOut ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <LogOut className="mr-2 h-4 w-4" />}
+              {isLoggingOut ? "Logging out..." : "Logout"}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

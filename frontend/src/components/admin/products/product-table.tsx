@@ -214,11 +214,9 @@ export function ProductTable({
       cell: ({ row }) => {
         const product = row.original;
         const isSaleActive =
-          product.sale_price &&
-          product.sale_start &&
-          product.sale_end &&
-          new Date() >= new Date(product.sale_start) &&
-          new Date() <= new Date(product.sale_end);
+          product.sale_price !== null &&
+          (!product.sale_start || new Date() >= new Date(product.sale_start)) &&
+          (!product.sale_end || new Date() <= new Date(product.sale_end));
 
         return (
           <div className="flex flex-col">

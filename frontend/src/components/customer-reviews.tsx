@@ -13,6 +13,8 @@ interface Review {
   verified_purchase: boolean;
 }
 
+import { apiFetch } from "@/lib/api";
+
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000/api/v1";
 
 export function CustomerReviews({ productId }: { productId: string }) {
@@ -32,7 +34,7 @@ export function CustomerReviews({ productId }: { productId: string }) {
   useEffect(() => {
     async function fetchReviews() {
       try {
-        const res = await fetch(`${API_URL}/reviews/product/${productId}`);
+        const res = await apiFetch(`/reviews/product/${productId}`);
         if (res.ok) {
           const data = await res.json();
           setReviews(data.data || []);
@@ -69,12 +71,8 @@ export function CustomerReviews({ productId }: { productId: string }) {
 
     setIsSubmitting(true);
     try {
-      const res = await fetch(`${API_URL}/reviews/`, {
+      const res = await apiFetch(`/reviews/`, {
         method: "POST",
-        headers: { 
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${localStorage.getItem("access_token")}` 
-        },
         body: JSON.stringify({
           product_id: productId,
           rating,

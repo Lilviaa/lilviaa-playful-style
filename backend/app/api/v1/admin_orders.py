@@ -38,9 +38,19 @@ def list_orders(
         query = query.eq("payment_method", payment_method)
         
     if search:
-        # Assuming ID or phone can be searched via DB if possible, but PostgREST doesn't support easy OR across foreign tables
-        # For a truly large DB, we'd use a dedicated RPC. For now, doing an ilike on id directly
-        query = query.ilike("id", f"%{search}%")
+        import uuid
+        is_uuid = False
+        try:
+            uuid.UUID(search)
+            is_uuid = True
+        except ValueError:
+            pass
+            
+        if is_uuid:
+            query = query.eq("id", search)
+        else:
+            # Search by customer name or phone instead of ID
+            query = query.or_(f"shipping_address->>full_name.ilike.%{search}%,shipping_address->>phone.ilike.%{search}%")
 
     start_idx = (page - 1) * limit
     end_idx = start_idx + limit - 1
@@ -84,6 +94,8 @@ def list_orders(
                 "price_at_purchase": float(oi["unit_price"]),
             })
 
+        addr_snap = o.get("shipping_address") or {}
+        
         order_obj = {
             "id": o["id"],
             "customer_id": o.get("user_id"),
@@ -95,13 +107,13 @@ def list_orders(
             "shipping_fee": float(o.get("shipping_amount", 0)),
             "total": float(o["total_amount"]),
             "shipping_address": {
-                "fullName": addr.get("full_name", ""),
-                "email": "",
-                "phone": addr.get("phone", ""),
-                "address": addr.get("address", ""),
-                "city": addr.get("city", ""),
-                "state": addr.get("state", ""),
-                "zip": addr.get("zip", ""),
+                "fullName": addr_snap.get("full_name") or addr.get("full_name", ""),
+                "email": addr_snap.get("email") or "",
+                "phone": addr_snap.get("phone") or addr.get("phone", ""),
+                "address": addr_snap.get("address") or addr.get("address", ""),
+                "city": addr_snap.get("city") or addr.get("city", ""),
+                "state": addr_snap.get("state") or addr.get("state", ""),
+                "zip": addr_snap.get("zip") or addr.get("zip", ""),
             },
             "tracking_number": o.get("tracking_number"),
             "call_confirmed": o.get("call_confirmed", False),

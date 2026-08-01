@@ -781,10 +781,17 @@ function CheckoutPage() {
                     className="rounded-xl border-border bg-background uppercase" 
                     value={couponCodeInput}
                     onChange={(e) => setCouponCodeInput(e.target.value.toUpperCase())}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && !isApplyingCoupon && !appliedCoupon?.valid && couponCodeInput.trim()) {
+                        e.preventDefault();
+                        handleApplyCoupon();
+                      }
+                    }}
                     disabled={isApplyingCoupon || appliedCoupon?.valid}
                   />
                   {appliedCoupon?.valid ? (
                     <button 
+                      type="button"
                       onClick={handleRemoveCoupon}
                       className="rounded-xl bg-red-100 px-4 py-2 text-sm font-bold text-red-600 transition-colors hover:bg-red-200"
                     >
@@ -792,6 +799,7 @@ function CheckoutPage() {
                     </button>
                   ) : (
                     <button 
+                      type="button"
                       onClick={handleApplyCoupon}
                       disabled={isApplyingCoupon || !couponCodeInput.trim()}
                       className="rounded-xl bg-cocoa px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-cocoa/90 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"

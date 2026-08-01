@@ -434,7 +434,7 @@ function HomePage() {
                   <p className="mt-4 font-display text-lg leading-snug text-cocoa">
                     "{t.text}"
                   </p>
-                  <p className="mt-4 text-sm font-semibold text-cocoa/70">— {t.customer_name}</p>
+                  <p className="mt-4 text-sm font-semibold text-cocoa/70">— {t.reviewer_name}</p>
                 </div>
               );
             })

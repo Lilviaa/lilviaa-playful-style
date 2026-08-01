@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, Query
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 from typing import Optional, List
 from datetime import datetime, timezone
 from uuid import UUID
@@ -26,6 +26,10 @@ class CouponCreate(BaseModel):
     end_date: str
     active: bool = True
 
+    @field_validator("code")
+    def sanitize_code(cls, v):
+        return v.upper().strip()
+
 
 class CouponUpdate(BaseModel):
     code: Optional[str] = None
@@ -40,6 +44,10 @@ class CouponUpdate(BaseModel):
     start_date: Optional[str] = None
     end_date: Optional[str] = None
     active: Optional[bool] = None
+
+    @field_validator("code")
+    def sanitize_code(cls, v):
+        return v.upper().strip() if v else v
 
 
 @router.get("/")

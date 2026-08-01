@@ -34,7 +34,7 @@ def get_featured_reviews():
     # We join users to get the name, and check order_item_id for verified purchase
     res = supabase.table("reviews").select(
         "id, product_id, user_id, rating, title, text, is_featured, created_at, order_item_id, users(email, user_profiles(full_name))"
-    ).eq("status", "approved").eq("is_featured", True).eq("rating", 5).order("created_at", desc=True).limit(3).execute()
+    ).eq("status", "approved").eq("is_featured", True).order("rating", desc=True).order("created_at", desc=True).limit(3).execute()
     
     out = []
     for row in res.data:

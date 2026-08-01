@@ -34,9 +34,9 @@ const couponSchema = z.object({
   active: z.boolean(),
 });
 
-export type CouponFormValues = z.infer<typeof couponSchema>;
+import { useCategories } from "@/lib/products-api";
 
-const CATEGORIES = ["Shirts", "Kurtas", "Rompers", "Dresses", "Sets", "Ethnic Wear"];
+export type CouponFormValues = z.infer<typeof couponSchema>;
 
 interface CouponFormProps {
   defaultValues?: Partial<Coupon>;
@@ -46,6 +46,7 @@ interface CouponFormProps {
 }
 
 export function CouponForm({ defaultValues, onSubmit, isPending, submitLabel = "Save Coupon" }: CouponFormProps) {
+  const { data: dbCategories = [] } = useCategories();
   const {
     register,
     control,
@@ -198,33 +199,33 @@ export function CouponForm({ defaultValues, onSubmit, isPending, submitLabel = "
 
         {scope === "category" && (
           <div className="space-y-2">
-            <Label className="text-cocoa font-semibold">Categories (comma-separated)</Label>
+            <Label className="text-cocoa font-semibold">Category UUIDs (comma-separated)</Label>
             <div className="flex flex-wrap gap-2 mb-2">
-              {CATEGORIES.map((cat) => (
+              {dbCategories.map((cat) => (
                 <button
-                  key={cat}
+                  key={cat.id}
                   type="button"
                   onClick={() => {
                     const raw = watch("scope_ids_raw") || "";
                     const parts = raw.split(",").map((s) => s.trim()).filter(Boolean);
-                    if (parts.includes(cat)) {
-                      setValue("scope_ids_raw", parts.filter((p) => p !== cat).join(", "));
+                    if (parts.includes(cat.id)) {
+                      setValue("scope_ids_raw", parts.filter((p) => p !== cat.id).join(", "));
                     } else {
-                      setValue("scope_ids_raw", [...parts, cat].join(", "));
+                      setValue("scope_ids_raw", [...parts, cat.id].join(", "));
                     }
                   }}
                   className={`px-3 py-1 rounded-full border text-xs font-medium transition-colors ${
-                    (watch("scope_ids_raw") || "").includes(cat)
+                    (watch("scope_ids_raw") || "").includes(cat.id)
                       ? "bg-cocoa text-white border-cocoa"
                       : "border-cocoa/20 text-cocoa hover:bg-sand/50"
                   }`}
                 >
-                  {cat}
+                  {cat.name}
                 </button>
               ))}
             </div>
             <Input
-              placeholder="Or type manually: Shirts, Kurtas..."
+              placeholder="Or type UUID manually..."
               {...register("scope_ids_raw")}
               className="rounded-xl border-cocoa/20"
             />

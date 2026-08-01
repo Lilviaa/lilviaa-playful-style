@@ -6,24 +6,23 @@ export async function fetchProducts(category?: string, sort?: string, q?: string
   const url = new URL(`${API_URL}/products/`);
   if (category && category !== "all") url.searchParams.append("category", category);
   if (sort && sort !== "featured") {
-    // Map frontend sort values to backend expected values
     const backendSort = sort.replace("-", "_");
     url.searchParams.append("sort", backendSort);
   }
   if (q) url.searchParams.append("q", q);
-  const res = await fetch(url.toString());
+  const res = await fetch(url.toString(), { cache: 'no-store' });
   if (!res.ok) throw new Error("Failed to fetch products");
   return res.json();
 }
 
 export async function fetchFeaturedProducts(): Promise<Product[]> {
-  const res = await fetch(`${API_URL}/products/featured`);
+  const res = await fetch(`${API_URL}/products/featured`, { cache: 'no-store' });
   if (!res.ok) throw new Error("Failed to fetch featured products");
   return res.json();
 }
 
 export async function fetchProduct(slug: string): Promise<Product> {
-  const res = await fetch(`${API_URL}/products/${slug}`);
+  const res = await fetch(`${API_URL}/products/${slug}`, { cache: 'no-store' });
   if (!res.ok) {
     if (res.status === 404) throw new Error("Product not found");
     throw new Error("Failed to fetch product");

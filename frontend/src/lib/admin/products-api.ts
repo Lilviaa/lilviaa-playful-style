@@ -323,7 +323,7 @@ export function useSaveProduct() {
       queryClient.invalidateQueries({ queryKey: ["admin-product", id] });
       queryClient.invalidateQueries({ queryKey: ["products"] });
       if (variables.slug) {
-        queryClient.invalidateQueries({ queryKey: ["product", variables.slug] });
+        queryClient.invalidateQueries({ queryKey: ["products", variables.slug] });
       }
       toast.success("Product saved successfully");
     },

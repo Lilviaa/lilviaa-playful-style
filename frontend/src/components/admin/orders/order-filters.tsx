@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { OrderFilters as OrderFiltersType } from "@/lib/admin/orders-api";
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
@@ -32,9 +33,22 @@ export function OrderFilters({ filters, onChange }: OrderFiltersProps) {
     onChange({ ...filters, paymentMethod: val });
   };
 
-  const handleSearchChange = (val: string) => {
-    onChange({ ...filters, search: val });
-  };
+  const [localSearch, setLocalSearch] = useState(filters.search || "");
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (localSearch !== filters.search) {
+        onChange({ ...filters, search: localSearch });
+      }
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [localSearch, filters, onChange]);
+
+  useEffect(() => {
+    if (filters.search !== localSearch) {
+      setLocalSearch(filters.search || "");
+    }
+  }, [filters.search]);
 
   return (
     <div className="flex flex-col sm:flex-row gap-4">
@@ -42,8 +56,8 @@ export function OrderFilters({ filters, onChange }: OrderFiltersProps) {
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
           placeholder="Search by Order ID, Customer, or Phone..."
-          value={filters.search || ""}
-          onChange={(e) => handleSearchChange(e.target.value)}
+          value={localSearch}
+          onChange={(e) => setLocalSearch(e.target.value)}
           className="pl-9 rounded-full border-cocoa/20 bg-white focus-visible:ring-primary h-10"
         />
       </div>

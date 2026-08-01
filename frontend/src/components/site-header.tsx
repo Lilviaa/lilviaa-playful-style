@@ -1,5 +1,5 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
-import { Heart, Menu, Search, ShoppingBag, X, UserCircle } from "lucide-react";
+import { Heart, Menu, Search, ShoppingBag, X, UserCircle, Loader2 } from "lucide-react";
 import { useState } from "react";
 import logoAsset from "@/assets/lilviaa-logo.png.asset.json";
 import { useCart } from "@/lib/cart";
@@ -25,7 +25,7 @@ const nav = [
 export function SiteHeader() {
   const { count } = useCart();
   const { count: wishlistCount } = useWishlist();
-  const { user, logout } = useAuth();
+  const { user, logout, isLoggingOut } = useAuth();
   const [open, setOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const navigate = useNavigate();
@@ -151,8 +151,18 @@ export function SiteHeader() {
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={logout} className="cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50">
-                  Logout
+                <DropdownMenuItem 
+                  onClick={(e) => {
+                    if (isLoggingOut) {
+                      e.preventDefault();
+                      return;
+                    }
+                    logout();
+                  }}
+                  className="cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50"
+                >
+                  {isLoggingOut && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  {isLoggingOut ? "Logging out..." : "Logout"}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

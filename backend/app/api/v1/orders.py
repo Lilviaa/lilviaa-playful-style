@@ -159,6 +159,15 @@ def create_order(order: OrderCreate, request: Request, background_tasks: Backgro
             
     is_cod = (order.payment_method == "cod")
 
+    shipping_snapshot = {
+        "full_name": order.full_name or "",
+        "phone": order.phone or "",
+        "address": order.address or "",
+        "city": order.city or "",
+        "state": order.state or "",
+        "zip": order.zip or ""
+    }
+
     # 4. Create the Order
     order_data = {
         "user_id": user_id,
@@ -167,6 +176,7 @@ def create_order(order: OrderCreate, request: Request, background_tasks: Backgro
         "shipping_amount": shipping_amount,
         "payment_method": order.payment_method,
         "shipping_address_id": shipping_address_id,
+        "shipping_address": shipping_snapshot,
         "order_source": "online",
         "coupon_id": coupon_id,
         "discount_amount": discount_amount,
