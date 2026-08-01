@@ -98,8 +98,8 @@ export function CategoryManager({ children }: { children: React.ReactNode }) {
     products?.filter((p) => {
       const searchLower = search.toLowerCase();
       const matchesSearch =
-        p.name.toLowerCase().includes(searchLower) ||
-        p.variants?.some((v) => v.sku.toLowerCase().includes(searchLower));
+        (p.name || "").toLowerCase().includes(searchLower) ||
+        p.variants?.some((v) => (v.sku || "").toLowerCase().includes(searchLower));
 
       const matchesCategory = selectedCategory === "all" || p.category === selectedCategory;
 

@@ -51,7 +51,7 @@ export function VariantEditor({ variants, onChange, basePrice }: VariantEditorPr
 
       <div className="rounded-lg border border-border overflow-hidden bg-card">
         <table className="w-full text-sm">
-          <thead className="bg-sand/30 border-b border-border text-left">
+          <thead className="bg-sand/30 border-b border-border text-center">
             <tr>
               <th className="p-3 font-semibold text-cocoa">Size</th>
               <th className="p-3 font-semibold text-cocoa">SKU</th>
