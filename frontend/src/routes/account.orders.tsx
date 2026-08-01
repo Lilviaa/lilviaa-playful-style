@@ -153,25 +153,14 @@ function AccountOrdersPage() {
                   </DialogContent>
                 </Dialog>
 
-                <Dialog>
-                  <DialogTrigger asChild>
-                    <button className="inline-flex items-center gap-2 rounded-xl border border-border bg-background px-5 py-2.5 text-sm font-semibold text-cocoa transition-colors hover:bg-sand">
-                      <FileText className="h-4 w-4" /> View Invoice
-                    </button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Invoice for #{order.id.split('-')[0].toUpperCase()}</DialogTitle>
-                    </DialogHeader>
-                    <div className="py-6 flex flex-col items-center justify-center space-y-4 text-center">
-                      <FileText className="h-16 w-16 text-muted-foreground opacity-50" />
-                      <p className="text-cocoa font-medium">Your invoice is ready to download.</p>
-                      <button className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-2 text-sm font-bold text-primary-foreground shadow-pop mt-2">
-                        <Download className="h-4 w-4" /> Download PDF
-                      </button>
-                    </div>
-                  </DialogContent>
-                </Dialog>
+                <a
+                  href={`/invoice/${order.id}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 rounded-xl border border-border bg-background px-5 py-2.5 text-sm font-semibold text-cocoa transition-colors hover:bg-sand"
+                >
+                  <FileText className="h-4 w-4" /> View Invoice
+                </a>
 
                 {isDelivered && (
                   <Dialog>

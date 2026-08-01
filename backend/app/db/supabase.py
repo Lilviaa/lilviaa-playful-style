@@ -8,9 +8,8 @@ from app.core.config import settings
 # admin updates, verifying tokens). This client is NOT used for user sign-in
 # to avoid session contamination.
 def get_supabase() -> Client:
-    """Get the admin Supabase client (service_role key, no user session)."""
-    # Create a fresh client per request to avoid httpx connection pool / HTTP2 errors
-    # when shared across FastAPI threads.
+    """Get the admin Supabase client (service_role key, no user session).
+    Returns a fresh client to prevent httpx RemoteProtocolError on stale connections."""
     return create_client(settings.SUPABASE_URL, settings.SUPABASE_SERVICE_ROLE_KEY)
 
 def get_fresh_supabase() -> Client:

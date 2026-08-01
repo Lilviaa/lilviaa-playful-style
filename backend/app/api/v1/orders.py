@@ -472,6 +472,35 @@ def get_my_orders(response: Response, user: dict = Depends(get_current_user_toke
         
     return res.data
 
+@router.get("/{order_id}")
+def get_order_by_id(order_id: str, user: dict = Depends(get_current_user_token)):
+    supabase = get_supabase()
+    
+    # Check if admin/owner or the owner of the order
+    role = user.get("user_metadata", {}).get("role", "customer")
+    
+    res = supabase.table("orders") \
+        .select("*, addresses(*), payment_transactions(*), order_items(*, product_variants(*, products(*)))") \
+        .eq("id", order_id) \
+        .execute()
+        
+    if not res.data:
+        raise HTTPException(status_code=404, detail="Order not found")
+        
+    order = res.data[0]
+    
+    # Non-admins can only see their own orders
+    if role == "customer" and order.get("user_id") != user.get("sub"):
+        raise HTTPException(status_code=403, detail="Not authorized to view this order")
+        
+    # Also fetch the user profile manually since it joins on user_id, not directly linked from order
+    if order.get("user_id"):
+        prof_res = supabase.table("user_profiles").select("*").eq("user_id", order.get("user_id")).execute()
+        if prof_res.data:
+            order["user_profile"] = prof_res.data[0]
+            
+    return order
+
 def _validate_coupon_logic(code: str, cart_total: float, user_id: str | None, supabase, enriched_items: list[dict] = None) -> dict:
     # Find coupon by code
     coupon_res = supabase.table("coupons") \

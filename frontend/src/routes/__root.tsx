@@ -141,8 +141,9 @@ function RootComponent() {
   const isAdmin = pathname.startsWith("/admin");
   const isAuthPage = pathname === "/login" || pathname === "/register" || pathname === "/forgot-password";
   const isCheckout = pathname === "/checkout";
-  const hideHeader = isAdmin || isAuthPage;
-  const hideFooter = isAdmin || isAuthPage || isCheckout;
+  const isInvoice = pathname.startsWith("/invoice");
+  const hideHeader = isAdmin || isAuthPage || isInvoice;
+  const hideFooter = isAdmin || isAuthPage || isCheckout || isInvoice;
 
   return (
     <QueryClientProvider client={queryClient}>

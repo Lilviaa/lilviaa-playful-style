@@ -1,3 +1,6 @@
+import os
+os.environ["HTTPX_NO_HTTP2"] = "1"
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv

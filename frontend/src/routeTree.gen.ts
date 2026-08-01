@@ -34,6 +34,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AccountIndexRouteImport } from './routes/account.index'
 import { Route as ProductsSlugRouteImport } from './routes/products.$slug'
+import { Route as InvoiceOrderIdRouteImport } from './routes/invoice.$orderId'
 import { Route as CheckoutPaymentFailedRouteImport } from './routes/checkout/payment-failed'
 import { Route as AdminReviewsRouteImport } from './routes/admin.reviews'
 import { Route as AdminOrdersRouteImport } from './routes/admin.orders'
@@ -176,6 +177,11 @@ const ProductsSlugRoute = ProductsSlugRouteImport.update({
   path: '/products/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const InvoiceOrderIdRoute = InvoiceOrderIdRouteImport.update({
+  id: '/invoice/$orderId',
+  path: '/invoice/$orderId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CheckoutPaymentFailedRoute = CheckoutPaymentFailedRouteImport.update({
   id: '/payment-failed',
   path: '/payment-failed',
@@ -289,6 +295,7 @@ export interface FileRoutesByFullPath {
   '/admin/orders': typeof AdminOrdersRoute
   '/admin/reviews': typeof AdminReviewsRoute
   '/checkout/payment-failed': typeof CheckoutPaymentFailedRoute
+  '/invoice/$orderId': typeof InvoiceOrderIdRoute
   '/products/$slug': typeof ProductsSlugRoute
   '/account/': typeof AccountIndexRoute
   '/admin/': typeof AdminIndexRoute
@@ -330,6 +337,7 @@ export interface FileRoutesByTo {
   '/admin/orders': typeof AdminOrdersRoute
   '/admin/reviews': typeof AdminReviewsRoute
   '/checkout/payment-failed': typeof CheckoutPaymentFailedRoute
+  '/invoice/$orderId': typeof InvoiceOrderIdRoute
   '/products/$slug': typeof ProductsSlugRoute
   '/account': typeof AccountIndexRoute
   '/admin': typeof AdminIndexRoute
@@ -374,6 +382,7 @@ export interface FileRoutesById {
   '/admin/orders': typeof AdminOrdersRoute
   '/admin/reviews': typeof AdminReviewsRoute
   '/checkout/payment-failed': typeof CheckoutPaymentFailedRoute
+  '/invoice/$orderId': typeof InvoiceOrderIdRoute
   '/products/$slug': typeof ProductsSlugRoute
   '/account/': typeof AccountIndexRoute
   '/admin/': typeof AdminIndexRoute
@@ -419,6 +428,7 @@ export interface FileRouteTypes {
     | '/admin/orders'
     | '/admin/reviews'
     | '/checkout/payment-failed'
+    | '/invoice/$orderId'
     | '/products/$slug'
     | '/account/'
     | '/admin/'
@@ -460,6 +470,7 @@ export interface FileRouteTypes {
     | '/admin/orders'
     | '/admin/reviews'
     | '/checkout/payment-failed'
+    | '/invoice/$orderId'
     | '/products/$slug'
     | '/account'
     | '/admin'
@@ -503,6 +514,7 @@ export interface FileRouteTypes {
     | '/admin/orders'
     | '/admin/reviews'
     | '/checkout/payment-failed'
+    | '/invoice/$orderId'
     | '/products/$slug'
     | '/account/'
     | '/admin/'
@@ -539,6 +551,7 @@ export interface RootRouteChildren {
   TermsRoute: typeof TermsRoute
   VerifyAccountRoute: typeof VerifyAccountRoute
   WishlistRoute: typeof WishlistRoute
+  InvoiceOrderIdRoute: typeof InvoiceOrderIdRoute
   ProductsSlugRoute: typeof ProductsSlugRoute
 }
 
@@ -717,6 +730,13 @@ declare module '@tanstack/react-router' {
       path: '/products/$slug'
       fullPath: '/products/$slug'
       preLoaderRoute: typeof ProductsSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/invoice/$orderId': {
+      id: '/invoice/$orderId'
+      path: '/invoice/$orderId'
+      fullPath: '/invoice/$orderId'
+      preLoaderRoute: typeof InvoiceOrderIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/checkout/payment-failed': {
@@ -920,6 +940,7 @@ const rootRouteChildren: RootRouteChildren = {
   TermsRoute: TermsRoute,
   VerifyAccountRoute: VerifyAccountRoute,
   WishlistRoute: WishlistRoute,
+  InvoiceOrderIdRoute: InvoiceOrderIdRoute,
   ProductsSlugRoute: ProductsSlugRoute,
 }
 export const routeTree = rootRouteImport
