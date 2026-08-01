@@ -4,7 +4,8 @@ import { ArrowRight, Sparkles, Truck, ShieldCheck, Ruler, Star, AlertCircle, Hea
 import { useFeaturedProducts as useDbFeaturedProducts, useProducts } from "@/lib/products-api";
 import { useCategories } from "@/lib/categories-api";
 import { useReviews } from "@/lib/admin/reviews-api";
-import { useBanners, useCategoryTiles, useFeaturedProducts as useCmsFeaturedProducts, useCmsSection, useHeroSlides } from "@/lib/admin/cms-api";
+import { useCategoryTiles, useFeaturedProducts as useCmsFeaturedProducts, useCmsSection, useHeroSlides } from "@/lib/admin/cms-api";
+import { usePublicBanners } from "@/lib/admin/banners-api";
 import { ProductCard } from "@/components/product-card";
 import { ScrollReveal } from "@/components/scroll-reveal";
 import logoAsset from "@/assets/lilviaa-logo.png.asset.json";
@@ -32,9 +33,9 @@ function HomePage() {
   const topReviews = reviews.filter(r => r.rating === 5).slice(0, 3);
 
   // CMS Hooks
-  const { data: banners = [] } = useBanners();
-  const heroBanner = banners.find(b => b.type === "hero");
-  const promoStrip = banners.find(b => b.type === "promo_strip" && b.active);
+  const { data: banners = [] } = usePublicBanners();
+  const heroBanner = banners.length > 0 ? banners[0] : null; // use first banner as hero
+  const promoStrip = null; // Removed since the DB schema replaces the mock promo strip
   const { data: cmsCategoryTiles = [] } = useCategoryTiles();
   const { data: cmsFeaturedProducts = [] } = useCmsFeaturedProducts();
   const { data: heroSlides = [] } = useHeroSlides();
@@ -177,11 +178,11 @@ function HomePage() {
               <ScrollReveal className="max-w-xl mx-auto md:mr-auto md:ml-0">
                 <span className="mb-4 inline-flex items-center gap-2 rounded-full border border-cream/40 bg-cream/60 px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-cocoa/80 backdrop-blur-sm shadow-sm">
                   <Sparkles className="h-3 w-3 text-primary/90" />
-                  {heroBanner?.subtext || "Premium Kidswear"}
+                  {heroBanner?.subtitle || "Premium Kidswear"}
                 </span>
                 <h1 className="mt-8 font-display text-5xl leading-[1.05] text-cocoa md:text-6xl lg:text-7xl">
                   {(() => {
-                    const text = heroBanner?.headline || "Made for Little Gentlemen.";
+                    const text = heroBanner?.title || "Made for Little Gentlemen.";
                     
                     if (text === "Made for Little Gentlemen.") {
                       return (
@@ -239,10 +240,10 @@ function HomePage() {
                 </p>
                 <div className="mt-10 flex flex-wrap gap-3 sm:gap-4">
                   <Link
-                    to={heroBanner?.cta_link || "/shop"}
+                    to={heroBanner?.link_url || "/shop"}
                     className="group inline-flex h-14 w-full items-center justify-center gap-2 rounded-full bg-primary px-8 text-base font-bold text-primary-foreground shadow-pop transition-all hover:scale-105 active:scale-95 sm:w-auto"
                   >
-                    {heroBanner?.cta_text || "Shop the collection"}
+                    {"Shop the collection"}
                     <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
                   </Link>
                 </div>

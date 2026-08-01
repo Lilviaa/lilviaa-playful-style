@@ -34,21 +34,16 @@ import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AccountIndexRouteImport } from './routes/account.index'
 import { Route as ProductsSlugRouteImport } from './routes/products.$slug'
 import { Route as CheckoutPaymentFailedRouteImport } from './routes/checkout/payment-failed'
-import { Route as AdminSettingsRouteImport } from './routes/admin.settings'
 import { Route as AdminReviewsRouteImport } from './routes/admin.reviews'
-import { Route as AdminReturnsRouteImport } from './routes/admin.returns'
-import { Route as AdminPosConnectRouteImport } from './routes/admin.pos-connect'
 import { Route as AdminOrdersRouteImport } from './routes/admin.orders'
 import { Route as AdminInventoryRouteImport } from './routes/admin.inventory'
 import { Route as AdminDashboardRouteImport } from './routes/admin.dashboard'
 import { Route as AdminBannersRouteImport } from './routes/admin.banners'
 import { Route as AccountSettingsRouteImport } from './routes/account.settings'
 import { Route as AccountOrdersRouteImport } from './routes/account.orders'
-import { Route as AdminReturnsIndexRouteImport } from './routes/admin.returns.index'
 import { Route as AdminProductsIndexRouteImport } from './routes/admin.products.index'
 import { Route as AdminCustomersIndexRouteImport } from './routes/admin.customers.index'
 import { Route as AdminCouponsIndexRouteImport } from './routes/admin.coupons.index'
-import { Route as AdminReturnsReturnIdRouteImport } from './routes/admin.returns.$returnId'
 import { Route as AdminProductsNewRouteImport } from './routes/admin.products.new'
 import { Route as AdminProductsProductIdRouteImport } from './routes/admin.products.$productId'
 import { Route as AdminCustomersCustomerIdRouteImport } from './routes/admin.customers.$customerId'
@@ -180,24 +175,9 @@ const CheckoutPaymentFailedRoute = CheckoutPaymentFailedRouteImport.update({
   path: '/payment-failed',
   getParentRoute: () => CheckoutRoute,
 } as any)
-const AdminSettingsRoute = AdminSettingsRouteImport.update({
-  id: '/settings',
-  path: '/settings',
-  getParentRoute: () => AdminRoute,
-} as any)
 const AdminReviewsRoute = AdminReviewsRouteImport.update({
   id: '/reviews',
   path: '/reviews',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminReturnsRoute = AdminReturnsRouteImport.update({
-  id: '/returns',
-  path: '/returns',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminPosConnectRoute = AdminPosConnectRouteImport.update({
-  id: '/pos-connect',
-  path: '/pos-connect',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminOrdersRoute = AdminOrdersRouteImport.update({
@@ -230,11 +210,6 @@ const AccountOrdersRoute = AccountOrdersRouteImport.update({
   path: '/orders',
   getParentRoute: () => AccountRoute,
 } as any)
-const AdminReturnsIndexRoute = AdminReturnsIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => AdminReturnsRoute,
-} as any)
 const AdminProductsIndexRoute = AdminProductsIndexRouteImport.update({
   id: '/products/',
   path: '/products/',
@@ -249,11 +224,6 @@ const AdminCouponsIndexRoute = AdminCouponsIndexRouteImport.update({
   id: '/coupons/',
   path: '/coupons/',
   getParentRoute: () => AdminRoute,
-} as any)
-const AdminReturnsReturnIdRoute = AdminReturnsReturnIdRouteImport.update({
-  id: '/$returnId',
-  path: '/$returnId',
-  getParentRoute: () => AdminReturnsRoute,
 } as any)
 const AdminProductsNewRoute = AdminProductsNewRouteImport.update({
   id: '/products/new',
@@ -310,10 +280,7 @@ export interface FileRoutesByFullPath {
   '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/inventory': typeof AdminInventoryRoute
   '/admin/orders': typeof AdminOrdersRoute
-  '/admin/pos-connect': typeof AdminPosConnectRoute
-  '/admin/returns': typeof AdminReturnsRouteWithChildren
   '/admin/reviews': typeof AdminReviewsRoute
-  '/admin/settings': typeof AdminSettingsRoute
   '/checkout/payment-failed': typeof CheckoutPaymentFailedRoute
   '/products/$slug': typeof ProductsSlugRoute
   '/account/': typeof AccountIndexRoute
@@ -323,11 +290,9 @@ export interface FileRoutesByFullPath {
   '/admin/customers/$customerId': typeof AdminCustomersCustomerIdRoute
   '/admin/products/$productId': typeof AdminProductsProductIdRoute
   '/admin/products/new': typeof AdminProductsNewRoute
-  '/admin/returns/$returnId': typeof AdminReturnsReturnIdRoute
   '/admin/coupons/': typeof AdminCouponsIndexRoute
   '/admin/customers/': typeof AdminCustomersIndexRoute
   '/admin/products/': typeof AdminProductsIndexRoute
-  '/admin/returns/': typeof AdminReturnsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -355,9 +320,7 @@ export interface FileRoutesByTo {
   '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/inventory': typeof AdminInventoryRoute
   '/admin/orders': typeof AdminOrdersRoute
-  '/admin/pos-connect': typeof AdminPosConnectRoute
   '/admin/reviews': typeof AdminReviewsRoute
-  '/admin/settings': typeof AdminSettingsRoute
   '/checkout/payment-failed': typeof CheckoutPaymentFailedRoute
   '/products/$slug': typeof ProductsSlugRoute
   '/account': typeof AccountIndexRoute
@@ -367,11 +330,9 @@ export interface FileRoutesByTo {
   '/admin/customers/$customerId': typeof AdminCustomersCustomerIdRoute
   '/admin/products/$productId': typeof AdminProductsProductIdRoute
   '/admin/products/new': typeof AdminProductsNewRoute
-  '/admin/returns/$returnId': typeof AdminReturnsReturnIdRoute
   '/admin/coupons': typeof AdminCouponsIndexRoute
   '/admin/customers': typeof AdminCustomersIndexRoute
   '/admin/products': typeof AdminProductsIndexRoute
-  '/admin/returns': typeof AdminReturnsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -402,10 +363,7 @@ export interface FileRoutesById {
   '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/inventory': typeof AdminInventoryRoute
   '/admin/orders': typeof AdminOrdersRoute
-  '/admin/pos-connect': typeof AdminPosConnectRoute
-  '/admin/returns': typeof AdminReturnsRouteWithChildren
   '/admin/reviews': typeof AdminReviewsRoute
-  '/admin/settings': typeof AdminSettingsRoute
   '/checkout/payment-failed': typeof CheckoutPaymentFailedRoute
   '/products/$slug': typeof ProductsSlugRoute
   '/account/': typeof AccountIndexRoute
@@ -415,11 +373,9 @@ export interface FileRoutesById {
   '/admin/customers/$customerId': typeof AdminCustomersCustomerIdRoute
   '/admin/products/$productId': typeof AdminProductsProductIdRoute
   '/admin/products/new': typeof AdminProductsNewRoute
-  '/admin/returns/$returnId': typeof AdminReturnsReturnIdRoute
   '/admin/coupons/': typeof AdminCouponsIndexRoute
   '/admin/customers/': typeof AdminCustomersIndexRoute
   '/admin/products/': typeof AdminProductsIndexRoute
-  '/admin/returns/': typeof AdminReturnsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -451,10 +407,7 @@ export interface FileRouteTypes {
     | '/admin/dashboard'
     | '/admin/inventory'
     | '/admin/orders'
-    | '/admin/pos-connect'
-    | '/admin/returns'
     | '/admin/reviews'
-    | '/admin/settings'
     | '/checkout/payment-failed'
     | '/products/$slug'
     | '/account/'
@@ -464,11 +417,9 @@ export interface FileRouteTypes {
     | '/admin/customers/$customerId'
     | '/admin/products/$productId'
     | '/admin/products/new'
-    | '/admin/returns/$returnId'
     | '/admin/coupons/'
     | '/admin/customers/'
     | '/admin/products/'
-    | '/admin/returns/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -496,9 +447,7 @@ export interface FileRouteTypes {
     | '/admin/dashboard'
     | '/admin/inventory'
     | '/admin/orders'
-    | '/admin/pos-connect'
     | '/admin/reviews'
-    | '/admin/settings'
     | '/checkout/payment-failed'
     | '/products/$slug'
     | '/account'
@@ -508,11 +457,9 @@ export interface FileRouteTypes {
     | '/admin/customers/$customerId'
     | '/admin/products/$productId'
     | '/admin/products/new'
-    | '/admin/returns/$returnId'
     | '/admin/coupons'
     | '/admin/customers'
     | '/admin/products'
-    | '/admin/returns'
   id:
     | '__root__'
     | '/'
@@ -542,10 +489,7 @@ export interface FileRouteTypes {
     | '/admin/dashboard'
     | '/admin/inventory'
     | '/admin/orders'
-    | '/admin/pos-connect'
-    | '/admin/returns'
     | '/admin/reviews'
-    | '/admin/settings'
     | '/checkout/payment-failed'
     | '/products/$slug'
     | '/account/'
@@ -555,11 +499,9 @@ export interface FileRouteTypes {
     | '/admin/customers/$customerId'
     | '/admin/products/$productId'
     | '/admin/products/new'
-    | '/admin/returns/$returnId'
     | '/admin/coupons/'
     | '/admin/customers/'
     | '/admin/products/'
-    | '/admin/returns/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -764,32 +706,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CheckoutPaymentFailedRouteImport
       parentRoute: typeof CheckoutRoute
     }
-    '/admin/settings': {
-      id: '/admin/settings'
-      path: '/settings'
-      fullPath: '/admin/settings'
-      preLoaderRoute: typeof AdminSettingsRouteImport
-      parentRoute: typeof AdminRoute
-    }
     '/admin/reviews': {
       id: '/admin/reviews'
       path: '/reviews'
       fullPath: '/admin/reviews'
       preLoaderRoute: typeof AdminReviewsRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/returns': {
-      id: '/admin/returns'
-      path: '/returns'
-      fullPath: '/admin/returns'
-      preLoaderRoute: typeof AdminReturnsRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/pos-connect': {
-      id: '/admin/pos-connect'
-      path: '/pos-connect'
-      fullPath: '/admin/pos-connect'
-      preLoaderRoute: typeof AdminPosConnectRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/orders': {
@@ -834,13 +755,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AccountOrdersRouteImport
       parentRoute: typeof AccountRoute
     }
-    '/admin/returns/': {
-      id: '/admin/returns/'
-      path: '/'
-      fullPath: '/admin/returns/'
-      preLoaderRoute: typeof AdminReturnsIndexRouteImport
-      parentRoute: typeof AdminReturnsRoute
-    }
     '/admin/products/': {
       id: '/admin/products/'
       path: '/products'
@@ -861,13 +775,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/coupons/'
       preLoaderRoute: typeof AdminCouponsIndexRouteImport
       parentRoute: typeof AdminRoute
-    }
-    '/admin/returns/$returnId': {
-      id: '/admin/returns/$returnId'
-      path: '/$returnId'
-      fullPath: '/admin/returns/$returnId'
-      preLoaderRoute: typeof AdminReturnsReturnIdRouteImport
-      parentRoute: typeof AdminReturnsRoute
     }
     '/admin/products/new': {
       id: '/admin/products/new'
@@ -922,29 +829,12 @@ const AccountRouteChildren: AccountRouteChildren = {
 const AccountRouteWithChildren =
   AccountRoute._addFileChildren(AccountRouteChildren)
 
-interface AdminReturnsRouteChildren {
-  AdminReturnsReturnIdRoute: typeof AdminReturnsReturnIdRoute
-  AdminReturnsIndexRoute: typeof AdminReturnsIndexRoute
-}
-
-const AdminReturnsRouteChildren: AdminReturnsRouteChildren = {
-  AdminReturnsReturnIdRoute: AdminReturnsReturnIdRoute,
-  AdminReturnsIndexRoute: AdminReturnsIndexRoute,
-}
-
-const AdminReturnsRouteWithChildren = AdminReturnsRoute._addFileChildren(
-  AdminReturnsRouteChildren,
-)
-
 interface AdminRouteChildren {
   AdminBannersRoute: typeof AdminBannersRoute
   AdminDashboardRoute: typeof AdminDashboardRoute
   AdminInventoryRoute: typeof AdminInventoryRoute
   AdminOrdersRoute: typeof AdminOrdersRoute
-  AdminPosConnectRoute: typeof AdminPosConnectRoute
-  AdminReturnsRoute: typeof AdminReturnsRouteWithChildren
   AdminReviewsRoute: typeof AdminReviewsRoute
-  AdminSettingsRoute: typeof AdminSettingsRoute
   AdminIndexRoute: typeof AdminIndexRoute
   AdminCouponsCouponIdRoute: typeof AdminCouponsCouponIdRoute
   AdminCouponsNewRoute: typeof AdminCouponsNewRoute
@@ -961,10 +851,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminDashboardRoute: AdminDashboardRoute,
   AdminInventoryRoute: AdminInventoryRoute,
   AdminOrdersRoute: AdminOrdersRoute,
-  AdminPosConnectRoute: AdminPosConnectRoute,
-  AdminReturnsRoute: AdminReturnsRouteWithChildren,
   AdminReviewsRoute: AdminReviewsRoute,
-  AdminSettingsRoute: AdminSettingsRoute,
   AdminIndexRoute: AdminIndexRoute,
   AdminCouponsCouponIdRoute: AdminCouponsCouponIdRoute,
   AdminCouponsNewRoute: AdminCouponsNewRoute,

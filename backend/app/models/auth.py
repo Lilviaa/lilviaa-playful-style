@@ -63,3 +63,20 @@ class ChangePassword(BaseModel):
     @classmethod
     def new_password_strength(cls, v: str) -> str:
         return _validate_password(v)
+
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
+
+class VerifyOTPRequest(BaseModel):
+    email: EmailStr
+    otp: str
+
+class ResetPasswordOTPRequest(BaseModel):
+    email: EmailStr
+    otp: str
+    new_password: str = Field(min_length=8)
+
+    @field_validator("new_password")
+    @classmethod
+    def new_password_strength(cls, v: str) -> str:
+        return _validate_password(v)

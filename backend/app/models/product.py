@@ -38,8 +38,6 @@ class UploadConfirmRequest(BaseModel):
 # ──────────────────────────────────────────
 class ProductVariantBase(BaseModel):
     size: str
-    color: Optional[str] = None
-    color_hex: Optional[str] = None
     sku: Optional[str] = None
     stock: int = 0
     price_override: Optional[float] = None
@@ -49,7 +47,6 @@ class ProductVariantCreate(ProductVariantBase):
 
 class ProductVariantUpdate(BaseModel):
     size: Optional[str] = None
-    color: Optional[str] = None
     sku: Optional[str] = None
     stock: Optional[int] = None
     price_override: Optional[float] = None

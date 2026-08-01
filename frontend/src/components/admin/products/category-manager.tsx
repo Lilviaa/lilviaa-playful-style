@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { FolderTree, Search, Trash2, Edit2, Check, X, ArrowRightLeft } from "lucide-react";
+import { FolderTree, Search, Trash2, Edit2, Check, X, ArrowRightLeft, Loader2 } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -53,6 +53,9 @@ export function CategoryManager({ children }: { children: React.ReactNode }) {
   // To allow creating categories without products in this session
   const [customCategories, setCustomCategories] = useState<string[]>([]);
   const [isCreatingCategory, setIsCreatingCategory] = useState(false);
+  const [isSubmittingCategory, setIsSubmittingCategory] = useState(false);
+  const [isRenamingCategory, setIsRenamingCategory] = useState<string | null>(null);
+  const [deletingCategory, setDeletingCategory] = useState<string | null>(null);
   const [newStandaloneCategory, setNewStandaloneCategory] = useState("");
 
   const { data: dbCategories = [] } = useCategories();
@@ -68,6 +71,7 @@ export function CategoryManager({ children }: { children: React.ReactNode }) {
       setIsCreatingCategory(false);
       return;
     }
+    setIsSubmittingCategory(true);
     if (!uniqueCategories.includes(trimmed)) {
       try {
         await createCategory({
@@ -79,14 +83,15 @@ export function CategoryManager({ children }: { children: React.ReactNode }) {
         setCustomCategories((prev) => [...prev, trimmed]);
         queryClient.invalidateQueries({ queryKey: ["categories"] });
         toast.success(`Category "${trimmed}" created!`);
+        setNewStandaloneCategory("");
+        setIsCreatingCategory(false);
       } catch (err: any) {
         toast.error(err.message || "Failed to create category");
       }
     } else {
       toast.error("Category already exists.");
     }
-    setNewStandaloneCategory("");
-    setIsCreatingCategory(false);
+    setIsSubmittingCategory(false);
   };
 
   const filteredProducts =
@@ -106,6 +111,8 @@ export function CategoryManager({ children }: { children: React.ReactNode }) {
       setEditingCategory(null);
       return;
     }
+    
+    setIsRenamingCategory(oldName);
 
     try {
       const categories = await getCategories();
@@ -128,43 +135,32 @@ export function CategoryManager({ children }: { children: React.ReactNode }) {
       queryClient.invalidateQueries({ queryKey: ["categories"] });
     } catch (err: any) {
       toast.error(err.message || "Failed to rename category");
+    } finally {
+      setIsRenamingCategory(null);
     }
   };
 
   const handleDeleteCategory = async (catName: string) => {
-    const productsInCat = products?.filter((p) => p.category === catName) || [];
-    const ids = productsInCat.map((p) => p.id);
-
-    setCustomCategories((prev) => prev.filter((c) => c !== catName));
-
-    const removeCategoryFromDB = async () => {
-      try {
-        const categories = await getCategories();
-        const targetCat = categories.find(c => c.name === catName);
-        if (targetCat) {
-          await deleteCategory(targetCat.id);
-          queryClient.invalidateQueries({ queryKey: ["categories"] });
-        }
-      } catch (e) {
-        console.error("Failed to delete category from DB", e);
+    setDeletingCategory(catName);
+    
+    try {
+      const categories = await getCategories();
+      const targetCat = categories.find(c => c.name === catName);
+      if (targetCat) {
+        await deleteCategory(targetCat.id);
+        queryClient.invalidateQueries({ queryKey: ["categories"] });
+        queryClient.invalidateQueries({ queryKey: ["admin-products"] });
+        queryClient.invalidateQueries({ queryKey: ["products"] });
       }
-    };
-
-    if (ids.length > 0) {
-      bulkUpdate.mutate(
-        { ids, updates: { category: "", category_id: null } as any },
-        {
-          onSuccess: async () => {
-            await removeCategoryFromDB();
-            toast.success(`Deleted category ${catName}`);
-            if (selectedCategory === catName) setSelectedCategory("all");
-          },
-        },
-      );
-    } else {
-      await removeCategoryFromDB();
+      
+      setCustomCategories((prev) => prev.filter((c) => c !== catName));
       toast.success(`Deleted category ${catName}`);
       if (selectedCategory === catName) setSelectedCategory("all");
+    } catch (e: any) {
+      toast.error(e.message || "Failed to delete category");
+      console.error("Failed to delete category", e);
+    } finally {
+      setDeletingCategory(null);
     }
   };
 
@@ -289,8 +285,13 @@ export function CategoryManager({ children }: { children: React.ReactNode }) {
                             variant="ghost"
                             className="h-8 w-8 text-green-600"
                             onClick={() => handleRenameCategory(cat)}
+                            disabled={isRenamingCategory === cat}
                           >
-                            <Check className="h-4 w-4" />
+                            {isRenamingCategory === cat ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <Check className="h-4 w-4" />
+                            )}
                           </Button>
                           <Button
                             size="icon"
@@ -350,8 +351,13 @@ export function CategoryManager({ children }: { children: React.ReactNode }) {
                                 size="icon"
                                 variant="ghost"
                                 className="h-8 w-8 text-muted-foreground hover:text-rose-600"
+                                disabled={deletingCategory === cat}
                               >
-                                <Trash2 className="h-4 w-4" />
+                                {deletingCategory === cat ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <Trash2 className="h-4 w-4" />
+                                )}
                               </Button>
                             </AlertDialogTrigger>
                             <AlertDialogContent className="bg-sand border-cocoa/10">
@@ -371,8 +377,9 @@ export function CategoryManager({ children }: { children: React.ReactNode }) {
                                 <AlertDialogAction
                                   onClick={() => handleDeleteCategory(cat)}
                                   className="bg-rose-600 hover:bg-rose-700 text-white"
+                                  disabled={deletingCategory === cat}
                                 >
-                                  Yes, delete category
+                                  {deletingCategory === cat ? "Deleting..." : "Yes, delete category"}
                                 </AlertDialogAction>
                               </AlertDialogFooter>
                             </AlertDialogContent>
@@ -405,8 +412,13 @@ export function CategoryManager({ children }: { children: React.ReactNode }) {
                       size="sm"
                       className="h-9 bg-primary hover:bg-primary/90 text-primary-foreground"
                       onClick={handleCreateCategory}
+                      disabled={isSubmittingCategory}
                     >
-                      <Check className="h-4 w-4" />
+                      {isSubmittingCategory ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Check className="h-4 w-4" />
+                      )}
                     </Button>
                     <Button
                       size="sm"

@@ -29,7 +29,7 @@ def list_orders(
     supabase = get_supabase()
 
     query = supabase.table("orders") \
-        .select("*, order_items(*, product_variants(size, color, sku, products(name, slug))), addresses(*), payment_transactions(status, razorpay_payment_id)", count="exact") \
+        .select("*, order_items(*, product_variants(size, sku, products(name, slug))), addresses(*), payment_transactions(status, razorpay_payment_id)", count="exact") \
         .order("created_at", desc=True)
 
     if status and status != "all":
@@ -79,7 +79,7 @@ def list_orders(
                 "variant_id": oi["product_variant_id"],
                 "product_name_snapshot": product.get("name", "Unknown"),
                 "size": variant.get("size", ""),
-                "color": variant.get("color", ""),
+                "sku": variant.get("sku", ""),
                 "quantity": oi["quantity"],
                 "price_at_purchase": float(oi["unit_price"]),
             })

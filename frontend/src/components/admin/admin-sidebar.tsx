@@ -24,11 +24,8 @@ export const ADMIN_LINKS = [
   { to: "/admin/orders", label: "Orders", icon: ShoppingCart },
   { to: "/admin/customers", label: "Customers", icon: Users },
   { to: "/admin/coupons", label: "Coupons", icon: Ticket },
-  { to: "/admin/returns", label: "Returns", icon: Undo2 },
   { to: "/admin/reviews", label: "Reviews", icon: Star, hasBadge: true },
   { to: "/admin/banners", label: "Banners", icon: ImageIcon },
-  { to: "/admin/pos-connect", label: "POS Connect", icon: MonitorSmartphone },
-  { to: "/admin/settings", label: "Settings", icon: Settings },
 ];
 
 export function AdminSidebar({ className }: { className?: string }) {

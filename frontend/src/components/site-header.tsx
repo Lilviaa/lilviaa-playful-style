@@ -125,10 +125,13 @@ export function SiteHeader() {
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48">
-                <div className="flex items-center gap-2 p-2">
-                  <div className="flex flex-col space-y-1 leading-none">
-                    <p className="font-medium text-sm text-cocoa">{user.name}</p>
-                    <p className="w-[150px] truncate text-xs text-muted-foreground">{user.email}</p>
+                <div className="flex items-center gap-3 p-2">
+                  <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
+                    {user.full_name?.charAt(0) || user.email.charAt(0).toUpperCase()}
+                  </div>
+                  <div>
+                    <p className="font-medium text-sm text-cocoa">{user.full_name || "User"}</p>
+                    <p className="text-xs text-muted-foreground truncate w-[100px]">{user.email}</p>
                   </div>
                 </div>
                 <DropdownMenuSeparator />

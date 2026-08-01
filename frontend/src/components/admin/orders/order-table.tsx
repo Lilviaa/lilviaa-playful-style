@@ -13,6 +13,7 @@ import { formatINR } from "@/lib/cart";
 import { OrderStatusBadge } from "./order-status-badge";
 import { OrderDetailDrawer } from "./order-detail-drawer";
 import { PackingSlipPrint } from "./packing-slip-print";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface OrderTableProps {
   data: Order[];
@@ -120,7 +121,17 @@ export function OrderTable({ data, isLoading }: OrderTableProps) {
             ))}
           </TableHeader>
           <TableBody>
-            {table.getRowModel().rows?.length ? (
+            {isLoading ? (
+              Array.from({ length: 5 }).map((_, i) => (
+                <TableRow key={`skeleton-${i}`}>
+                  {columns.map((_, j) => (
+                    <TableCell key={`cell-${i}-${j}`} className="py-4">
+                      <Skeleton className="h-5 w-[80%] rounded-md" />
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))
+            ) : table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
                 <TableRow
                   key={row.id}
@@ -140,7 +151,7 @@ export function OrderTable({ data, isLoading }: OrderTableProps) {
                   colSpan={columns.length}
                   className="h-24 text-center text-muted-foreground"
                 >
-                  {isLoading ? "Loading orders..." : "No orders found."}
+                  No orders found.
                 </TableCell>
               </TableRow>
             )}

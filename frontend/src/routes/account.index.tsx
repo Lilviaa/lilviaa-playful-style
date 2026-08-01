@@ -2,25 +2,16 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useAuth } from "@/lib/auth";
 import { MapPin, Package, User, Save, Edit2, CheckCircle2, Plus, Trash2, AlertCircle } from "lucide-react";
 import { formatINR } from "@/lib/cart";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAddresses, useCreateAddress, useUpdateAddress, useDeleteAddress, type Address } from "@/lib/addresses-api";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { toast } from "sonner";
+import { apiFetch } from "@/lib/api";
+import { useUpdateProfile } from "@/lib/profile-api";
 
 export const Route = createFileRoute("/account/")({
   component: AccountIndexPage,
 });
-
-const recentOrder = {
-  id: "#LV-928374",
-  date: "July 12, 2026",
-  status: "Delivered",
-  total: 2499,
-  items: [
-    { name: "Sunshine Linen Kurta", qty: 1, size: "2-3Y" },
-    { name: "Playful Prints Shirt", qty: 2, size: "3-4Y" }
-  ]
-};
 
 function AccountIndexPage() {
   const { user } = useAuth();
@@ -32,14 +23,45 @@ function AccountIndexPage() {
   const createAddress = useCreateAddress();
   const updateAddress = useUpdateAddress();
   const deleteAddress = useDeleteAddress();
+  const updateProfile = useUpdateProfile();
   
   const [addressView, setAddressView] = useState<"list" | "edit" | "add">("list");
   const [editingAddress, setEditingAddress] = useState<Address | null>(null);
 
-  function handleProfileSave(e: React.FormEvent) {
+  const [recentOrder, setRecentOrder] = useState<any>(null);
+  const [loadingOrder, setLoadingOrder] = useState(true);
+
+  useEffect(() => {
+    if (user) {
+      apiFetch(`/orders/me?t=${Date.now()}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data && data.length > 0) {
+            setRecentOrder(data[0]);
+          }
+          setLoadingOrder(false);
+        })
+        .catch(err => {
+          console.error(err);
+          setLoadingOrder(false);
+        });
+    } else {
+      setRecentOrder(null);
+      setLoadingOrder(true);
+    }
+  }, [user]);
+
+  function handleProfileSave(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    toast.success("Profile updated successfully");
-    setIsProfileOpen(false);
+    const formData = new FormData(e.currentTarget);
+    const full_name = formData.get("full_name") as string;
+    const phone = formData.get("phone") as string;
+    
+    updateProfile.mutate({ full_name, phone }, {
+      onSuccess: () => {
+        setIsProfileOpen(false);
+      }
+    });
   }
 
   function handleAddressSave(e: React.FormEvent<HTMLFormElement>) {
@@ -95,15 +117,17 @@ function AccountIndexPage() {
                 <DialogHeader>
                   <DialogTitle className="font-display text-2xl text-cocoa">Edit Profile</DialogTitle>
                 </DialogHeader>
-                <form onSubmit={handleProfileSave} className="space-y-4 pt-4">
-                  <div className="space-y-1.5">
-                    <label className="text-sm font-semibold text-cocoa">Full Name</label>
-                    <input
-                      type="text"
-                      defaultValue={user.full_name}
-                      className="w-full rounded-xl border-2 border-border bg-background px-4 py-2 text-sm text-cocoa focus:border-primary focus:outline-none"
-                    />
-                  </div>
+                  <form onSubmit={handleProfileSave} className="space-y-4 pt-4">
+                    <div className="space-y-1.5">
+                      <label className="text-sm font-semibold text-cocoa">Full Name</label>
+                      <input
+                        type="text"
+                        name="full_name"
+                        required
+                        defaultValue={user.full_name}
+                        className="w-full rounded-xl border-2 border-border bg-background px-4 py-2 text-sm text-cocoa focus:border-primary focus:outline-none"
+                      />
+                    </div>
                   <div className="space-y-1.5">
                     <label className="text-sm font-semibold text-cocoa">Email Address</label>
                     <input
@@ -114,22 +138,25 @@ function AccountIndexPage() {
                       className="w-full rounded-xl border-2 border-border bg-background px-4 py-2 text-sm text-cocoa opacity-60 cursor-not-allowed focus:outline-none"
                     />
                   </div>
-                  <div className="space-y-1.5">
-                    <label className="text-sm font-semibold text-cocoa">Phone Number</label>
-                    <input
-                      type="tel"
-                      defaultValue={user.phone || ""}
-                      className="w-full rounded-xl border-2 border-border bg-background px-4 py-2 text-sm text-cocoa focus:border-primary focus:outline-none"
-                    />
-                  </div>
-                  <div className="pt-2 flex justify-end">
-                    <button
-                      type="submit"
-                      className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-2.5 text-sm font-bold text-primary-foreground shadow-pop transition-transform hover:-translate-y-0.5"
-                    >
-                      <Save className="h-4 w-4" /> Save Changes
-                    </button>
-                  </div>
+                    <div className="space-y-1.5">
+                      <label className="text-sm font-semibold text-cocoa">Phone Number</label>
+                      <input
+                        type="tel"
+                        name="phone"
+                        required
+                        defaultValue={user.phone || ""}
+                        className="w-full rounded-xl border-2 border-border bg-background px-4 py-2 text-sm text-cocoa focus:border-primary focus:outline-none"
+                      />
+                    </div>
+                    <div className="pt-2 flex justify-end">
+                      <button
+                        type="submit"
+                        disabled={updateProfile.isPending}
+                        className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-2.5 text-sm font-bold text-primary-foreground shadow-pop transition-transform hover:-translate-y-0.5 disabled:opacity-50"
+                      >
+                        <Save className="h-4 w-4" /> Save Changes
+                      </button>
+                    </div>
                 </form>
               </DialogContent>
             </Dialog>
@@ -142,60 +169,12 @@ function AccountIndexPage() {
             <div>
               <div className="flex items-center justify-between">
                 <p className="text-muted-foreground text-xs uppercase tracking-wider">Email Address</p>
-                <button onClick={() => {
-                  toast.success("Verification link sent to email!");
-                }} className="text-[10px] font-bold text-primary hover:underline flex items-center gap-1">
-                  <AlertCircle className="h-3 w-3" /> Verify
-                </button>
               </div>
               <p className="font-medium text-cocoa mt-0.5">{user.email}</p>
             </div>
             <div>
               <div className="flex items-center justify-between">
                 <p className="text-muted-foreground text-xs uppercase tracking-wider">Phone Number</p>
-                <Dialog open={isPhoneOpen} onOpenChange={setIsPhoneOpen}>
-                  <DialogTrigger asChild>
-                    <button onClick={() => toast.success("OTP sent to phone!")} className="text-[10px] font-bold text-primary hover:underline flex items-center gap-1">
-                      <AlertCircle className="h-3 w-3" /> Verify
-                    </button>
-                  </DialogTrigger>
-                  <DialogContent className="sm:max-w-[400px]">
-                    <DialogHeader>
-                      <DialogTitle className="font-display text-2xl text-cocoa">Verify Phone Number</DialogTitle>
-                    </DialogHeader>
-                    <div className="space-y-4 pt-4 text-center">
-                      <p className="text-sm text-muted-foreground text-left">
-                        Enter the 6-digit OTP sent to {user.phone}.
-                      </p>
-                      <input
-                        type="text"
-                        maxLength={6}
-                        placeholder="000000"
-                        inputMode="numeric"
-                        pattern="[0-9]*"
-                        onChange={(e) => {
-                          e.target.value = e.target.value.replace(/\D/g, "");
-                        }}
-                        className="w-full text-center tracking-[1em] rounded-xl border-2 border-border bg-background px-4 py-3 text-lg font-bold text-cocoa focus:border-primary focus:outline-none"
-                      />
-                      <button
-                        onClick={() => {
-                          toast.success("Phone verified successfully!");
-                          setIsPhoneOpen(false);
-                        }}
-                        className="w-full inline-flex justify-center items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-bold text-primary-foreground shadow-pop transition-transform hover:-translate-y-0.5"
-                      >
-                        Verify OTP
-                      </button>
-                      <button
-                        onClick={() => toast.success("New OTP sent to phone!")}
-                        className="text-xs font-semibold text-muted-foreground hover:text-primary hover:underline"
-                      >
-                        Didn't receive it? Resend OTP
-                      </button>
-                    </div>
-                  </DialogContent>
-                </Dialog>
               </div>
               <p className="font-medium text-cocoa mt-0.5">{user.phone || "Not provided"}</p>
             </div>
@@ -221,7 +200,7 @@ function AccountIndexPage() {
                 </DialogHeader>
 
                 {addressView === "list" ? (
-                  <div className="space-y-4 pt-4">
+                  <div className="space-y-4 pt-4 max-h-[60vh] overflow-y-auto pr-2">
                     {addresses.map(addr => (
                       <div key={addr.id} className={`p-4 rounded-xl border-2 ${addr.is_default ? 'border-primary bg-primary/5' : 'border-border bg-background'} flex justify-between items-start gap-4`}>
                         <div className="space-y-1 text-sm">
@@ -340,7 +319,8 @@ function AccountIndexPage() {
                       </button>
                       <button
                         type="submit"
-                        className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-2.5 text-sm font-bold text-primary-foreground shadow-pop transition-transform hover:-translate-y-0.5"
+                        disabled={createAddress.isPending || updateAddress.isPending}
+                        className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-2.5 text-sm font-bold text-primary-foreground shadow-pop transition-transform hover:-translate-y-0.5 disabled:opacity-50"
                       >
                         <Save className="h-4 w-4" /> Save Address
                       </button>
@@ -375,32 +355,50 @@ function AccountIndexPage() {
           </Link>
         </div>
         
-        <div className="rounded-2xl border border-border bg-background p-5">
-          <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border pb-4">
-            <div>
-              <p className="text-sm font-semibold text-cocoa">{recentOrder.id}</p>
-              <p className="text-xs text-muted-foreground">{recentOrder.date}</p>
-            </div>
-            <div className="text-right">
-              <p className="text-sm font-bold text-cocoa">{formatINR(recentOrder.total)}</p>
-              <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${
-                recentOrder.status === 'Delivered' ? 'bg-green-100 text-green-800' : 'bg-butter text-primary'
-              }`}>
-                {recentOrder.status}
-              </span>
-            </div>
+        {loadingOrder ? (
+          <div className="rounded-2xl border border-border bg-background p-5 text-center text-muted-foreground text-sm">
+            Loading recent order...
           </div>
-          
-          <ul className="mt-4 space-y-2">
-            {recentOrder.items.map((item, idx) => (
-              <li key={idx} className="flex justify-between text-sm">
-                <span className="text-cocoa">
-                  <span className="font-medium">{item.qty}x</span> {item.name} <span className="text-muted-foreground">(Size: {item.size})</span>
+        ) : recentOrder ? (
+          <div className="rounded-2xl border border-border bg-background p-5">
+            <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border pb-4">
+              <div>
+                <p className="text-sm font-semibold text-cocoa">
+                  {recentOrder.id.split("-")[0].toUpperCase()}-{recentOrder.id.split("-")[4].toUpperCase()}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {new Date(recentOrder.created_at).toLocaleDateString("en-US", { year: 'numeric', month: 'long', day: 'numeric' })}
+                </p>
+              </div>
+              <div className="text-right">
+                <p className="text-sm font-bold text-cocoa">{formatINR(recentOrder.total_amount)}</p>
+                <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+                  recentOrder.status === 'delivered' ? 'bg-green-100 text-green-800' : 'bg-butter text-primary'
+                }`}>
+                  <span className="capitalize">{recentOrder.status}</span>
                 </span>
-              </li>
-            ))}
-          </ul>
-        </div>
+              </div>
+            </div>
+            
+            <ul className="mt-4 space-y-2">
+              {recentOrder.order_items?.map((item: any, idx: number) => {
+                const product = item.product_variants?.products;
+                const variant = item.product_variants;
+                return (
+                  <li key={item.id || idx} className="flex justify-between text-sm">
+                    <span className="text-cocoa">
+                      <span className="font-medium">{item.quantity}x</span> {product?.name || "Product"} <span className="text-muted-foreground">(Size: {variant?.size || "N/A"})</span>
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        ) : (
+          <div className="rounded-2xl border border-border bg-background p-5 text-center text-muted-foreground text-sm">
+            No recent orders found.
+          </div>
+        )}
       </div>
     </div>
   );

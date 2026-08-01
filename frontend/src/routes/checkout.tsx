@@ -148,6 +148,7 @@ function CheckoutPage() {
   }, [addresses, form]);
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
+    if (isPlacingOrder || isVerifyingPayment) return;
     setIsPlacingOrder(true);
     setPaymentError(null);
     try {

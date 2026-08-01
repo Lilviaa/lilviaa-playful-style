@@ -11,7 +11,7 @@ import { formatINR } from "@/lib/cart";
 import { OrderStatusBadge } from "./order-status-badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Printer, RefreshCcw, XCircle, RotateCcw } from "lucide-react";
+import { Printer, RefreshCcw, XCircle, RotateCcw, Loader2 } from "lucide-react";
 import {
   useUpdateOrderStatus,
   useUpdateTracking,
@@ -47,7 +47,7 @@ interface OrderDetailDrawerProps {
 }
 
 export function OrderDetailDrawer({ order, isOpen, onClose, onPrint }: OrderDetailDrawerProps) {
-  const { mutate: updateStatus } = useUpdateOrderStatus();
+  const { mutate: updateStatus, isPending: updatingStatus } = useUpdateOrderStatus();
   const { mutate: updateTracking } = useUpdateTracking();
   const { mutate: updateCallConfirmed } = useUpdateCallConfirmed();
   const { mutate: createReturn, isPending: creatingReturn } = useCreateReturn();
@@ -82,7 +82,12 @@ export function OrderDetailDrawer({ order, isOpen, onClose, onPrint }: OrderDeta
 
   return (
     <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <SheetContent className="w-full sm:max-w-xl overflow-y-auto bg-sand border-l-cocoa/10 p-0 sm:p-6">
+      <SheetContent className="w-full sm:max-w-xl overflow-y-auto bg-sand border-l-cocoa/10 p-0 sm:p-6 relative">
+        {updatingStatus && (
+          <div className="absolute inset-0 z-50 flex items-center justify-center bg-white/50 backdrop-blur-sm">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        )}
         <SheetHeader className="p-6 sm:p-0 pb-0">
           <div className="flex items-center justify-between">
             <SheetTitle className="font-display text-2xl text-cocoa">Order {order.id}</SheetTitle>

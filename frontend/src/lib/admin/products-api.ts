@@ -29,7 +29,6 @@ export interface ProductVariant {
   id: string;
   product_id: string;
   size: string;
-  color: string;
   sku: string;
   stock: number;
   sales: number;
@@ -250,7 +249,6 @@ export function useSaveProduct() {
       for (const v of data.variants) {
         const variantPayload = {
           size: v.size,
-          color: v.color || null,
           sku: v.sku || null,
           stock: v.stock,
           price_override: v.price_override

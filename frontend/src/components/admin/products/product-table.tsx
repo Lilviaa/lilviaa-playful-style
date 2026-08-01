@@ -43,6 +43,7 @@ import {
   useDeleteProducts,
 } from "@/lib/admin/products-api";
 import { StatusBadge } from "./status-badge";
+import { Loader2 } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -61,6 +62,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
+import { Skeleton } from "@/components/ui/skeleton";
 import { formatINR } from "@/lib/cart";
 import { cn } from "@/lib/utils";
 
@@ -415,12 +417,28 @@ export function ProductTable({
           ))}
         </TableHeader>
         <TableBody>
-          {table.getRowModel().rows?.length ? (
-            table.getRowModel().rows.map((row) => (
+          {isLoading ? (
+            Array.from({ length: 5 }).map((_, i) => (
+              <TableRow key={`skeleton-${i}`}>
+                {columns.map((_, j) => (
+                  <TableCell key={`cell-${i}-${j}`} className="py-4">
+                    <Skeleton className="h-5 w-[80%] rounded-md" />
+                  </TableCell>
+                ))}
+              </TableRow>
+            ))
+          ) : table.getRowModel().rows?.length ? (
+            table.getRowModel().rows.map((row) => {
+              const isDeletingRow = deleteProducts.isPending && deleteProducts.variables?.includes(row.original.id);
+              
+              return (
               <TableRow
                 key={row.id}
                 data-state={row.getIsSelected() && "selected"}
-                className="border-b border-cocoa/5 hover:bg-primary/5 transition-colors duration-200 cursor-pointer group"
+                className={cn(
+                  "border-b border-cocoa/5 hover:bg-primary/5 transition-colors duration-200 cursor-pointer group relative",
+                  isDeletingRow && "opacity-60 pointer-events-none bg-muted/50"
+                )}
                 onClick={(e) => {
                   // Don't open quick view if they clicked the checkbox or the actions dropdown
                   if (
@@ -443,19 +461,24 @@ export function ProductTable({
                 }}
               >
                 {row.getVisibleCells().map((cell) => (
-                  <TableCell key={cell.id}>
+                  <TableCell key={cell.id} className="relative">
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
                   </TableCell>
                 ))}
+                {isDeletingRow && (
+                  <div className="absolute inset-0 flex items-center justify-center z-20">
+                    <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                  </div>
+                )}
               </TableRow>
-            ))
+            )})
           ) : (
             <TableRow>
               <TableCell
                 colSpan={columns.length}
                 className="h-24 text-center text-muted-foreground"
               >
-                {isLoading ? "Loading products..." : "No products found."}
+                No products found.
               </TableCell>
             </TableRow>
           )}
@@ -558,7 +581,7 @@ export function ProductTable({
                       >
                         <div className="flex flex-col">
                           <span className="font-medium text-cocoa">
-                            {v.color} - {v.size}
+                            {v.size}
                           </span>
                           <span className="text-xs text-muted-foreground mt-0.5">SKU: {v.sku}</span>
                         </div>

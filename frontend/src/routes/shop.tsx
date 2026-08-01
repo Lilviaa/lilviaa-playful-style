@@ -4,6 +4,7 @@ import { ChevronDown } from "lucide-react";
 import { useProducts, useCategories } from "@/lib/products-api";
 import { ProductCard } from "@/components/product-card";
 import { CustomSelect } from "@/components/ui/custom-select";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export const Route = createFileRoute("/shop")({
   validateSearch: (search: Record<string, unknown>): { category?: string; tag?: string } => {
@@ -121,16 +122,27 @@ function ShopPage() {
         </div>
 
         {isLoading ? (
-          <p className="mt-6 text-sm text-muted-foreground">Loading products...</p>
+          <div className="mt-6 grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <div key={i} className="flex flex-col gap-3">
+                <Skeleton className="aspect-[3/4] w-full rounded-2xl" />
+                <div className="space-y-2 px-1">
+                  <Skeleton className="h-4 w-3/4 rounded-md" />
+                  <Skeleton className="h-4 w-1/4 rounded-md" />
+                </div>
+              </div>
+            ))}
+          </div>
         ) : (
-          <p className="mt-6 text-sm text-muted-foreground">{items.length} products</p>
+          <>
+            <p className="mt-6 text-sm text-muted-foreground px-1">{items.length} products</p>
+            <div className="mt-6 grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
+              {items.map((p) => (
+                <ProductCard key={p.slug} product={p} />
+              ))}
+            </div>
+          </>
         )}
-
-        <div className="mt-6 grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
-          {items.map((p) => (
-            <ProductCard key={p.slug} product={p} />
-          ))}
-        </div>
         {!isLoading && items.length === 0 && (
           <div className="mt-16 rounded-3xl bg-card p-10 text-center shadow-cute">
             <p className="font-display text-2xl text-cocoa">Nothing here yet 🌱</p>

@@ -4,6 +4,8 @@ import { useAddresses, useCreateAddress, useUpdateAddress, useDeleteAddress } fr
 import { Settings, MapPin, User, Shield, Key, Trash2, Edit2, Save, Plus } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { toast } from "sonner";
+import { useUpdateProfile, useUpdatePassword } from "@/lib/profile-api";
+import { useState } from "react";
 
 export const Route = createFileRoute("/account/settings")({
   head: () => ({
@@ -20,8 +22,47 @@ function AccountSettingsPage() {
   const createAddress = useCreateAddress();
   const updateAddress = useUpdateAddress();
   const deleteAddress = useDeleteAddress();
+  
+  const updateProfile = useUpdateProfile();
+  const updatePassword = useUpdatePassword();
+  
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isPasswordOpen, setIsPasswordOpen] = useState(false);
 
   if (!user) return null;
+
+  const handleProfileSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    const full_name = formData.get("full_name") as string;
+    const phone = formData.get("phone") as string;
+    
+    updateProfile.mutate({ full_name, phone }, {
+      onSuccess: () => {
+        setIsProfileOpen(false);
+      }
+    });
+  };
+
+  const handlePasswordSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    const current_password = formData.get("current_password") as string;
+    const new_password = formData.get("new_password") as string;
+    const confirm_password = formData.get("confirm_password") as string;
+    
+    if (new_password !== confirm_password) {
+      toast.error("New passwords do not match");
+      return;
+    }
+    
+    updatePassword.mutate({ current_password, new_password }, {
+      onSuccess: () => {
+        setIsPasswordOpen(false);
+        e.currentTarget.reset();
+      }
+    });
+  };
 
   const handleAddressSubmit = async (e: React.FormEvent<HTMLFormElement>, id?: string) => {
     e.preventDefault();
@@ -58,7 +99,7 @@ function AccountSettingsPage() {
               <h3 className="font-display text-lg text-cocoa flex items-center gap-2">
                 <User className="h-4 w-4" /> Personal Information
               </h3>
-              <Dialog>
+              <Dialog open={isProfileOpen} onOpenChange={setIsProfileOpen}>
                 <DialogTrigger asChild>
                   <button className="text-sm font-semibold text-primary hover:underline flex items-center gap-1">
                     <Edit2 className="h-3 w-3" /> Edit
@@ -68,10 +109,10 @@ function AccountSettingsPage() {
                   <DialogHeader>
                     <DialogTitle className="font-display text-2xl text-cocoa">Edit Personal Information</DialogTitle>
                   </DialogHeader>
-                  <form onSubmit={(e) => { e.preventDefault(); toast.success("Information updated"); }} className="space-y-4 pt-4">
+                  <form onSubmit={handleProfileSubmit} className="space-y-4 pt-4">
                     <div className="space-y-1.5">
                       <label className="text-sm font-semibold text-cocoa">Full Name</label>
-                      <input type="text" defaultValue={user.name} className="w-full rounded-xl border-2 border-border bg-background px-4 py-2 text-sm text-cocoa focus:border-primary focus:outline-none" />
+                      <input type="text" name="full_name" required defaultValue={user.full_name} className="w-full rounded-xl border-2 border-border bg-background px-4 py-2 text-sm text-cocoa focus:border-primary focus:outline-none" />
                     </div>
                     <div className="space-y-1.5">
                       <label className="text-sm font-semibold text-cocoa">Email Address</label>
@@ -85,10 +126,10 @@ function AccountSettingsPage() {
                     </div>
                     <div className="space-y-1.5">
                       <label className="text-sm font-semibold text-cocoa">Phone Number</label>
-                      <input type="tel" defaultValue={user.phone || ""} className="w-full rounded-xl border-2 border-border bg-background px-4 py-2 text-sm text-cocoa focus:border-primary focus:outline-none" />
+                      <input type="tel" name="phone" required defaultValue={user.phone || ""} className="w-full rounded-xl border-2 border-border bg-background px-4 py-2 text-sm text-cocoa focus:border-primary focus:outline-none" />
                     </div>
                     <div className="pt-2 flex justify-end">
-                      <button type="submit" className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-2.5 text-sm font-bold text-primary-foreground shadow-pop transition-transform hover:-translate-y-0.5">
+                      <button type="submit" disabled={updateProfile.isPending} className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-2.5 text-sm font-bold text-primary-foreground shadow-pop transition-transform hover:-translate-y-0.5 disabled:opacity-50">
                         <Save className="h-4 w-4" /> Save Changes
                       </button>
                     </div>
@@ -100,7 +141,7 @@ function AccountSettingsPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-6 gap-x-8 text-sm">
               <div>
                 <p className="text-muted-foreground text-xs uppercase tracking-wider">Full Name</p>
-                <p className="font-medium text-cocoa mt-1">{user.name}</p>
+                <p className="font-medium text-cocoa mt-1">{user.full_name || "Not provided"}</p>
               </div>
               <div>
                 <p className="text-muted-foreground text-xs uppercase tracking-wider">Email Address</p>
@@ -138,7 +179,7 @@ function AccountSettingsPage() {
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-1.5">
                           <label className="text-sm font-semibold text-cocoa">Full Name</label>
-                          <input type="text" name="full_name" required defaultValue={user.name} className="w-full rounded-xl border-2 border-border bg-background px-4 py-2 text-sm text-cocoa focus:border-primary focus:outline-none" />
+                          <input type="text" name="full_name" required defaultValue={user.full_name} className="w-full rounded-xl border-2 border-border bg-background px-4 py-2 text-sm text-cocoa focus:border-primary focus:outline-none" />
                         </div>
                         <div className="space-y-1.5">
                           <label className="text-sm font-semibold text-cocoa">Phone</label>
@@ -279,7 +320,7 @@ function AccountSettingsPage() {
                   <h4 className="font-semibold text-cocoa">Password</h4>
                   <p className="text-sm text-muted-foreground mt-0.5">Update your password to keep your account secure.</p>
                 </div>
-                <Dialog>
+                <Dialog open={isPasswordOpen} onOpenChange={setIsPasswordOpen}>
                   <DialogTrigger asChild>
                     <button className="inline-flex items-center gap-2 rounded-xl border border-border bg-background px-5 py-2 text-sm font-semibold text-cocoa hover:bg-sand transition-colors w-fit shrink-0">
                       <Key className="h-4 w-4" /> Update
@@ -289,18 +330,18 @@ function AccountSettingsPage() {
                     <DialogHeader>
                       <DialogTitle className="font-display text-2xl text-cocoa">Update Password</DialogTitle>
                     </DialogHeader>
-                    <form onSubmit={(e) => { e.preventDefault(); toast.success("Password updated successfully"); }} className="space-y-4 pt-4">
+                    <form onSubmit={handlePasswordSubmit} className="space-y-4 pt-4">
                       <div className="space-y-1.5">
                         <label className="text-sm font-semibold text-cocoa">Current Password</label>
-                        <input type="password" required className="w-full rounded-xl border-2 border-border bg-background px-4 py-2 text-sm text-cocoa focus:border-primary focus:outline-none" />
+                        <input type="password" name="current_password" required className="w-full rounded-xl border-2 border-border bg-background px-4 py-2 text-sm text-cocoa focus:border-primary focus:outline-none" />
                       </div>
                       <div className="space-y-1.5">
                         <label className="text-sm font-semibold text-cocoa">New Password</label>
-                        <input type="password" required className="w-full rounded-xl border-2 border-border bg-background px-4 py-2 text-sm text-cocoa focus:border-primary focus:outline-none" />
+                        <input type="password" name="new_password" required className="w-full rounded-xl border-2 border-border bg-background px-4 py-2 text-sm text-cocoa focus:border-primary focus:outline-none" />
                       </div>
                       <div className="space-y-1.5">
                         <label className="text-sm font-semibold text-cocoa">Confirm New Password</label>
-                        <input type="password" required className="w-full rounded-xl border-2 border-border bg-background px-4 py-2 text-sm text-cocoa focus:border-primary focus:outline-none" />
+                        <input type="password" name="confirm_password" required className="w-full rounded-xl border-2 border-border bg-background px-4 py-2 text-sm text-cocoa focus:border-primary focus:outline-none" />
                       </div>
                       <div className="pt-4 flex justify-between items-center">
                         <DialogTrigger asChild>
@@ -308,7 +349,7 @@ function AccountSettingsPage() {
                             Cancel
                           </button>
                         </DialogTrigger>
-                        <button type="submit" className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-2.5 text-sm font-bold text-primary-foreground shadow-pop transition-transform hover:-translate-y-0.5">
+                        <button type="submit" disabled={updatePassword.isPending} className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-2.5 text-sm font-bold text-primary-foreground shadow-pop transition-transform hover:-translate-y-0.5 disabled:opacity-50">
                           <Save className="h-4 w-4" /> Update Password
                         </button>
                       </div>

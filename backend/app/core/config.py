@@ -19,6 +19,12 @@ class Settings(BaseSettings):
     RAZORPAY_WEBHOOK_SECRET: str = ""
 
     CORS_ORIGINS: str = "http://localhost:8080,http://localhost:5173"
+    
+    SMTP_HOST: str = ""
+    SMTP_PORT: int = 587
+    SMTP_USERNAME: str = ""
+    SMTP_PASSWORD: str = ""
+    SMTP_FROM_EMAIL: str = ""
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 

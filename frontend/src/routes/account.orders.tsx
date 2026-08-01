@@ -23,7 +23,9 @@ function AccountOrdersPage() {
 
   useEffect(() => {
     if (user) {
-      apiFetch("/orders/me")
+      // Append a cache-busting timestamp to prevent the browser from serving cached requests
+      // from a previous user's session
+      apiFetch(`/orders/me?t=${Date.now()}`)
         .then(res => res.json())
         .then(data => {
           setOrders(data);
@@ -33,6 +35,10 @@ function AccountOrdersPage() {
           console.error(err);
           setLoading(false);
         });
+    } else {
+      // Clear state when user is null (e.g. on logout)
+      setOrders([]);
+      setLoading(true);
     }
   }, [user]);
 

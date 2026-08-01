@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, status, Query, Request
 from typing import List, Optional
 from datetime import datetime, timezone
-from app.models.public_product import PublicProductResponse, ProductColor
+from app.models.public_product import PublicProductResponse
 from app.db.supabase import get_supabase, get_fresh_supabase
 from app.core.exceptions import AppError
 
@@ -42,10 +42,9 @@ def map_product(row: dict) -> dict:
     gallery = [img["url"] for img in images_sorted]
     image = gallery[0] if gallery else ""
 
-    # 3. Variants logic (sizes & colors)
+    # 3. Variants logic (sizes only)
     variants_raw = row.get("product_variants", [])
     sizes = []
-    colors_dict = {}
     variants = []
     total_stock = 0
     sku = ""
@@ -54,10 +53,6 @@ def map_product(row: dict) -> dict:
             sku = v["sku"]
         if v.get("size") and v["size"] not in sizes:
             sizes.append(v["size"])
-        color_name = v.get("color")
-        color_hex = v.get("color_hex")
-        if color_name and color_hex and color_name not in colors_dict:
-            colors_dict[color_name] = color_hex
             
         stock = v.get("stock") or 0
         reserved = v.get("reserved_stock") or 0
@@ -66,14 +61,11 @@ def map_product(row: dict) -> dict:
         variants.append({
             "id": v.get("id"),
             "size": v.get("size"),
-            "color": v.get("color"),
             "sku": v.get("sku"),
             "stock": available_stock,
             "price_override": v.get("price_override")
         })
         total_stock += available_stock
-            
-    colors = [{"name": name, "hex": hex_code} for name, hex_code in colors_dict.items()]
 
     # 4. Category
     category_slug = row.get("category", {}).get("slug", "") if row.get("category") else ""
@@ -92,7 +84,6 @@ def map_product(row: dict) -> dict:
         "gender": row.get("gender") or "unisex",
         "ageRange": row.get("age_range") or "",
         "sizes": sizes,
-        "colors": colors,
         "description": row.get("description") or "",
         "fabric": row.get("fabric") or "",
         "care": row.get("wash_care") or "",

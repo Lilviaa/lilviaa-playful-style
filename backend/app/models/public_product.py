@@ -2,9 +2,6 @@ from pydantic import BaseModel, ConfigDict, Field
 from typing import Optional, List
 from datetime import datetime
 
-class ProductColor(BaseModel):
-    name: str
-    hex: str
 
 class PublicProductResponse(BaseModel):
     slug: str
@@ -24,7 +21,6 @@ class PublicProductResponse(BaseModel):
 class PublicProductVariant(BaseModel):
     id: str
     size: str
-    color: Optional[str] = None
     sku: Optional[str] = None
     stock: int
     price_override: Optional[float] = None
@@ -41,7 +37,6 @@ class PublicProductResponse(BaseModel):
     gender: str
     ageRange: str
     sizes: List[str]
-    colors: List[ProductColor]
     tag: Optional[str] = None
     description: str
     fabric: str

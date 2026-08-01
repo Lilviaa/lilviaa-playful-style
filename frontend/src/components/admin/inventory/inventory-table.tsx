@@ -69,11 +69,10 @@ export function InventoryTable({ data, isLoading, filterLowStock }: InventoryTab
       id: "variant",
       header: "Variant",
       enableGlobalFilter: false,
-      accessorFn: (row) => `${row.color} ${row.size}`,
+      accessorFn: (row) => row.size,
       cell: ({ row }) => (
         <div className="flex flex-col">
-          <span className="text-sm font-medium text-cocoa">{row.original.color}</span>
-          <span className="text-xs text-muted-foreground">{row.original.size}</span>
+          <span className="text-sm font-medium text-cocoa">{row.original.size}</span>
         </div>
       ),
     },

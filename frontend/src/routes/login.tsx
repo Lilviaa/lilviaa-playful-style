@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { useAuth } from "@/lib/auth";
-import { LogIn, UserCircle, Eye, EyeOff } from "lucide-react";
+import { LogIn, UserCircle, Eye, EyeOff, Loader2 } from "lucide-react";
 import {
   Form,
   FormControl,
@@ -129,7 +129,15 @@ function LoginPage() {
               disabled={isLoading}
               className="mt-4 flex w-full items-center justify-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-bold text-primary-foreground shadow-pop transition-transform hover:scale-105 active:scale-95 disabled:opacity-70 disabled:hover:scale-100"
             >
-              <LogIn className="h-4 w-4" /> {isLoading ? "Logging in..." : "Log In"}
+              {isLoading ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" /> Logging in...
+                </>
+              ) : (
+                <>
+                  <LogIn className="h-4 w-4" /> Log In
+                </>
+              )}
             </button>
           </form>
         </Form>

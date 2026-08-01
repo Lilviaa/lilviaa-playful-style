@@ -26,6 +26,7 @@ export function ProductCard({ product }: { product: Product }) {
         name: product.name,
         price: product.price,
         image: product.image,
+        variant_id: product.variants?.[0]?.id || "",
       });
     }
   };
@@ -82,14 +83,6 @@ export function ProductCard({ product }: { product: Product }) {
               </span>
             )}
             <div className="ml-auto flex -space-x-1">
-              {product?.colors?.slice(0, 3).map((c) => (
-                <span
-                  key={c.name}
-                  className="h-4 w-4 rounded-full border-2 border-card"
-                  style={{ background: c.hex }}
-                  title={c.name}
-                />
-              ))}
             </div>
           </div>
         </div>

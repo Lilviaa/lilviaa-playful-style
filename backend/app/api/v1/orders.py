@@ -1,9 +1,10 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Request
+from fastapi import APIRouter, Depends, HTTPException, status, Request, BackgroundTasks
 from app.api.dependencies import get_current_user_token
 from typing import List, Dict, Any
 from app.models.order import OrderCreate, OrderResponse
 from app.db.supabase import get_supabase, get_fresh_supabase
 from app.core.exceptions import AppError
+from app.core.email import send_order_confirmation_email
 import uuid
 import os
 import razorpay
@@ -32,12 +33,13 @@ class VerifyPaymentRequest(BaseModel):
     razorpay_signature: str
 
 @router.post("/", status_code=status.HTTP_201_CREATED)
-def create_order(order: OrderCreate, request: Request):
+def create_order(order: OrderCreate, request: Request, background_tasks: BackgroundTasks):
     """Create a new order, validate stock, and deduct stock."""
     supabase = get_supabase()
     
     # 1. Check user auth
     user_id = None
+    user_email = None
     token = request.cookies.get("access_token")
     if token:
         try:
@@ -45,6 +47,7 @@ def create_order(order: OrderCreate, request: Request):
             user_response = fresh.auth.get_user(token)
             if user_response and user_response.user:
                 user_id = user_response.user.id
+                user_email = user_response.user.email
         except Exception:
             pass
 
@@ -210,6 +213,8 @@ def create_order(order: OrderCreate, request: Request):
         raise AppError(f"Failed to create order items: {str(e)}")
 
     if is_cod:
+        if user_email:
+            background_tasks.add_task(send_order_confirmation_email, user_email, created_order, order_items_data)
         return created_order
 
     # 6. Razorpay Flow
@@ -254,7 +259,7 @@ def create_order(order: OrderCreate, request: Request):
     }
 
 @router.post("/verify-payment")
-def verify_payment(req: VerifyPaymentRequest):
+def verify_payment(req: VerifyPaymentRequest, background_tasks: BackgroundTasks):
     """Verify Razorpay signature and confirm order."""
     rzp = get_razorpay_client()
     if not rzp:
@@ -306,6 +311,20 @@ def verify_payment(req: VerifyPaymentRequest):
                 "stock": max(0, current_stock - qty),
                 "reserved_stock": max(0, current_reserved - qty)
             }).eq("id", var_id).execute()
+
+    # Get user email
+    user_email = None
+    order_res = supabase.table("orders").select("user_id, total_amount").eq("id", order_id).execute()
+    if order_res.data and order_res.data[0].get("user_id"):
+        u_id = order_res.data[0]["user_id"]
+        user_res = supabase.table("users").select("email").eq("id", u_id).execute()
+        if user_res.data:
+            user_email = user_res.data[0]["email"]
+        
+        # Send email
+        if user_email:
+            items_res2 = supabase.table("order_items").select("*").eq("order_id", order_id).execute()
+            background_tasks.add_task(send_order_confirmation_email, user_email, {"id": order_id, "total_amount": order_res.data[0]["total_amount"]}, items_res2.data)
 
     return {"success": True}
 
@@ -417,8 +436,13 @@ class ValidateCouponRequest(BaseModel):
     cart_total: float
     user_id: str | None = None
 
+from fastapi import APIRouter, Depends, HTTPException, status, Request, Response
+
 @router.get("/me")
-def get_my_orders(user: dict = Depends(get_current_user_token)):
+def get_my_orders(response: Response, user: dict = Depends(get_current_user_token)):
+    # Prevent browser caching of order history across users
+    response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+    
     supabase = get_supabase()
     user_id = user["sub"]
     

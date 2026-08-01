@@ -10,7 +10,6 @@ export type Product = {
   gender: "boys" | "girls" | "unisex" | string;
   ageRange: string;
   sizes: string[];
-  colors: { name: string; hex: string }[];
   tag?: "new" | "bestseller" | "sale" | string;
   description: string;
   fabric: string;
@@ -18,8 +17,8 @@ export type Product = {
   sku?: string;
   stock?: number;
   variants?: {
+    id: string;
     size: string;
-    color: string;
     sku: string;
     stock: number;
     price_override: number | null;

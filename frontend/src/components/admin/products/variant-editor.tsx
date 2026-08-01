@@ -20,7 +20,6 @@ export function VariantEditor({ variants, onChange, basePrice }: VariantEditorPr
         id: `v_new_${Date.now()}`,
         product_id: "", // will be set on save
         size: "",
-        color: "",
         sku: "",
         stock: 0,
         price_override: null,
@@ -55,7 +54,6 @@ export function VariantEditor({ variants, onChange, basePrice }: VariantEditorPr
           <thead className="bg-sand/30 border-b border-border text-left">
             <tr>
               <th className="p-3 font-semibold text-cocoa">Size</th>
-              <th className="p-3 font-semibold text-cocoa">Color</th>
               <th className="p-3 font-semibold text-cocoa">SKU</th>
               <th className="p-3 font-semibold text-cocoa w-24">Stock</th>
               <th className="p-3 font-semibold text-cocoa w-32" title="Leave blank to use the Base Price">
@@ -67,7 +65,7 @@ export function VariantEditor({ variants, onChange, basePrice }: VariantEditorPr
           <tbody>
             {variants.length === 0 ? (
               <tr>
-                <td colSpan={6} className="p-4 text-center text-muted-foreground">
+                <td colSpan={5} className="p-4 text-center text-muted-foreground">
                   No variants added. Product needs at least one variant.
                 </td>
               </tr>
@@ -81,14 +79,6 @@ export function VariantEditor({ variants, onChange, basePrice }: VariantEditorPr
                       onChange={e => updateVariant(i, 'size', e.target.value)}
                       className="h-8"
                       required
-                    />
-                  </td>
-                  <td className="p-2">
-                    <Input 
-                      placeholder="e.g. Red" 
-                      value={v.color} 
-                      onChange={e => updateVariant(i, 'color', e.target.value)}
-                      className="h-8"
                     />
                   </td>
                   <td className="p-2">

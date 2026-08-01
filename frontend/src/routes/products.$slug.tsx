@@ -15,6 +15,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { CustomerReviews } from "@/components/customer-reviews";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export const Route = createFileRoute("/products/$slug")({
   loader: async ({ params }): Promise<{ product: Product }> => {
@@ -46,6 +47,7 @@ export const Route = createFileRoute("/products/$slug")({
       ],
     };
   },
+  pendingComponent: ProductSkeleton,
   component: ProductPage,
   notFoundComponent: () => (
     <div className="mx-auto max-w-lg px-6 py-24 text-center">
@@ -74,12 +76,9 @@ function ProductPage() {
   const [activeImg, setActiveImg] = useState(product.image);
   const [size, setSize] = useState(product.sizes[2] ?? product.sizes[0]);
   const [qty, setQty] = useState(1);
-  const [selectedColor, setSelectedColor] = useState(product.colors && product.colors.length > 0 ? product.colors[0] : null);
   
-  // Find the exact variant based on selected size (and color if applicable)
-  const activeVariant = product.variants?.find(v => 
-    v.size === size && (!selectedColor || v.color?.toLowerCase() === selectedColor.name.toLowerCase())
-  ) || product.variants?.find(v => v.size === size);
+  // Find the exact variant based on selected size
+  const activeVariant = product.variants?.find(v => v.size === size);
 
   let displayPrice = product.price;
   let displayCompareAt = product.compareAt;
@@ -278,29 +277,6 @@ function ProductPage() {
           </div>
 
           <hr className="my-8 border-border" />
-
-          {/* Color Selection */}
-          {product.colors && product.colors.length > 0 && (
-            <div>
-              <div className="mb-3 text-sm font-bold text-cocoa uppercase tracking-wider">
-                Color: <span className="font-medium text-muted-foreground normal-case tracking-normal">{selectedColor?.name}</span>
-              </div>
-              <div className="flex gap-3">
-                {product.colors.map((c) => (
-                  <button
-                    key={c.name}
-                    onClick={() => setSelectedColor(c)}
-                    className={`h-10 w-10 rounded-full border p-1 transition-transform hover:scale-110 focus:outline-none ${
-                      selectedColor?.name === c.name ? "border-cocoa ring-1 ring-cocoa" : "border-border"
-                    }`}
-                    title={c.name}
-                  >
-                    <div className="h-full w-full rounded-full" style={{ background: c.hex }} />
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
 
           {/* Size Selection */}
           {product.sizes && product.sizes.length > 0 && (
@@ -548,6 +524,51 @@ function ProductPage() {
           ))}
         </div>
       </section>
+    </div>
+  );
+}
+
+function ProductSkeleton() {
+  return (
+    <div className="bg-background min-h-screen pb-16">
+      <div className="mx-auto max-w-7xl px-6 pt-6 pb-4">
+        <Skeleton className="h-4 w-64 rounded-md" />
+      </div>
+
+      <div className="mx-auto grid max-w-7xl gap-8 lg:gap-12 px-4 sm:px-6 py-6 lg:grid-cols-[1.4fr_1fr] lg:items-start">
+        <div className="flex flex-col-reverse md:flex-row gap-4 w-full">
+          <div className="flex md:flex-col gap-3 overflow-x-auto md:w-20 shrink-0">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <Skeleton key={i} className="h-24 w-20 md:w-full shrink-0 rounded-xl" />
+            ))}
+          </div>
+          <div className="relative flex-1 aspect-[4/5] overflow-hidden rounded-2xl w-full">
+            <Skeleton className="h-full w-full" />
+          </div>
+        </div>
+
+        <div className="flex flex-col h-fit mt-4 lg:mt-0">
+          <Skeleton className="h-10 w-3/4 mb-4" />
+          <Skeleton className="h-8 w-1/4 mb-6" />
+          
+          <Skeleton className="h-16 w-full mb-6 rounded-2xl" />
+          
+          <div className="mt-4">
+            <Skeleton className="h-6 w-20 mb-4" />
+            <div className="flex flex-wrap gap-3">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <Skeleton key={i} className="h-12 w-24 rounded-full" />
+              ))}
+            </div>
+          </div>
+          
+          <div className="mt-8 flex gap-3">
+            <Skeleton className="h-14 w-32 rounded-full" />
+            <Skeleton className="h-14 flex-1 rounded-full" />
+            <Skeleton className="h-14 w-14 rounded-full shrink-0" />
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
