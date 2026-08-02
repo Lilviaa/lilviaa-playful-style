@@ -7,7 +7,7 @@ export function getCookie(name: string): string | null {
   return null;
 }
 
-const API_BASE_URL = "http://localhost:8000/api/v1";
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000/api/v1";
 
 interface FetchOptions extends RequestInit {
   skipRefresh?: boolean; // Avoid infinite loops if refresh itself fails

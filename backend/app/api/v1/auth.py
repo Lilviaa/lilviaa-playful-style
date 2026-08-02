@@ -23,7 +23,7 @@ def set_auth_cookies(response: Response, token: Token):
     (pre-auth endpoints that don't have a CSRF token yet).
     """
     is_prod = settings.ENVIRONMENT == "production"
-    samesite = "strict"
+    samesite = "none" if is_prod else "lax"
     
     # CSRF token - readable by JS
     csrf_token = secrets.token_urlsafe(32)
@@ -58,7 +58,7 @@ def set_auth_cookies(response: Response, token: Token):
 
 def clear_auth_cookies(response: Response):
     is_prod = settings.ENVIRONMENT == "production"
-    samesite = "strict"
+    samesite = "none" if is_prod else "lax"
 
     response.delete_cookie(
         "access_token",
