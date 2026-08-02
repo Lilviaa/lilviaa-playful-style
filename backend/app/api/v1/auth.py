@@ -84,7 +84,7 @@ def clear_auth_cookies(response: Response):
 # ──────────────────────────────────────────
 
 @router.post("/register", status_code=status.HTTP_201_CREATED)
-@limiter.limit("3/minute")
+@limiter.limit("30/minute")
 def register(request: Request, user_in: UserCreate, background_tasks: BackgroundTasks):
     """Register a new customer account. Sends a verification OTP to the user's email.
     The user must verify their email before they can log in.
@@ -147,7 +147,7 @@ def _email_key(request: Request) -> str:
     return f"login_ip:{get_remote_address(request)}"
 
 @router.post("/login")
-@limiter.limit("5/minute")                          # Layer 1: per IP
+@limiter.limit("30/minute")                         # Layer 1: per IP
 @limiter.limit("5/minute", key_func=_email_key)    # Layer 2: per email address
 def login(request: Request, response: Response, background_tasks: BackgroundTasks, form_data: OAuth2PasswordRequestForm = Depends()):
     """Login with email and password, setting secure httpOnly cookies."""

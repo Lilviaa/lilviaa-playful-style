@@ -5,6 +5,7 @@ from app.models.order import OrderCreate, OrderResponse
 from app.db.supabase import get_supabase, get_fresh_supabase
 from app.core.exceptions import AppError
 from app.core.email import send_order_confirmation_email
+from app.core.limiter import limiter
 import uuid
 import os
 import razorpay
@@ -33,8 +34,9 @@ class VerifyPaymentRequest(BaseModel):
     razorpay_signature: str
 
 @router.post("/", status_code=status.HTTP_201_CREATED)
+@limiter.limit("10/minute")
 def create_order(order: OrderCreate, request: Request, background_tasks: BackgroundTasks):
-    """Create a new order, validate stock, and deduct stock."""
+    """Create a new order, validate stock, and deduct stock atomically."""
     supabase = get_supabase()
     
     # 1. Check user auth
@@ -183,67 +185,42 @@ def create_order(order: OrderCreate, request: Request, background_tasks: Backgro
         "zip": order.zip or ""
     }
 
-    # 4. Create the Order
-    order_data = {
-        "user_id": user_id,
-        "status": "processing" if is_cod else "pending", 
-        "total_amount": calculated_total,
-        "shipping_amount": shipping_amount,
-        "payment_method": order.payment_method,
-        "shipping_address_id": shipping_address_id,
-        "shipping_address": shipping_snapshot,
-        "order_source": "online",
-        "coupon_id": coupon_id,
-        "discount_amount": discount_amount,
-    }
-    
-    try:
-        order_res = supabase.table("orders").insert(order_data).execute()
-        created_order = order_res.data[0]
-        order_id = created_order["id"]
-    except Exception as e:
-        raise AppError(f"Failed to create order: {str(e)}")
-        
-    # 5. Create Order Items & Manage Stock
-    order_items_data = []
-    reserved_until = (now + timedelta(minutes=15)).isoformat()
-
-    for item in order.items:
-        total_price = item.quantity * item.unit_price
-        order_items_data.append({
-            "order_id": order_id,
+    # 4. Create the Order and reserve/deduct stock atomically via RPC
+    rpc_args = {
+        "p_user_id": user_id,
+        "p_status": "processing" if is_cod else "pending",
+        "p_total_amount": float(calculated_total),
+        "p_shipping_amount": float(shipping_amount),
+        "p_payment_method": order.payment_method,
+        "p_shipping_address_id": shipping_address_id,
+        "p_shipping_address": shipping_snapshot,
+        "p_coupon_id": coupon_id,
+        "p_discount_amount": float(discount_amount),
+        "p_is_cod": is_cod,
+        "p_items": [{
             "product_variant_id": item.product_variant_id,
             "quantity": item.quantity,
-            "unit_price": item.unit_price,
-            "total_price": total_price
-        })
-        
-        v_data = variant_map[item.product_variant_id]
-        if is_cod:
-            new_stock = v_data["stock"] - item.quantity
-            supabase.table("product_variants").update({"stock": new_stock}).eq("id", item.product_variant_id).execute()
-        else:
-            new_reserved = v_data.get("reserved_stock", 0) + item.quantity
-            supabase.table("product_variants").update({
-                "reserved_stock": new_reserved,
-                "reserved_until": reserved_until
-            }).eq("id", item.product_variant_id).execute()
-        
+            "unit_price": float(item.unit_price),
+            "total_price": float(item.quantity * item.unit_price)
+        } for item in order.items]
+    }
+
     try:
-        items_res = supabase.table("order_items").insert(order_items_data).execute()
-        created_order["items"] = items_res.data
-        
-        if coupon_id:
-            supabase.table("coupon_usages").insert({
-                "coupon_id": coupon_id,
-                "user_id": user_id,
-                "order_id": order_id,
-                "discount_applied": discount_amount
-            }).execute()
-            
+        rpc_res = supabase.rpc("create_online_order", rpc_args).execute()
+        order_id = rpc_res.data["id"]
     except Exception as e:
-        supabase.table("orders").delete().eq("id", order_id).execute()
-        raise AppError(f"Failed to create order items: {str(e)}")
+        error_msg = str(e)
+        if "Insufficient stock" in error_msg:
+            raise AppError("One or more items in your cart just went out of stock.", status_code=400)
+        raise AppError(f"Failed to create order: {error_msg}")
+
+    # 5. Fetch the newly created order for the response and email
+    try:
+        order_res = supabase.table("orders").select("*, items:order_items(*)").eq("id", order_id).execute()
+        created_order = order_res.data[0]
+        order_items_data = created_order.get("items", [])
+    except Exception as e:
+        raise AppError(f"Order created but failed to fetch details: {str(e)}")
 
     if is_cod:
         if user_email:

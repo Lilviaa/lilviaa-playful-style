@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    {
+      "source": "/api/v1/:path*",
+      "destination": "https://lilviaa-playful-style.onrender.com/api/v1/:path*"
+    }
+  ]
+}

@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { useNavigate } from "@tanstack/react-router";
 import { useAuth } from "./auth";
 import { apiFetch } from "./api";
 
@@ -25,11 +26,11 @@ type CartCtx = {
 };
 
 const Ctx = createContext<CartCtx | null>(null);
-const GUEST_KEY = "lilviaa-cart-v1-guest";
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
   const { user } = useAuth();
+  const navigate = useNavigate();
   
   const fetchBackendCart = async () => {
     try {
@@ -73,27 +74,16 @@ export function CartProvider({ children }: { children: ReactNode }) {
     if (user) {
       fetchBackendCart();
     } else {
-      try {
-        const raw = localStorage.getItem(GUEST_KEY);
-        if (raw) {
-          const parsed = JSON.parse(raw);
-          if (Array.isArray(parsed)) setItems(parsed);
-        } else {
-            setItems([]);
-        }
-      } catch {}
+      setItems([]);
     }
   }, [user]);
 
-  useEffect(() => {
-    if (!user) {
-      try {
-        localStorage.setItem(GUEST_KEY, JSON.stringify(items));
-      } catch {}
-    }
-  }, [items, user]);
-
   const add: CartCtx["add"] = async (item) => {
+    if (!user) {
+      navigate({ to: "/auth" });
+      return;
+    }
+
     // Optimistic update
     setItems((prev) => {
       const idx = prev.findIndex((p) => p.slug === item.slug && p.size === item.size);
@@ -105,8 +95,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       return [...prev, item];
     });
 
-    if (user) {
-      try {
+    try {
         const response = await apiFetch("/cart/", {
           method: "POST",
           body: JSON.stringify({ product_variant_id: item.variant_id, quantity: item.qty })
@@ -121,7 +110,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
         alert(e.message || "Failed to add to cart");
         fetchBackendCart(); // Rollback
       }
-    }
   };
 
   const remove: CartCtx["remove"] = async (slug, size, variant_id) => {
@@ -168,9 +156,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const clear = () => {
     setItems([]);
-    if (!user) {
-      localStorage.removeItem(GUEST_KEY);
-    }
   };
 
   const count = items.length;

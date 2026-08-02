@@ -1,4 +1,6 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { useNavigate } from "@tanstack/react-router";
+import { useAuth } from "./auth";
 import { type CartItem } from "./cart";
 
 export type WishlistItem = Omit<CartItem, "size" | "qty" | "max_qty">;
@@ -17,8 +19,14 @@ const KEY = "lilviaa-wishlist-v1";
 
 export function WishlistProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<WishlistItem[]>([]);
+  const { user } = useAuth();
+  const navigate = useNavigate();
 
   useEffect(() => {
+    if (!user) {
+      setItems([]);
+      return;
+    }
     try {
       const raw = localStorage.getItem(KEY);
       if (raw) {
@@ -26,7 +34,7 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
         if (Array.isArray(parsed)) setItems(parsed);
       }
     } catch {}
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     try {
@@ -34,11 +42,16 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
     } catch {}
   }, [items]);
 
-  const add: WishlistCtx["add"] = (item) =>
+  const add: WishlistCtx["add"] = (item) => {
+    if (!user) {
+      navigate({ to: "/auth" });
+      return;
+    }
     setItems((prev) => {
       if (prev.some((p) => p.slug === item.slug)) return prev;
       return [...prev, item];
     });
+  };
 
   const remove: WishlistCtx["remove"] = (slug) =>
     setItems((prev) => prev.filter((p) => p.slug !== slug));

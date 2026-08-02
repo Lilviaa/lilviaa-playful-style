@@ -7,10 +7,15 @@ from app.core.config import settings
 # Shared admin client — used for operations that bypass RLS (creating users, 
 # admin updates, verifying tokens). This client is NOT used for user sign-in
 # to avoid session contamination.
+_supabase_client: Client | None = None
+
 def get_supabase() -> Client:
     """Get the admin Supabase client (service_role key, no user session).
-    Returns a fresh client to prevent httpx RemoteProtocolError on stale connections."""
-    return create_client(settings.SUPABASE_URL, settings.SUPABASE_SERVICE_ROLE_KEY)
+    Uses a singleton to prevent exhausting ephemeral ports on high concurrency."""
+    global _supabase_client
+    if _supabase_client is None:
+        _supabase_client = create_client(settings.SUPABASE_URL, settings.SUPABASE_SERVICE_ROLE_KEY)
+    return _supabase_client
 
 def get_fresh_supabase() -> Client:
     """Create a fresh Supabase client — used for sign_in_with_password so the 
