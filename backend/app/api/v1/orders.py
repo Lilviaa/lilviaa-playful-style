@@ -55,21 +55,36 @@ def create_order(order: OrderCreate, request: Request, background_tasks: Backgro
     shipping_address_id = order.shipping_address_id
     if not shipping_address_id and user_id and order.full_name:
         try:
-            if order.save_as_default:
-                supabase.table("addresses").update({"is_default": False}).eq("user_id", user_id).execute()
-                
-            addr_res = supabase.table("addresses").insert({
-                "user_id": user_id,
-                "full_name": order.full_name,
-                "phone": order.phone,
-                "address": order.address,
-                "city": order.city,
-                "state": order.state,
-                "zip": order.zip,
-                "is_default": order.save_as_default
-            }).execute()
-            if addr_res.data:
-                shipping_address_id = addr_res.data[0]["id"]
+            # Check if an identical address already exists
+            existing_addrs = supabase.table("addresses").select("id, is_default").eq("user_id", user_id)\
+                .eq("full_name", order.full_name)\
+                .eq("phone", order.phone)\
+                .eq("address", order.address)\
+                .eq("city", order.city)\
+                .eq("state", order.state)\
+                .eq("zip", order.zip).execute()
+            
+            if existing_addrs.data:
+                shipping_address_id = existing_addrs.data[0]["id"]
+                if order.save_as_default and not existing_addrs.data[0].get("is_default"):
+                    supabase.table("addresses").update({"is_default": False}).eq("user_id", user_id).execute()
+                    supabase.table("addresses").update({"is_default": True}).eq("id", shipping_address_id).execute()
+            else:
+                if order.save_as_default:
+                    supabase.table("addresses").update({"is_default": False}).eq("user_id", user_id).execute()
+                    
+                addr_res = supabase.table("addresses").insert({
+                    "user_id": user_id,
+                    "full_name": order.full_name,
+                    "phone": order.phone,
+                    "address": order.address,
+                    "city": order.city,
+                    "state": order.state,
+                    "zip": order.zip,
+                    "is_default": order.save_as_default
+                }).execute()
+                if addr_res.data:
+                    shipping_address_id = addr_res.data[0]["id"]
         except Exception as e:
             print("Failed to save address:", e)
 

@@ -16,6 +16,12 @@ import {
 import { Input } from "@/components/ui/input";
 
 export const Route = createFileRoute("/login")({
+  validateSearch: (search: Record<string, unknown>) => {
+    return {
+      redirect: search.redirect as string | undefined,
+      email: search.email as string | undefined,
+    }
+  },
   head: () => ({
     meta: [
       { title: "Log In — lilviaa" },
@@ -32,6 +38,7 @@ const formSchema = z.object({
 function LoginPage() {
   const { login, user } = useAuth();
   const navigate = useNavigate();
+  const search = Route.useSearch();
   const [errorMsg, setErrorMsg] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -39,18 +46,20 @@ function LoginPage() {
   // Guard: If already logged in, redirect away from login page
   useEffect(() => {
     if (user) {
-      if (user.role === "admin") {
+      if (search.redirect) {
+        navigate({ to: search.redirect, replace: true });
+      } else if (user.role === "admin") {
         navigate({ to: "/admin", replace: true });
       } else {
-        navigate({ to: "/account", replace: true });
+        navigate({ to: "/", replace: true });
       }
     }
-  }, [user, navigate]);
+  }, [user, navigate, search.redirect]);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      email: "",
+      email: search.email || "",
       password: "",
     },
   });
@@ -60,10 +69,12 @@ function LoginPage() {
     setIsLoading(true);
     try {
       const loggedUser = await login(values);
-      if (loggedUser?.role === "admin") {
+      if (search.redirect) {
+        navigate({ to: search.redirect, replace: true });
+      } else if (loggedUser?.role === "admin") {
         navigate({ to: "/admin", replace: true });
       } else {
-        navigate({ to: "/account", replace: true });
+        navigate({ to: "/", replace: true });
       }
     } catch (e: any) {
       if (e.message.includes("Account not verified")) {

@@ -13,7 +13,7 @@ class StorageService:
         # Public URL prefix for Supabase storage
         self.public_url_base = f"{settings.SUPABASE_URL}/storage/v1/object/public/{self.bucket_name}"
 
-    def generate_presigned_url(self, filename: str, content_type: str) -> dict:
+    def generate_presigned_url(self, filename: str, content_type: str, folder: str = "products") -> dict:
         """
         Returns an upload URL that points to our own backend,
         so the frontend will send the file to us for processing.
@@ -22,9 +22,13 @@ class StorageService:
             raise AppError("Only image files are allowed", status_code=400)
             
         ext = mimetypes.guess_extension(content_type) or ""
-        unique_filename = f"products/{uuid.uuid4().hex}{ext}"
+        unique_filename = f"{folder}/{uuid.uuid4().hex}{ext}"
 
-        upload_url = f"/admin/products/upload/direct/{unique_filename}"
+        # If it's cms, we route to admin/cms, else admin/products
+        if folder == "cms":
+            upload_url = f"/admin/cms/upload/direct/{unique_filename}"
+        else:
+            upload_url = f"/admin/products/upload/direct/{unique_filename}"
         
         return {
             "upload_url": upload_url,

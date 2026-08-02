@@ -16,6 +16,11 @@ import {
 import { Input } from "@/components/ui/input";
 
 export const Route = createFileRoute("/register")({
+  validateSearch: (search: Record<string, unknown>) => {
+    return {
+      redirect: search.redirect as string | undefined,
+    }
+  },
   head: () => ({
     meta: [
       { title: "Sign Up — lilviaa" },
@@ -36,6 +41,7 @@ const formSchema = z.object({
 function RegisterPage() {
   const { registerUser, user } = useAuth();
   const navigate = useNavigate();
+  const search = Route.useSearch();
   const [errorMsg, setErrorMsg] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -43,13 +49,15 @@ function RegisterPage() {
   // Guard: If already logged in, redirect away from register page
   useEffect(() => {
     if (user) {
-      if (user.role === "admin") {
+      if (search.redirect) {
+        navigate({ to: search.redirect, replace: true });
+      } else if (user.role === "admin") {
         navigate({ to: "/admin", replace: true });
       } else {
         navigate({ to: "/account", replace: true });
       }
     }
-  }, [user, navigate]);
+  }, [user, navigate, search.redirect]);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -73,6 +81,8 @@ function RegisterPage() {
       });
       if (result?.requires_verification) {
         navigate({ to: "/verify-account", search: { email: values.email }, replace: true });
+      } else if (search.redirect) {
+        navigate({ to: search.redirect, replace: true });
       } else if (result?.role === "admin") {
         navigate({ to: "/admin", replace: true });
       } else {

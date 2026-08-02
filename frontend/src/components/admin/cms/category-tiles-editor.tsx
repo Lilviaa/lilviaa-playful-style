@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useCategoryTiles, useUpdateCategoryTiles, CategoryTile } from "@/lib/admin/cms-api";
+import { useCategoryTiles, useUpdateCategoryTiles, CategoryTile, uploadCmsImage } from "@/lib/admin/cms-api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -115,28 +115,38 @@ export function CategoryTilesEditor() {
       const savedDefault = localStorage.getItem('lilviaa_custom_default_category_tiles');
       if (savedDefault) {
         setTiles(JSON.parse(savedDefault));
-        toast.info("Restored custom default tiles.");
+        toast.info("Restored custom default values.");
         return;
       }
     } catch (e) {}
 
-    // Add unique IDs to ensure react keys don't clash if resetting multiple times
-    const fallback = DEFAULT_CATEGORY_TILES.map(t => ({...t, id: `CT-${Date.now()}-${t.id}`}));
-    setTiles(fallback);
-    toast.info("Restored original tiles. Click 'Save Tiles' to apply.");
+    // Factory fallback
+    setTiles([
+      { id: "CT-1", image_url: "https://images.unsplash.com/photo-1518831959646-742c3a14ebf7?auto=format&fit=crop&q=80&w=400", label: "Kurtas", link: "/shop?category=kurta", sort_order: 1 },
+      { id: "CT-2", image_url: "https://images.unsplash.com/photo-1514090458221-65bb69cf63e6?auto=format&fit=crop&q=80&w=400", label: "Shirts", link: "/shop?category=shirt", sort_order: 2 },
+      { id: "CT-3", image_url: "https://images.unsplash.com/photo-1522771930-78848d9293e8?auto=format&fit=crop&q=80&w=400", label: "Ethnic", link: "/shop?category=ethnic", sort_order: 3 },
+      { id: "CT-4", image_url: "https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9?auto=format&fit=crop&q=80&w=400", label: "Party", link: "/shop?category=party", sort_order: 4 }
+    ]);
+    toast.info("Restored original values. Click 'Save Tiles' to apply.");
   };
 
   const handleUploadClick = () => {
     fileInputRef.current?.click();
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0 && editingTileIndex !== null) {
       const file = e.target.files[0];
-      const url = URL.createObjectURL(file);
-      handleChange(editingTileIndex, "image_url", url);
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
+      }
+      const toastId = toast.loading("Uploading image...");
+      try {
+        const publicUrl = await uploadCmsImage(file);
+        handleChange(editingTileIndex, "image_url", publicUrl);
+        toast.success("Image uploaded successfully!", { id: toastId });
+      } catch (error) {
+        toast.error("Failed to upload image", { id: toastId });
       }
     }
   };

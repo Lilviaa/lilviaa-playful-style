@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { useBanners, useUpdateBanner, Banner, useHeroSlides, useUpdateHeroSlides, HeroSlide } from "@/lib/admin/cms-api";
+import { useBanners, useUpdateBanner, Banner, useHeroSlides, useUpdateHeroSlides, HeroSlide, uploadCmsImage } from "@/lib/admin/cms-api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -102,7 +102,23 @@ export function HeroBannerEditor() {
   
   const isDirty = hasUnsavedChanges();
 
+  const handleSetAsDefault = () => {
+    localStorage.setItem('lilviaa_custom_default_hero_banner', JSON.stringify({ banner: localBanner, slides: localSlides }));
+    toast.success("Saved as your custom default.");
+  };
+
   const handleResetToDefault = () => {
+    try {
+      const savedDefault = localStorage.getItem('lilviaa_custom_default_hero_banner');
+      if (savedDefault) {
+        const parsed = JSON.parse(savedDefault);
+        setLocalBanner(parsed.banner);
+        setLocalSlides(parsed.slides);
+        toast.info("Restored custom default values.");
+        return;
+      }
+    } catch (e) {}
+
     setLocalBanner({
       ...localBanner,
       image_url: "",
@@ -115,29 +131,54 @@ export function HeroBannerEditor() {
       start_date: null,
       end_date: null,
     });
-    if (slides) setLocalSlides([...slides]);
-    toast.info("Restored default values. Click 'Save Changes' to apply.");
+    setLocalSlides([
+      { id: "HS-1", image_url: "https://images.unsplash.com/photo-1518831959646-742c3a14ebf7?auto=format&fit=crop&q=80&w=1080", sort_order: 1 },
+      { id: "HS-2", image_url: "https://images.unsplash.com/photo-1514090458221-65bb69cf63e6?auto=format&fit=crop&q=80&w=1080", sort_order: 2 },
+      { id: "HS-3", image_url: "https://images.unsplash.com/photo-1522771930-78848d9293e8?auto=format&fit=crop&q=80&w=1080", sort_order: 3 },
+      { id: "HS-4", image_url: "https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9?auto=format&fit=crop&q=80&w=1080", sort_order: 4 },
+    ]);
+    toast.info("Restored original values. Click 'Save Changes' to apply.");
   };
 
-  const handlePosterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePosterChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       const file = e.target.files[0];
-      setLocalBanner({ ...localBanner, image_url: URL.createObjectURL(file) });
       e.target.value = "";
+      
+      const toastId = toast.loading("Uploading image...");
+      try {
+        const publicUrl = await uploadCmsImage(file);
+        setLocalBanner({ ...localBanner, image_url: publicUrl });
+        toast.success("Image uploaded successfully!", { id: toastId });
+      } catch (error) {
+        toast.error("Failed to upload image", { id: toastId });
+      }
     }
   };
 
-  const handleSliderFilesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleSliderFilesChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       const files = Array.from(e.target.files);
-      const newSlides = files.map((file, idx) => ({
-        id: `HS-NEW-${Date.now()}-${idx}`,
-        image_url: URL.createObjectURL(file),
-        sort_order: localSlides.length + idx + 1,
-        file
-      }));
-      setLocalSlides([...localSlides, ...newSlides]);
       e.target.value = "";
+      
+      let newSlides = [...localSlides];
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const toastId = toast.loading(`Uploading slide ${i + 1} of ${files.length}...`);
+        try {
+          const publicUrl = await uploadCmsImage(file);
+          newSlides.push({
+            id: `HS-NEW-${Date.now()}-${i}`,
+            image_url: publicUrl,
+            sort_order: newSlides.length + 1,
+          });
+          toast.success(`Slide ${i + 1} uploaded!`, { id: toastId });
+          // Update state incrementally so user sees progress
+          setLocalSlides([...newSlides]);
+        } catch (error) {
+          toast.error(`Failed to upload slide ${i + 1}`, { id: toastId });
+        }
+      }
     }
   };
 
@@ -396,7 +437,10 @@ export function HeroBannerEditor() {
             </span>
           )}
         </div>
-        <div className="flex gap-3">
+        <div className="flex items-center gap-3">
+          <Button variant="ghost" onClick={handleSetAsDefault} className="rounded-full px-4 text-xs font-semibold text-cocoa/50 hover:text-cocoa hover:bg-cocoa/5 mr-auto">
+            Set as Default
+          </Button>
           <Button variant="outline" onClick={handleResetToDefault} className="rounded-full px-6 text-cocoa/70 border-cocoa/20 hover:bg-cocoa/5">
             Reset to Default
           </Button>

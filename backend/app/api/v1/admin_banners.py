@@ -9,8 +9,11 @@ router = APIRouter(dependencies=[Depends(require_admin)])
 
 class BannerCreate(BaseModel):
     image_url: str
+    type: Optional[str] = "hero"
     title: Optional[str] = None
     subtitle: Optional[str] = None
+    description: Optional[str] = None
+    cta_text: Optional[str] = None
     link_url: Optional[str] = None
     sort_order: Optional[int] = 0
     active: Optional[bool] = True
@@ -19,8 +22,11 @@ class BannerCreate(BaseModel):
 
 class BannerUpdate(BaseModel):
     image_url: Optional[str] = None
+    type: Optional[str] = None
     title: Optional[str] = None
     subtitle: Optional[str] = None
+    description: Optional[str] = None
+    cta_text: Optional[str] = None
     link_url: Optional[str] = None
     sort_order: Optional[int] = None
     active: Optional[bool] = None

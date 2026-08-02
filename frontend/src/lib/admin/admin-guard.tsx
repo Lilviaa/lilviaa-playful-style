@@ -14,7 +14,7 @@ export function AdminGuard({ children }: { children: ReactNode }) {
     if (isLoading) return;
 
     if (!user) {
-      navigate({ to: "/login", replace: true });
+      navigate({ to: "/login", search: { redirect: window.location.pathname }, replace: true });
       return;
     }
 

@@ -20,9 +20,9 @@ function AccountLayout() {
 
   useEffect(() => {
     if (!user) {
-      navigate({ to: "/login", replace: true });
+      navigate({ to: "/login", search: { redirect: pathname }, replace: true });
     }
-  }, [user, navigate]);
+  }, [user, navigate, pathname]);
 
   if (!user) return null;
 

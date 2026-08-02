@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { useFeaturedProducts, useUpdateFeaturedProducts, FeaturedProduct, useCmsSection, useUpdateCmsSection, CmsSection } from "@/lib/admin/cms-api";
+import { useFeaturedProducts, useUpdateFeaturedProducts, FeaturedProduct, useCmsSection, useUpdateCmsSection, CmsSection, uploadCmsImage } from "@/lib/admin/cms-api";
 import { useProducts, Product } from "@/lib/admin/products-api";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -104,14 +104,21 @@ export function FeaturedCarouselEditor() {
     }
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, field: 'image_url' | 'secondary_image_url') => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>, field: 'image_url' | 'secondary_image_url') => {
     if (e.target.files && e.target.files.length > 0) {
       const file = e.target.files[0];
-      const url = URL.createObjectURL(file);
-      if (section) {
-        setSection({ ...section, [field]: url });
-      }
       e.target.value = ""; // reset
+      
+      const toastId = toast.loading("Uploading image...");
+      try {
+        const publicUrl = await uploadCmsImage(file);
+        if (section) {
+          setSection({ ...section, [field]: publicUrl });
+        }
+        toast.success("Image uploaded successfully!", { id: toastId });
+      } catch (error) {
+        toast.error("Failed to upload image", { id: toastId });
+      }
     }
   };
 
@@ -121,6 +128,40 @@ export function FeaturedCarouselEditor() {
     const matchesTag = tagFilter === "all" ? true : p.tag === tagFilter;
     return matchesSearch && matchesTag;
   });
+
+  const handleSetAsDefault = () => {
+    localStorage.setItem('lilviaa_custom_default_featured_carousel', JSON.stringify({ featured, section }));
+    toast.success("Saved as your custom default.");
+  };
+
+  const handleResetToDefault = () => {
+    try {
+      const savedDefault = localStorage.getItem('lilviaa_custom_default_featured_carousel');
+      if (savedDefault) {
+        const parsed = JSON.parse(savedDefault);
+        setFeatured(parsed.featured);
+        setSection(parsed.section);
+        toast.info("Restored custom default values.");
+        return;
+      }
+    } catch (e) {}
+
+    // Factory fallback
+    setFeatured([
+      { id: "FP-1", product_id: "p_1", sort_order: 1 },
+      { id: "FP-2", product_id: "p_2", sort_order: 2 },
+      { id: "FP-3", product_id: "p_3", sort_order: 3 },
+    ]);
+    setSection({
+      id: `CMS-${Date.now()}`,
+      key: "featured_products_section",
+      title: "Bestsellers this week",
+      body: "Loved by little ones",
+      image_url: null,
+      secondary_image_url: null
+    });
+    toast.info("Restored original values. Click 'Save Carousel' to apply.");
+  };
 
   return (
     <div className="bg-white border border-cocoa/10 rounded-2xl p-6 shadow-sm space-y-6">
@@ -339,7 +380,13 @@ export function FeaturedCarouselEditor() {
         </Droppable>
       </DragDropContext>
       
-      <div className="pt-4 border-t border-cocoa/10 flex justify-end">
+      <div className="pt-4 border-t border-cocoa/10 flex items-center justify-end gap-3">
+        <Button variant="ghost" onClick={handleSetAsDefault} className="rounded-full px-4 text-xs font-semibold text-cocoa/50 hover:text-cocoa hover:bg-cocoa/5 mr-auto">
+          Set as Default
+        </Button>
+        <Button variant="outline" onClick={handleResetToDefault} className="rounded-full px-6 text-cocoa/70 border-cocoa/20 hover:bg-cocoa/5">
+          Reset to Default
+        </Button>
         <Button onClick={handleSave} disabled={isUpdating} className="bg-cocoa hover:bg-cocoa/90 text-white rounded-full px-8">
           {isUpdating ? "Saving..." : "Save Carousel"}
         </Button>

@@ -169,6 +169,7 @@ export function SiteHeader() {
           ) : (
             <Link
               to="/login"
+              search={{ redirect: pathname !== "/" ? pathname : undefined }}
               className="rounded-full p-2 text-cocoa hover:bg-sand"
               aria-label="Account"
             >
