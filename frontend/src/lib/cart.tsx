@@ -80,7 +80,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const add: CartCtx["add"] = async (item) => {
     if (!user) {
-      navigate({ to: "/auth" });
+      navigate({ to: "/login" });
       return;
     }
 

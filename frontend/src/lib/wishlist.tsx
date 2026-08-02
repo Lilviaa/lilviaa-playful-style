@@ -44,7 +44,7 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
 
   const add: WishlistCtx["add"] = (item) => {
     if (!user) {
-      navigate({ to: "/auth" });
+      navigate({ to: "/login" });
       return;
     }
     setItems((prev) => {

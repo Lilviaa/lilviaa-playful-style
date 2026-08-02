@@ -6,6 +6,7 @@ import type { Product } from "@/lib/products";
 import { fetchProduct, useProducts } from "@/lib/products-api";
 import { formatINR, useCart } from "@/lib/cart";
 import { useWishlist } from "@/lib/wishlist";
+import { useAuth } from "@/lib/auth";
 import { ProductCard } from "@/components/product-card";
 import { SizeGuide } from "@/components/size-guide";
 import {
@@ -70,6 +71,7 @@ export const Route = createFileRoute("/products/$slug")({
 
 function ProductPage() {
   const { product } = Route.useLoaderData() as { product: Product };
+  const { user } = useAuth();
   const { items, add, setQty: setCartQty, remove: removeFromCart } = useCart();
   const { add: addToWishlist, remove: removeFromWishlist, has: inWishlistCheck } = useWishlist();
   const navigate = useNavigate();
@@ -144,9 +146,13 @@ function ProductPage() {
   };
 
   const handleAdd = () => {
+    if (!user) {
+      navigate({ to: "/login" });
+      return false;
+    }
     if (inCart) {
       // If already in cart, just go to cart/checkout or do nothing
-      return;
+      return true;
     }
     add({
       slug: product.slug,
@@ -161,11 +167,13 @@ function ProductPage() {
     toast.success(`${product.name} added to cart`, {
       description: `Size ${size} · Qty ${qty}`,
     });
+    return true;
   };
 
   const handleBuyNow = () => {
-    handleAdd();
-    navigate({ to: "/checkout" });
+    if (handleAdd()) {
+      navigate({ to: "/checkout" });
+    }
   };
 
   return (
