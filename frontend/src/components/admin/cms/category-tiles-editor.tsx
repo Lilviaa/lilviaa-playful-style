@@ -156,7 +156,7 @@ export function CategoryTilesEditor() {
       <div className="flex items-center justify-between border-b border-cocoa/10 pb-4">
         <div>
           <h2 className="text-lg font-bold text-cocoa">Category Tiles</h2>
-          <p className="text-xs text-muted-foreground mt-1">Manage the visual category links on the homepage. Drag to reorder.</p>
+          <p className="text-xs text-muted-foreground mt-1">Manage the visual category links on the homepage. Drag to reorder. (.webp only)</p>
         </div>
         <Button onClick={handleAdd} variant="outline" size="sm" className="gap-2">
           <Plus className="h-4 w-4" /> Add Tile
@@ -167,7 +167,7 @@ export function CategoryTilesEditor() {
         type="file" 
         ref={fileInputRef} 
         className="hidden" 
-        accept="image/*" 
+        accept="image/webp" 
         onChange={handleFileChange} 
       />
 

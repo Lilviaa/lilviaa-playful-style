@@ -120,11 +120,11 @@ function CompanySettingsPage() {
                   ) : (
                     <div className="text-center p-4">
                       <UploadCloud className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
-                      <span className="text-xs text-muted-foreground">Click to upload</span>
+                      <span className="text-xs text-muted-foreground">Click to upload (.webp only)</span>
                     </div>
                   )}
                 </div>
-                <input type="file" id="logo-upload" className="hidden" accept="image/*" onChange={handleImageUpload} />
+                <input type="file" id="logo-upload" className="hidden" accept="image/webp" onChange={handleImageUpload} />
               </div>
 
               <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4 w-full">

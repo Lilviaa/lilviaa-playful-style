@@ -70,7 +70,7 @@ export function ImageUploader({ images, onChange }: ImageUploaderProps) {
             type="file" 
             ref={fileInputRef} 
             className="hidden" 
-            accept="image/*" 
+            accept="image/webp" 
             multiple 
             onChange={handleFileChange} 
           />
@@ -84,7 +84,7 @@ export function ImageUploader({ images, onChange }: ImageUploaderProps) {
         <div className="rounded-lg border border-dashed border-border p-12 text-center flex flex-col items-center justify-center bg-sand/30">
           <ImageIcon className="h-10 w-10 text-muted-foreground/50 mb-4" />
           <p className="text-sm font-medium text-cocoa">No images uploaded</p>
-          <p className="text-xs text-muted-foreground mt-1">Upload multiple images for the product (drag to reorder).</p>
+          <p className="text-xs text-muted-foreground mt-1">Upload multiple images for the product (.webp only, drag to reorder).</p>
         </div>
       ) : (
         <DragDropContext onDragEnd={handleDragEnd}>

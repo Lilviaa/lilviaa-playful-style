@@ -86,6 +86,8 @@ export function HeroBannerEditor() {
       if (hero.start_date !== localBanner.start_date) return true;
       if (hero.end_date !== localBanner.end_date) return true;
       if (hero.active !== localBanner.active) return true;
+    } else {
+      return true;
     }
     
     // Compare slides length
@@ -201,7 +203,7 @@ export function HeroBannerEditor() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-lg font-bold text-cocoa">Homepage Hero Banner</h2>
-          <p className="text-xs text-muted-foreground mt-1">Manage the primary welcome banner at the top of the store.</p>
+          <p className="text-xs text-muted-foreground mt-1">Manage the primary welcome banner at the top of the store. (.webp only)</p>
         </div>
         <div className="flex items-center gap-3 bg-sand/30 px-3 py-1.5 rounded-xl border border-cocoa/5">
           <Label htmlFor="hero-active" className="text-sm font-semibold cursor-pointer">Visibility</Label>
@@ -287,7 +289,7 @@ export function HeroBannerEditor() {
           
           <div className="flex flex-col md:flex-row gap-6 items-start">
             <div className="w-[200px] shrink-0">
-              <input type="file" ref={posterInputRef} className="hidden" accept="image/*" onChange={handlePosterChange} />
+              <input type="file" ref={posterInputRef} className="hidden" accept="image/webp" onChange={handlePosterChange} />
               {localBanner.image_url ? (
                 <div className="relative aspect-[4/5] w-full bg-sand/20 rounded-xl overflow-hidden border border-cocoa/10 group">
                   <img src={localBanner.image_url} alt="Event Poster" className="w-full h-full object-cover" />
@@ -369,10 +371,10 @@ export function HeroBannerEditor() {
           <div className="flex items-center justify-between">
             <div>
               <h3 className="text-sm font-bold text-cocoa">Default Slide Images</h3>
-              <p className="text-xs text-muted-foreground mt-1">Manage the default rotating images. (Recommended: 1080x1350)</p>
+              <p className="text-xs text-muted-foreground mt-1">Manage the default rotating images. (Recommended: 1080x1350, .webp only)</p>
             </div>
             <div>
-              <input type="file" ref={sliderInputRef} className="hidden" accept="image/*" multiple onChange={handleSliderFilesChange} />
+              <input type="file" ref={sliderInputRef} className="hidden" accept="image/webp" multiple onChange={handleSliderFilesChange} />
               <Button type="button" variant="outline" size="sm" onClick={() => sliderInputRef.current?.click()}>
                 <UploadCloud className="mr-2 h-4 w-4" /> Add Images
               </Button>

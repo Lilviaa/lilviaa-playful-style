@@ -18,10 +18,10 @@ class StorageService:
         Returns an upload URL that points to our own backend,
         so the frontend will send the file to us for processing.
         """
-        if not content_type.startswith("image/"):
+        if not (content_type.startswith("image/") or content_type == "application/octet-stream"):
             raise AppError("Only image files are allowed", status_code=400)
             
-        ext = mimetypes.guess_extension(content_type) or ""
+        ext = ".webp"
         unique_filename = f"{folder}/{uuid.uuid4().hex}{ext}"
 
         # If it's cms, we route to admin/cms, else admin/products
@@ -47,9 +47,6 @@ class StorageService:
             
         try:
             with Image.open(io.BytesIO(file_bytes)) as img:
-                if img.mode in ("RGBA", "P"):
-                    img = img.convert("RGB")
-                    
                 max_width = 1200
                 if img.width > max_width:
                     ratio = max_width / img.width
@@ -57,7 +54,7 @@ class StorageService:
                     img = img.resize((max_width, new_height), Image.Resampling.LANCZOS)
                 
                 output_buffer = io.BytesIO()
-                img.save(output_buffer, format="JPEG", quality=85, optimize=True)
+                img.save(output_buffer, format="WEBP", quality=85)
                 compressed_bytes = output_buffer.getvalue()
         except UnidentifiedImageError:
             raise AppError("Invalid image format or corrupted file", status_code=400)
@@ -69,7 +66,7 @@ class StorageService:
             res = supabase.storage.from_(self.bucket_name).upload(
                 path=file_path,
                 file=compressed_bytes,
-                file_options={"content-type": "image/jpeg"}
+                file_options={"content-type": "image/webp"}
             )
         except Exception as e:
             raise AppError(f"Failed to upload to storage: {str(e)}", status_code=400)

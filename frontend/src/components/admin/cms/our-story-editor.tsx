@@ -83,11 +83,11 @@ export function OurStoryEditor() {
       <div className="flex items-center justify-between border-b border-cocoa/10 pb-4">
         <div>
           <h2 className="text-lg font-bold text-cocoa">"Our Story" Section</h2>
-          <p className="text-xs text-muted-foreground mt-1">Manage the brand story text displayed on the homepage and about page.</p>
+          <p className="text-xs text-muted-foreground mt-1">Manage the brand story text displayed on the homepage and about page. (Images must be .webp)</p>
         </div>
       </div>
       
-      <input type="file" id="story-img-upload" className="hidden" accept="image/*" onChange={handleImageUpload} />
+      <input type="file" id="story-img-upload" className="hidden" accept="image/webp" onChange={handleImageUpload} />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <div className="space-y-4">

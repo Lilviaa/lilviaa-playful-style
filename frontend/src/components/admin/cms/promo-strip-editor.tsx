@@ -41,7 +41,8 @@ export function PromoStripEditor() {
   }
 
   const serverBanner = banners?.find(b => b.type === "promo_strip");
-  const hasUnsavedChanges = serverBanner && localBanner ? (
+  const hasUnsavedChanges = localBanner ? (
+    !serverBanner ||
     localBanner.headline !== serverBanner.headline ||
     localBanner.cta_link !== serverBanner.cta_link ||
     localBanner.active !== serverBanner.active
@@ -128,8 +129,8 @@ export function PromoStripEditor() {
       {localBanner.active && localBanner.headline && (
         <div className="mt-4 border rounded overflow-hidden">
           <div className="text-xs font-semibold text-muted-foreground bg-sand/30 px-3 py-1.5 border-b">Live Preview</div>
-          <div className="bg-primary text-primary-foreground py-2 text-sm font-medium overflow-hidden whitespace-nowrap">
-            <div className="flex animate-[scrollMarquee_15s_linear_infinite] w-max items-center">
+          <div className="bg-cocoa text-white py-2 text-sm font-medium overflow-hidden whitespace-nowrap">
+            <div className="flex animate-[scrollMarquee_35s_linear_infinite] w-max items-center">
               {Array(3).fill(localBanner.headline).map((text, i) => (
                 <div key={i} className="flex items-center px-8 whitespace-nowrap text-sm font-semibold tracking-wide">
                   {text.split(/\||•/).map((part: string, idx: number, arr: string[]) => (

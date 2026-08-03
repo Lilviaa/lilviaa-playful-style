@@ -168,7 +168,7 @@ export function FeaturedCarouselEditor() {
       <div className="flex items-center justify-between border-b border-cocoa/10 pb-4">
         <div>
           <h2 className="text-lg font-bold text-cocoa">Featured Products Carousel</h2>
-          <p className="text-xs text-muted-foreground mt-1">Select and reorder products to feature on the homepage.</p>
+          <p className="text-xs text-muted-foreground mt-1">Select and reorder products to feature on the homepage. (Editorial images must be .webp)</p>
         </div>
       </div>
 
@@ -198,14 +198,14 @@ export function FeaturedCarouselEditor() {
           type="file" 
           ref={fileInputRef1} 
           className="hidden" 
-          accept="image/*" 
+          accept="image/webp" 
           onChange={(e) => handleFileChange(e, 'image_url')} 
         />
         <input 
           type="file" 
           ref={fileInputRef2} 
           className="hidden" 
-          accept="image/*" 
+          accept="image/webp" 
           onChange={(e) => handleFileChange(e, 'secondary_image_url')} 
         />
         <div className="space-y-2">

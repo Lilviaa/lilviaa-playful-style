@@ -8,7 +8,7 @@ from app.core.exceptions import AppError
 router = APIRouter(dependencies=[Depends(require_admin)])
 
 class BannerCreate(BaseModel):
-    image_url: str
+    image_url: Optional[str] = None
     type: Optional[str] = "hero"
     title: Optional[str] = None
     subtitle: Optional[str] = None
@@ -46,6 +46,8 @@ def list_banners():
 @router.post("/")
 def create_banner(banner: BannerCreate):
     supabase = get_supabase()
+    if banner.image_url is None:
+        banner.image_url = ""
     res = supabase.table("banners").insert(banner.model_dump(exclude_none=True)).execute()
     return res.data[0]
 
@@ -53,6 +55,8 @@ def create_banner(banner: BannerCreate):
 def update_banner(banner_id: str, banner: BannerUpdate):
     supabase = get_supabase()
     updates = banner.model_dump(exclude_unset=True)
+    if "image_url" in updates and updates["image_url"] is None:
+        updates["image_url"] = ""
     if not updates:
         return supabase.table("banners").select("*").eq("id", banner_id).single().execute().data
         

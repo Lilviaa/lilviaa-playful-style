@@ -6,6 +6,8 @@ import { useCart } from "@/lib/cart";
 import { useWishlist } from "@/lib/wishlist";
 import { useAuth } from "@/lib/auth";
 import { cn } from "@/lib/utils";
+import { useQuery } from "@tanstack/react-query";
+import { apiFetch } from "@/lib/api";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -32,8 +34,27 @@ export function SiteHeader() {
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
+  const { data: banners } = useQuery({
+    queryKey: ["public-banners"],
+    queryFn: async () => {
+      const res = await apiFetch("/banners");
+      if (!res.ok) throw new Error("Failed to fetch banners");
+      return res.json();
+    }
+  });
+
+  const promoBanner = banners?.find((b: any) => b.type === "promo_strip" && b.active);
+
   return (
-    <header className="sticky top-0 z-40 border-b border-border/60 bg-cream/85 backdrop-blur">
+    <>
+      <style>{`
+        @keyframes scrollMarquee {
+          0% { transform: translateX(0); }
+          100% { transform: translateX(-50%); }
+        }
+      `}</style>
+      
+    <header className="static md:sticky top-0 z-40 border-b border-border/60 bg-cream/85 backdrop-blur">
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-3 py-3 sm:gap-4 md:px-6">
         <Sheet open={open} onOpenChange={setOpen}>
           <SheetTrigger asChild>
@@ -226,7 +247,34 @@ export function SiteHeader() {
         </div>
       </div>
 
-
     </header>
+
+      {promoBanner && (
+        <div className="bg-cocoa text-white py-2 text-sm font-medium overflow-hidden whitespace-nowrap">
+          <div className="flex animate-[scrollMarquee_35s_linear_infinite] w-max items-center">
+            {Array(4).fill(promoBanner.title).map((text, i) => (
+              <div key={i} className="flex items-center px-8 whitespace-nowrap text-sm font-semibold tracking-wide">
+                {text.split(/\||•/).map((part: string, idx: number, arr: string[]) => (
+                  <span key={idx} className="flex items-center">
+                    <span>{part.trim()}</span>
+                    {promoBanner.link_url && idx === arr.length - 1 && (
+                      <Link to={promoBanner.link_url} className="underline ml-2 mr-1">
+                        {promoBanner.cta_text}
+                      </Link>
+                    )}
+                    {(!promoBanner.link_url && promoBanner.cta_text && idx === arr.length - 1) && (
+                      <span className="underline ml-2 mr-1">{promoBanner.cta_text}</span>
+                    )}
+                    {idx < arr.length - 1 && <span className="mx-6 opacity-40">•</span>}
+                  </span>
+                ))}
+                <span className="mx-6 opacity-40">•</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+    </>
   );
 }
