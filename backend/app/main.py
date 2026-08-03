@@ -18,6 +18,18 @@ app = FastAPI(
 )
 
 # Set up CORS
+from urllib.parse import urlparse
+
+@app.middleware("http")
+async def fix_redirect_urls(request, call_next):
+    response = await call_next(request)
+    if response.status_code in (301, 302, 303, 307, 308):
+        location = response.headers.get("location")
+        if location and location.startswith("http"):
+            parsed = urlparse(location)
+            response.headers["location"] = parsed.path + ("?" + parsed.query if parsed.query else "")
+    return response
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins_list,
