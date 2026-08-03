@@ -23,15 +23,17 @@ export const Route = createFileRoute("/products/$slug")({
     try {
       const product = await fetchProduct(params.slug);
       return { product };
-    } catch (e) {
-      throw notFound();
+    } catch (e: any) {
+      console.error("fetchProduct ERROR:", e);
+      // Return the error so we can see it on the page!
+      return { product: null as any, error: e.message || String(e) };
     }
   },
   head: ({ loaderData }) => {
-    if (!loaderData) {
+    if (!loaderData || loaderData.error) {
       return {
         meta: [
-          { title: "Product not found — lilviaa" },
+          { title: "Error — lilviaa" },
           { name: "robots", content: "noindex" },
         ],
       };
@@ -70,11 +72,24 @@ export const Route = createFileRoute("/products/$slug")({
 });
 
 function ProductPage() {
-  const { product } = Route.useLoaderData() as { product: Product };
+  const { product, error } = Route.useLoaderData() as { product: Product; error?: string };
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { items, add, setQty: setCartQty, remove: removeFromCart } = useCart();
   const { add: addToWishlist, remove: removeFromWishlist, has: inWishlistCheck } = useWishlist();
-  const navigate = useNavigate();
+
+  if (error) {
+    return (
+      <div className="mx-auto max-w-lg px-6 py-24 text-center">
+        <h1 className="font-display text-3xl text-cocoa">Debug Error</h1>
+        <p className="mt-2 text-red-500 font-mono">{error}</p>
+        <Link to="/shop" className="mt-6 inline-block rounded-full bg-primary px-6 py-3 text-sm font-bold text-primary-foreground">
+          Back to shop
+        </Link>
+      </div>
+    );
+  }
+
   const [activeImg, setActiveImg] = useState(product.image);
   const [size, setSize] = useState(product.sizes[2] ?? product.sizes[0]);
   const [qty, setQty] = useState(1);
