@@ -3,7 +3,7 @@ import type { Product } from "./products";
 export const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000/api/v1";
 
 export async function fetchProducts(category?: string, sort?: string, q?: string): Promise<Product[]> {
-  const url = new URL(`${API_URL}/products/`);
+  const url = new URL(`${API_URL}/products/`, window.location.origin);
   if (category && category !== "all") url.searchParams.append("category", category);
   if (sort && sort !== "featured") {
     const backendSort = sort.replace("-", "_");
