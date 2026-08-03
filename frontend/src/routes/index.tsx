@@ -117,9 +117,9 @@ function HomePage() {
           <div className="mx-auto flex flex-col md:flex-row-reverse items-stretch w-full">
 
             {/* IMAGE HALF */}
-            <div className="relative w-full md:w-1/2 h-[450px] md:h-auto min-h-[500px] lg:min-h-[700px]">
+            <div className="relative w-full md:w-1/2 h-[60vh] min-h-[450px] max-h-[600px] md:h-auto md:min-h-[500px] lg:min-h-[700px] md:max-h-none">
               {/* The Arched Image Container */}
-              <div className="absolute bottom-0 right-0 top-0 left-4 md:left-8 lg:left-12 overflow-hidden rounded-tl-[10rem] rounded-bl-3xl rounded-tr-3xl rounded-br-[4rem] shadow-2xl group">
+              <div className="absolute inset-0 md:bottom-0 md:right-0 md:top-0 md:left-8 lg:left-12 overflow-hidden rounded-b-[2.5rem] md:rounded-t-none md:rounded-tl-[10rem] md:rounded-bl-3xl md:rounded-tr-3xl md:rounded-br-[4rem] shadow-lg md:shadow-2xl group">
                 {/* Sliding Images */}
                 <div
                   className="flex h-full w-full transition-transform duration-1000 ease-in-out"
@@ -170,13 +170,13 @@ function HomePage() {
             </div>
 
             {/* TEXT HALF */}
-            <div className="relative z-10 flex w-full flex-col items-center justify-center px-6 py-12 md:items-start md:w-1/2 md:py-24 lg:px-16">
+            <div className="relative z-10 flex w-full flex-col items-center justify-center px-6 py-8 pb-16 md:items-start md:w-1/2 md:py-24 lg:px-16">
               <ScrollReveal className="max-w-xl mx-auto text-center md:mr-auto md:ml-0 md:text-left">
                 <span className="mb-4 inline-flex items-center gap-2 rounded-full border border-cream/40 bg-cream/60 px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-cocoa/80 backdrop-blur-sm shadow-sm">
                   <Sparkles className="h-3 w-3 text-primary/90" />
                   {heroBanner?.subtitle || "Premium Kidswear"}
                 </span>
-                <h1 className="mt-8 font-display text-5xl leading-[1.05] text-cocoa md:text-6xl lg:text-7xl">
+                <h1 className="mt-6 font-display text-4xl sm:text-5xl leading-[1.1] text-cocoa md:text-6xl lg:text-7xl">
                   {(() => {
                     const text = heroBanner?.title || "Made for Little Gentlemen.";
                     
@@ -399,7 +399,7 @@ function HomePage() {
 
       {/* TRUST BAR */}
       <ScrollReveal className="border-y border-border/60 bg-card">
-        <div className="mx-auto flex max-w-7xl flex-col items-center gap-6 px-6 py-8 sm:flex-row sm:flex-wrap sm:justify-center md:flex-nowrap md:justify-between">
+        <div className="mx-auto flex w-max max-w-7xl flex-col items-start gap-6 px-6 py-8 sm:w-full sm:flex-row sm:flex-wrap sm:items-center sm:justify-center md:flex-nowrap md:justify-between">
           {[
             { icon: Heart, label: "Comfort First" },
             { icon: Gem, label: "Premium Fabric" },

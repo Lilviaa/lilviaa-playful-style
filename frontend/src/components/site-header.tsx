@@ -13,6 +13,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 
 const nav = [
   { to: "/", label: "Home" },
@@ -34,13 +35,35 @@ export function SiteHeader() {
   return (
     <header className="sticky top-0 z-40 border-b border-border/60 bg-cream/85 backdrop-blur">
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-3 py-3 sm:gap-4 md:px-6">
-        <button
-          onClick={() => setOpen((v) => !v)}
-          className="rounded-full p-2 text-cocoa hover:bg-sand md:hidden"
-          aria-label="Menu"
-        >
-          {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-        </button>
+        <Sheet open={open} onOpenChange={setOpen}>
+          <SheetTrigger asChild>
+            <button
+              className="rounded-full p-2 text-cocoa hover:bg-sand md:hidden"
+              aria-label="Menu"
+            >
+              <Menu className="h-5 w-5" />
+            </button>
+          </SheetTrigger>
+          <SheetContent side="left" className="w-[280px] bg-cream border-r-border/60 sm:w-[350px]">
+            <SheetHeader className="text-left mt-2 mb-4">
+              <SheetTitle className="font-display text-2xl text-cocoa flex items-center gap-2">
+                <img src={logoAsset.url} alt="lilviaa" className="h-8 w-auto" />
+              </SheetTitle>
+            </SheetHeader>
+            <nav className="flex flex-col gap-1">
+              {nav.map((n) => (
+                <Link
+                  key={n.label}
+                  to={n.to}
+                  onClick={() => setOpen(false)}
+                  className="block rounded-xl px-4 py-3 text-base font-semibold text-cocoa hover:bg-sand transition-colors"
+                >
+                  {n.label}
+                </Link>
+              ))}
+            </nav>
+          </SheetContent>
+        </Sheet>
 
         <Link to="/" className="flex items-center gap-2">
           <img
@@ -137,6 +160,16 @@ export function SiteHeader() {
                   </div>
                 </div>
                 <DropdownMenuSeparator />
+                {(user.role === "admin" || user.role === "owner") && (
+                  <>
+                    <DropdownMenuItem asChild>
+                      <Link to="/admin/dashboard" className="cursor-pointer w-full text-primary font-bold">
+                        Admin Panel
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                  </>
+                )}
                 <DropdownMenuItem asChild>
                   <Link to="/account" className="cursor-pointer w-full">
                     Account
@@ -193,20 +226,7 @@ export function SiteHeader() {
         </div>
       </div>
 
-      {open && (
-        <nav className="border-t border-border/60 bg-cream px-4 py-3 md:hidden">
-          {nav.map((n) => (
-            <Link
-              key={n.label}
-              to={n.to}
-              onClick={() => setOpen(false)}
-              className="block rounded-xl px-3 py-2 text-sm font-semibold text-cocoa hover:bg-sand"
-            >
-              {n.label}
-            </Link>
-          ))}
-        </nav>
-      )}
+
     </header>
   );
 }

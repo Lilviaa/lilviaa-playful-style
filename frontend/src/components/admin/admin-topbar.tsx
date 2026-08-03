@@ -32,16 +32,6 @@ export function AdminTopbar() {
       </Sheet>
 
       <div className="flex-1">
-        <form>
-          <div className="relative max-w-md">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <input
-              type="search"
-              placeholder="Search products, orders..."
-              className="w-full rounded-full border border-border bg-sand/30 py-2 pl-9 pr-4 text-sm text-cocoa placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-            />
-          </div>
-        </form>
       </div>
 
       <div className="flex items-center gap-4">

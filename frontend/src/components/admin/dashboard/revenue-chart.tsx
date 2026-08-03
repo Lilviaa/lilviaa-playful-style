@@ -4,7 +4,7 @@ import { DashboardStats } from "@/lib/admin/dashboard-api";
 
 export function RevenueChart({ data }: { data: DashboardStats["chartData"] }) {
   return (
-    <Card className="col-span-1 md:col-span-2 lg:col-span-3 border-border shadow-cute">
+    <Card className="border-border shadow-cute">
       <CardHeader>
         <CardTitle className="text-cocoa font-display">Revenue Overview (Last 30 Days)</CardTitle>
       </CardHeader>

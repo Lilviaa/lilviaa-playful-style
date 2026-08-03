@@ -2,7 +2,6 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useDashboardStats } from "@/lib/admin/dashboard-api";
 import { RevenueCards } from "@/components/admin/dashboard/revenue-cards";
 import { RevenueChart } from "@/components/admin/dashboard/revenue-chart";
-import { TopProductsWidget } from "@/components/admin/dashboard/top-products-widget";
 import { LowStockBadge } from "@/components/admin/dashboard/low-stock-badge";
 import { PendingOrdersBadge } from "@/components/admin/dashboard/pending-orders-badge";
 import { RecentActivityFeed } from "@/components/admin/dashboard/recent-activity-feed";
@@ -30,9 +29,8 @@ function DashboardPage() {
           <Skeleton className="h-[120px] rounded-xl" />
         </div>
 
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-5">
-          <Skeleton className="h-[400px] rounded-xl lg:col-span-3" />
-          <Skeleton className="h-[400px] rounded-xl lg:col-span-2" />
+        <div className="grid grid-cols-1 gap-6">
+          <Skeleton className="h-[400px] rounded-xl" />
         </div>
 
         <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
@@ -56,10 +54,9 @@ function DashboardPage() {
       {/* Top Row: Revenue Cards */}
       <RevenueCards data={data.revenue} />
 
-      {/* Middle Row: Chart & Top Products */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-5">
+      {/* Middle Row: Chart */}
+      <div className="grid grid-cols-1 gap-6">
         <RevenueChart data={data.chartData} />
-        <TopProductsWidget data={data.topProducts} />
       </div>
 
       {/* Bottom Row: Badges & Activity */}

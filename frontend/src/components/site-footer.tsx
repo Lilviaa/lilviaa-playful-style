@@ -96,8 +96,11 @@ export function SiteFooter() {
           </div>
         </div>
       </div>
-      <div className="border-t border-cream/10 px-6 py-5 text-center text-sm text-cream/60">
-        © {new Date().getFullYear()} lilviaa
+      <div className="flex flex-col items-center justify-between gap-4 border-t border-cream/10 px-6 py-5 text-cream/60 md:flex-row">
+        <div className="text-sm">© {new Date().getFullYear()} Lil Viaaa. All Rights Reserved.</div>
+        <div className="text-xs">
+          Powered by <a href="https://www.arcvex.in/" target="_blank" rel="noopener noreferrer" className="font-semibold text-cream hover:underline">ARCVEX</a>
+        </div>
       </div>
     </footer>
   );
