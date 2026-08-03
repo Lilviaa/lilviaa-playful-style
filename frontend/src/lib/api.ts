@@ -17,8 +17,14 @@ interface FetchOptions extends RequestInit {
  * Core API wrapper that handles cookies, CSRF, and silent token refresh.
  */
 export async function apiFetch(endpoint: string, options: FetchOptions = {}): Promise<Response> {
-  const url = `${API_BASE_URL}${endpoint}`;
+  let url = `${API_BASE_URL}${endpoint}`;
   
+  // In SSR (Server-Side Rendering), fetch requires an absolute URL.
+  // If API_BASE_URL is a relative path (e.g., /api/v1), we must prepend the host.
+  if (typeof window === "undefined" && url.startsWith("/")) {
+    url = `https://lilviaa-playful-style.vercel.app${url}`;
+  }
+
   const headers = new Headers(options.headers || {});
   
   // Set Content-Type by default if there's a body and it's not FormData
