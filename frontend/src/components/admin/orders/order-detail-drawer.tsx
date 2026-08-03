@@ -8,6 +8,7 @@ import {
 import { Order, OrderStatus } from "@/lib/admin/orders-api";
 import { OrderStatusStepper } from "./order-status-stepper";
 import { formatINR } from "@/lib/cart";
+import { formatOrderId } from "@/lib/utils";
 import { OrderStatusBadge } from "./order-status-badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -82,7 +83,7 @@ export function OrderDetailDrawer({ order, isOpen, onClose, onPrint }: OrderDeta
 
   return (
     <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <SheetContent className="w-full sm:max-w-xl overflow-y-auto bg-sand border-l-cocoa/10 p-0 sm:p-6 relative">
+      <SheetContent className="w-full sm:max-w-xl bg-white overflow-y-auto p-6 z-50 shadow-2xl">
         {updatingStatus && (
           <div className="absolute inset-0 z-50 flex items-center justify-center bg-white/50 backdrop-blur-sm">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -90,7 +91,7 @@ export function OrderDetailDrawer({ order, isOpen, onClose, onPrint }: OrderDeta
         )}
         <SheetHeader className="p-6 sm:p-0 pb-0">
           <div className="flex items-center justify-between">
-            <SheetTitle className="font-display text-2xl text-cocoa">Order {order.id}</SheetTitle>
+            <SheetTitle className="font-display text-2xl text-cocoa">Order {formatOrderId(order.id)}</SheetTitle>
             <div className="flex items-center gap-2">
               <Button
                 variant="outline"
@@ -280,7 +281,7 @@ export function OrderDetailDrawer({ order, isOpen, onClose, onPrint }: OrderDeta
               <DialogHeader>
                 <DialogTitle>Create Return Request</DialogTitle>
                 <DialogDescription>
-                  Manually create a return for <strong>{order.id}</strong>. Use this for phone or WhatsApp requests.
+                  Manually create a return for <strong>{formatOrderId(order.id)}</strong>. Use this for phone or WhatsApp requests.
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4 py-2">

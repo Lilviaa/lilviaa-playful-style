@@ -169,7 +169,7 @@ export function useCategoryTiles() {
   return useQuery({
     queryKey: ["admin-category-tiles"],
     queryFn: async () => {
-      const res = await apiFetch("/admin/cms/category-tiles");
+      const res = await apiFetch("/cms/category-tiles");
       if (!res.ok) throw new Error("Failed to fetch category tiles");
       return await res.json();
     },
@@ -199,7 +199,7 @@ export function useFeaturedProducts() {
   return useQuery({
     queryKey: ["admin-featured-products"],
     queryFn: async () => {
-      const res = await apiFetch("/admin/cms/featured-products");
+      const res = await apiFetch("/cms/featured-products");
       if (!res.ok) throw new Error("Failed to fetch featured products");
       return await res.json();
     },
@@ -229,7 +229,7 @@ export function useCmsSection(key: string) {
   return useQuery({
     queryKey: ["admin-cms-section", key],
     queryFn: async () => {
-      const res = await apiFetch(`/admin/cms/sections/${key}`);
+      const res = await apiFetch(`/cms/sections/${key}`);
       if (!res.ok) {
         if (res.status === 404) return null;
         throw new Error("Failed to fetch section");
@@ -264,7 +264,7 @@ export function useHeroSlides() {
   return useQuery({
     queryKey: ["hero_slides"],
     queryFn: async () => {
-      const res = await apiFetch("/admin/cms/hero-slides");
+      const res = await apiFetch("/cms/hero-slides");
       if (!res.ok) throw new Error("Failed to fetch hero slides");
       return await res.json();
     },
@@ -294,7 +294,7 @@ export function usePhilosophyCards() {
   return useQuery({
     queryKey: ["admin-philosophy-cards"],
     queryFn: async () => {
-      const res = await apiFetch("/admin/cms/philosophy-cards");
+      const res = await apiFetch("/cms/philosophy-cards");
       if (!res.ok) throw new Error("Failed to fetch philosophy cards");
       return await res.json();
     },

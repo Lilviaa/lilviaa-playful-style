@@ -73,8 +73,10 @@ export function SiteHeader() {
         <div className="flex items-center gap-1">
           <div
             className={cn(
-              "flex items-center overflow-hidden transition-all duration-300 ease-in-out",
-              searchOpen ? "w-32 sm:w-64 opacity-100" : "w-0 opacity-0"
+              "flex items-center overflow-hidden transition-all duration-300 ease-in-out z-50",
+              searchOpen 
+                ? "absolute top-full left-0 w-full p-3 bg-cream/95 backdrop-blur shadow-md opacity-100 md:static md:w-64 md:bg-transparent md:p-0 md:shadow-none" 
+                : "w-0 opacity-0"
             )}
           >
             <input

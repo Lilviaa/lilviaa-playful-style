@@ -75,18 +75,6 @@ export function OrderFilters({ filters, onChange }: OrderFiltersProps) {
             <SelectItem value="shipped">Shipped</SelectItem>
             <SelectItem value="delivered">Delivered</SelectItem>
             <SelectItem value="cancelled">Cancelled</SelectItem>
-            <SelectItem value="returned">Returned</SelectItem>
-          </SelectContent>
-        </Select>
-
-        <Select value={filters.paymentMethod || "all"} onValueChange={handlePaymentMethodChange}>
-          <SelectTrigger className="w-[160px] rounded-full bg-white border-cocoa/20">
-            <SelectValue placeholder="Payment Method" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Methods</SelectItem>
-            <SelectItem value="cod">Cash on Delivery</SelectItem>
-            <SelectItem value="razorpay">Razorpay</SelectItem>
           </SelectContent>
         </Select>
       </div>

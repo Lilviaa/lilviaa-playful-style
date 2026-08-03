@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/table";
 import { Order } from "@/lib/admin/orders-api";
 import { formatINR } from "@/lib/cart";
+import { formatOrderId } from "@/lib/utils";
 import { OrderStatusBadge } from "./order-status-badge";
 import { OrderDetailDrawer } from "./order-detail-drawer";
 import { PackingSlipPrint } from "./packing-slip-print";
@@ -39,7 +40,7 @@ export function OrderTable({ data, isLoading }: OrderTableProps) {
     {
       accessorKey: "id",
       header: "Order ID",
-      cell: ({ row }) => <span className="font-medium text-cocoa">{row.original.id}</span>,
+      cell: ({ row }) => <span className="font-medium text-cocoa">{formatOrderId(row.original.id)}</span>,
     },
     {
       id: "customer",

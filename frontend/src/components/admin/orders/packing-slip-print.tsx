@@ -1,5 +1,6 @@
 import { Order } from "@/lib/admin/orders-api";
 import { formatINR } from "@/lib/cart";
+import { formatOrderId } from "@/lib/utils";
 
 interface PackingSlipPrintProps {
   order: Order | null;
@@ -14,7 +15,7 @@ export function PackingSlipPrint({ order }: PackingSlipPrintProps) {
       <div className="flex justify-between items-start border-b pb-6 mb-6">
         <div>
           <h1 className="text-3xl font-bold uppercase tracking-wider mb-1">Packing Slip</h1>
-          <p className="text-gray-500">Order #{order.id}</p>
+          <p className="text-gray-500">Order #{formatOrderId(order.id)}</p>
           <p className="text-gray-500">Date: {new Date(order.created_at).toLocaleDateString()}</p>
         </div>
         <div className="text-right">

@@ -16,7 +16,8 @@ const STEPS: { label: string; value: OrderStatus }[] = [
 ];
 
 export function OrderStatusStepper({ order, onUpdateStatus }: OrderStatusStepperProps) {
-  const currentStepIndex = STEPS.findIndex((s) => s.value === order.status);
+  const effectiveStatus = order.status === "processing" ? "pending" : order.status;
+  const currentStepIndex = STEPS.findIndex((s) => s.value === effectiveStatus);
 
   if (order.status === "cancelled" || order.status === "returned") {
     return (

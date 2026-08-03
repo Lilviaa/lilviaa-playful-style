@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { formatOrderId } from "../utils";
 import { apiFetch } from "@/lib/api";
 
 export type OrderStatus = 'pending' | 'confirmed' | 'packed' | 'shipped' | 'delivered' | 'cancelled' | 'returned';
@@ -94,7 +95,7 @@ export function useUpdateOrderStatus() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["admin-orders"] });
-      toast.success(`Order ${data.id.slice(0, 8)}… marked as ${data.status}`);
+      toast.success(`Order ${formatOrderId(data.id)} marked as ${data.status}`);
     },
     onError: (error: any) => {
       toast.error(error.message);

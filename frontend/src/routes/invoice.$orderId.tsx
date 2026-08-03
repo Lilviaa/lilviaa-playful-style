@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { apiFetch } from "@/lib/api";
 import { formatINR } from "@/lib/cart";
 import { Loader2, Printer, MapPin, Phone, Mail, Globe, Heart, UserCircle, Truck, Package, CreditCard, Download, AlertTriangle } from "lucide-react";
+import { useCompanySettings } from "@/lib/admin/settings-api";
 import logoAsset from "@/assets/lilviaa-logo.png.asset.json";
 import { Facebook, Instagram } from "lucide-react";
 
@@ -12,6 +13,7 @@ export const Route = createFileRoute("/invoice/$orderId")({
 
 function InvoicePage() {
   const { orderId } = Route.useParams();
+  const { data: companyDetails, isLoading: isCompanyLoading } = useCompanySettings();
   const [order, setOrder] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -35,7 +37,7 @@ function InvoicePage() {
       });
   }, [orderId]);
 
-  if (loading) {
+  if (loading || isCompanyLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#FFFDF8]">
         <Loader2 className="h-8 w-8 animate-spin text-[#FF8FA3]" />
@@ -51,9 +53,11 @@ function InvoicePage() {
     );
   }
 
-  // Do not fabricate Invoice Number or format Order ID
-  const invoiceNumber = "N/A (Missing in DB)";
+  // Format Order ID and Invoice Number based on UUID
   const rawOrderId = order.id;
+  const numericHash = parseInt(rawOrderId.replace(/-/g, '').substring(0, 6), 16).toString().padStart(6, '0');
+  const invoiceNumber = `INV-LV-${numericHash}`;
+  const formattedOrderId = `ORD-LV-${numericHash}`;
   const orderDate = new Date(order.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
   
   const shippingAddress = order.addresses || {};
@@ -70,7 +74,6 @@ function InvoicePage() {
   else if (paymentTransaction.razorpay_payment_id) paymentMethodLabel = "Razorpay";
   
   const shippingMethod = "Standard Shipping";
-  const shippingStatus = order.status ? order.status.charAt(0).toUpperCase() + order.status.slice(1) : "Processing";
 
   const items = order.order_items || [];
   
@@ -110,9 +113,28 @@ function InvoicePage() {
         
         {/* HEADER */}
         <div className="flex justify-between items-start print:break-inside-avoid">
-          <div className="flex flex-col items-center">
-            {/* Logo slightly reduced to save space */}
-            <img src={logoAsset.url} alt="Logo" className="w-[180px] h-auto object-contain" />
+          <div className="flex flex-col items-start gap-4">
+            {/* Logo */}
+            {companyDetails?.logo_url ? (
+              <img src={companyDetails.logo_url} alt="Logo" className="w-[180px] h-auto object-contain" />
+            ) : (
+              <img src={logoAsset.url} alt="Logo" className="w-[180px] h-auto object-contain" />
+            )}
+            
+            {/* Address */}
+            <div className="text-[#5C3A21] text-xs leading-tight">
+              <div className="font-bold text-sm mb-1">{companyDetails?.company_name || 'Lil Viaaa'}</div>
+              {companyDetails?.address_line && <div>{companyDetails.address_line}</div>}
+              {(companyDetails?.city || companyDetails?.state) && (
+                <div>
+                  {[companyDetails?.city, companyDetails?.state].filter(Boolean).join(', ')}
+                  {companyDetails?.pincode ? ` - ${companyDetails.pincode}` : ''}
+                </div>
+              )}
+              {companyDetails?.gst_number && (
+                <div className="mt-1 font-bold">GST: {companyDetails.gst_number}</div>
+              )}
+            </div>
           </div>
           <div className="text-right">
             <h1 className="text-3xl font-[900] tracking-wider text-[#5C3A21] mb-1">INVOICE</h1>
@@ -124,7 +146,7 @@ function InvoicePage() {
               <span className="font-bold text-red-500">: {invoiceNumber}</span>
               
               <span className="text-[#8C6D56]">Order ID</span>
-              <span className="font-bold">: {rawOrderId}</span>
+              <span className="font-bold">: {formattedOrderId}</span>
               
               <span className="text-[#8C6D56]">Order Date</span>
               <span className="font-bold">: {orderDate}</span>
@@ -180,10 +202,6 @@ function InvoicePage() {
             <span className={`font-bold ${paymentStatus === 'Paid' ? 'text-[#1E8A53]' : 'text-[#856404]'}`}>{paymentStatus}</span>
           </div>
           <div><strong className="text-[#8C6D56] uppercase tracking-wide text-[10px] block mb-0.5">Shipping Method</strong><span className="font-bold">{shippingMethod}</span></div>
-          <div>
-            <strong className="text-[#8C6D56] uppercase tracking-wide text-[10px] block mb-0.5">Order Status</strong>
-            <span className={`font-bold ${shippingStatus === 'Shipped' || shippingStatus === 'Delivered' ? 'text-[#1971C2]' : 'text-[#856404]'}`}>{shippingStatus}</span>
-          </div>
         </div>
 
         {/* ITEMS TABLE */}
@@ -269,30 +287,37 @@ function InvoicePage() {
 
         {/* FOOTER */}
         <div className="absolute bottom-8 left-8 right-8 print:break-inside-avoid">
-          <div className="pt-4 border-t border-[#F4EBE1] flex justify-between items-center text-[10px] text-[#5C3A21] font-medium">
+          <div className="pt-4 border-t border-[#F4EBE1] flex justify-between items-start text-[10px] text-[#5C3A21] font-medium">
             
             <div className="flex items-center gap-2">
-              <div className="bg-red-100 text-red-500 p-1.5 rounded-full">
-                <AlertTriangle className="w-3 h-3" />
+              <div className="bg-[#FCF8F2] text-[#5C3A21] p-1.5 rounded-full">
+                <Heart className="w-3 h-3 fill-[#FF8FA3] text-[#FF8FA3]" />
               </div>
               <div>
-                <div className="font-bold tracking-wide text-red-500">[Company Name Missing]</div>
+                <div className="font-bold tracking-wide text-[#5C3A21]">
+                  {companyDetails?.company_name || 'Company Name'}
+                </div>
               </div>
             </div>
 
-            <div className="flex flex-col gap-1 text-red-500">
-              <div className="flex items-center gap-1.5">
-                <Mail className="w-3 h-3" /> <span>[Email Missing in DB]</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <Globe className="w-3 h-3" /> <span>[Website Missing in DB]</span>
-              </div>
+            <div className="flex flex-col gap-1 text-[#5C3A21]">
+              {companyDetails?.business_email && (
+                <div className="flex items-center gap-1.5">
+                  <Mail className="w-3 h-3" /> <span>{companyDetails.business_email}</span>
+                </div>
+              )}
+              {companyDetails?.website && (
+                <div className="flex items-center gap-1.5">
+                  <Globe className="w-3 h-3" /> <span>{companyDetails.website.replace(/^https?:\/\//, '')}</span>
+                </div>
+              )}
             </div>
 
-            <div className="flex items-center gap-1.5 text-red-500">
+            <div className="flex items-center gap-1.5 text-[#5C3A21]">
               <Phone className="w-3 h-3" />
               <div className="flex flex-col">
-                <span>[Phone Missing in DB]</span>
+                {companyDetails?.phone_primary && <span>{companyDetails.phone_primary}</span>}
+                {companyDetails?.phone_secondary && <span>{companyDetails.phone_secondary}</span>}
               </div>
             </div>
 

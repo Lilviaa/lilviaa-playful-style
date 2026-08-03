@@ -18,29 +18,33 @@ const Ctx = createContext<WishlistCtx | null>(null);
 const KEY = "lilviaa-wishlist-v1";
 
 export function WishlistProvider({ children }: { children: ReactNode }) {
-  const [items, setItems] = useState<WishlistItem[]>([]);
-  const { user } = useAuth();
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    if (!user) {
-      setItems([]);
-      return;
-    }
+  const [items, setItems] = useState<WishlistItem[]>(() => {
     try {
       const raw = localStorage.getItem(KEY);
       if (raw) {
         const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed)) setItems(parsed);
+        if (Array.isArray(parsed)) return parsed;
       }
     } catch {}
-  }, [user]);
+    return [];
+  });
+  const { user, isLoading } = useAuth();
+  const navigate = useNavigate();
 
   useEffect(() => {
+    if (isLoading) return;
+    if (!user) {
+      setItems([]);
+    }
+  }, [user, isLoading]);
+
+  useEffect(() => {
+    if (isLoading) return; // Don't write back during initial auth loading to prevent wiping
+    if (!user) return; // Guests don't have wishlists, so don't write empty lists
     try {
       localStorage.setItem(KEY, JSON.stringify(items));
     } catch {}
-  }, [items]);
+  }, [items, isLoading, user]);
 
   const add: WishlistCtx["add"] = (item) => {
     if (!user) {

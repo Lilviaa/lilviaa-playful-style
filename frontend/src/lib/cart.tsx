@@ -27,9 +27,20 @@ type CartCtx = {
 
 const Ctx = createContext<CartCtx | null>(null);
 
+const KEY = "lilviaa-cart-snapshot-v1";
+
 export function CartProvider({ children }: { children: ReactNode }) {
-  const [items, setItems] = useState<CartItem[]>([]);
-  const { user } = useAuth();
+  const [items, setItems] = useState<CartItem[]>(() => {
+    try {
+      const raw = localStorage.getItem(KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) return parsed;
+      }
+    } catch {}
+    return [];
+  });
+  const { user, isLoading } = useAuth();
   const navigate = useNavigate();
   
   const fetchBackendCart = async () => {
@@ -71,12 +82,21 @@ export function CartProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
+    if (isLoading) return;
     if (user) {
       fetchBackendCart();
     } else {
       setItems([]);
     }
-  }, [user]);
+  }, [user, isLoading]);
+
+  useEffect(() => {
+    if (isLoading) return; // Don't wipe cache during initial load
+    if (!user) return; // Only cache for logged in users
+    try {
+      localStorage.setItem(KEY, JSON.stringify(items));
+    } catch {}
+  }, [items, isLoading, user]);
 
   const add: CartCtx["add"] = async (item) => {
     if (!user) {

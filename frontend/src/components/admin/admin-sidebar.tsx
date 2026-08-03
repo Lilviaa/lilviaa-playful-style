@@ -13,6 +13,7 @@ import {
   Image as ImageIcon,
   Settings,
   MonitorSmartphone,
+  Building2,
 } from "lucide-react";
 
 import { usePendingReviewCount } from "@/lib/admin/reviews-api";
@@ -26,6 +27,7 @@ export const ADMIN_LINKS = [
   { to: "/admin/coupons", label: "Coupons", icon: Ticket },
   { to: "/admin/reviews", label: "Reviews", icon: Star, hasBadge: true },
   { to: "/admin/banners", label: "Banners", icon: ImageIcon },
+  { to: "/admin/shop", label: "Shop", icon: Building2 },
 ];
 
 export function AdminSidebar({ className }: { className?: string }) {

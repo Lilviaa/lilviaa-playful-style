@@ -4,6 +4,7 @@ from typing import Optional, List
 from app.db.supabase import get_supabase
 from app.api.dependencies import require_admin
 from app.core.exceptions import AppError
+from app.models.settings import CompanySettingsResponse, CompanySettingsUpdate
 
 router = APIRouter(dependencies=[Depends(require_admin)])
 
@@ -179,3 +180,22 @@ def update_philosophy_cards(cards: List[PhilosophyCardUpdate]):
     records = [c.model_dump(exclude={"id"}) for c in cards]
     res = supabase.table("philosophy_cards").insert(records).execute()
     return res.data
+
+# -----------------
+# Company Settings
+# -----------------
+
+@router.put("/company-settings", response_model=CompanySettingsResponse)
+def update_company_settings(updates: CompanySettingsUpdate):
+    """Update global company settings"""
+    supabase = get_supabase()
+    
+    res = supabase.table("company_settings") \
+        .update(updates.model_dump(exclude_unset=True)) \
+        .eq("id", "00000000-0000-0000-0000-000000000001") \
+        .execute()
+        
+    if not res.data:
+        raise AppError("Failed to update company settings", status_code=500)
+        
+    return res.data[0]

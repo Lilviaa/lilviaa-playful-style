@@ -36,6 +36,7 @@ import { Route as AccountIndexRouteImport } from './routes/account.index'
 import { Route as ProductsSlugRouteImport } from './routes/products.$slug'
 import { Route as InvoiceOrderIdRouteImport } from './routes/invoice.$orderId'
 import { Route as CheckoutPaymentFailedRouteImport } from './routes/checkout/payment-failed'
+import { Route as AdminShopRouteImport } from './routes/admin/shop'
 import { Route as AdminReviewsRouteImport } from './routes/admin.reviews'
 import { Route as AdminOrdersRouteImport } from './routes/admin.orders'
 import { Route as AdminInventoryRouteImport } from './routes/admin.inventory'
@@ -187,6 +188,11 @@ const CheckoutPaymentFailedRoute = CheckoutPaymentFailedRouteImport.update({
   path: '/payment-failed',
   getParentRoute: () => CheckoutRoute,
 } as any)
+const AdminShopRoute = AdminShopRouteImport.update({
+  id: '/shop',
+  path: '/shop',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminReviewsRoute = AdminReviewsRouteImport.update({
   id: '/reviews',
   path: '/reviews',
@@ -294,6 +300,7 @@ export interface FileRoutesByFullPath {
   '/admin/inventory': typeof AdminInventoryRoute
   '/admin/orders': typeof AdminOrdersRoute
   '/admin/reviews': typeof AdminReviewsRoute
+  '/admin/shop': typeof AdminShopRoute
   '/checkout/payment-failed': typeof CheckoutPaymentFailedRoute
   '/invoice/$orderId': typeof InvoiceOrderIdRoute
   '/products/$slug': typeof ProductsSlugRoute
@@ -336,6 +343,7 @@ export interface FileRoutesByTo {
   '/admin/inventory': typeof AdminInventoryRoute
   '/admin/orders': typeof AdminOrdersRoute
   '/admin/reviews': typeof AdminReviewsRoute
+  '/admin/shop': typeof AdminShopRoute
   '/checkout/payment-failed': typeof CheckoutPaymentFailedRoute
   '/invoice/$orderId': typeof InvoiceOrderIdRoute
   '/products/$slug': typeof ProductsSlugRoute
@@ -381,6 +389,7 @@ export interface FileRoutesById {
   '/admin/inventory': typeof AdminInventoryRoute
   '/admin/orders': typeof AdminOrdersRoute
   '/admin/reviews': typeof AdminReviewsRoute
+  '/admin/shop': typeof AdminShopRoute
   '/checkout/payment-failed': typeof CheckoutPaymentFailedRoute
   '/invoice/$orderId': typeof InvoiceOrderIdRoute
   '/products/$slug': typeof ProductsSlugRoute
@@ -427,6 +436,7 @@ export interface FileRouteTypes {
     | '/admin/inventory'
     | '/admin/orders'
     | '/admin/reviews'
+    | '/admin/shop'
     | '/checkout/payment-failed'
     | '/invoice/$orderId'
     | '/products/$slug'
@@ -469,6 +479,7 @@ export interface FileRouteTypes {
     | '/admin/inventory'
     | '/admin/orders'
     | '/admin/reviews'
+    | '/admin/shop'
     | '/checkout/payment-failed'
     | '/invoice/$orderId'
     | '/products/$slug'
@@ -513,6 +524,7 @@ export interface FileRouteTypes {
     | '/admin/inventory'
     | '/admin/orders'
     | '/admin/reviews'
+    | '/admin/shop'
     | '/checkout/payment-failed'
     | '/invoice/$orderId'
     | '/products/$slug'
@@ -746,6 +758,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CheckoutPaymentFailedRouteImport
       parentRoute: typeof CheckoutRoute
     }
+    '/admin/shop': {
+      id: '/admin/shop'
+      path: '/shop'
+      fullPath: '/admin/shop'
+      preLoaderRoute: typeof AdminShopRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/reviews': {
       id: '/admin/reviews'
       path: '/reviews'
@@ -875,6 +894,7 @@ interface AdminRouteChildren {
   AdminInventoryRoute: typeof AdminInventoryRoute
   AdminOrdersRoute: typeof AdminOrdersRoute
   AdminReviewsRoute: typeof AdminReviewsRoute
+  AdminShopRoute: typeof AdminShopRoute
   AdminIndexRoute: typeof AdminIndexRoute
   AdminCouponsCouponIdRoute: typeof AdminCouponsCouponIdRoute
   AdminCouponsNewRoute: typeof AdminCouponsNewRoute
@@ -892,6 +912,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminInventoryRoute: AdminInventoryRoute,
   AdminOrdersRoute: AdminOrdersRoute,
   AdminReviewsRoute: AdminReviewsRoute,
+  AdminShopRoute: AdminShopRoute,
   AdminIndexRoute: AdminIndexRoute,
   AdminCouponsCouponIdRoute: AdminCouponsCouponIdRoute,
   AdminCouponsNewRoute: AdminCouponsNewRoute,

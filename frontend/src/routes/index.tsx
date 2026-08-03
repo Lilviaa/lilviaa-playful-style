@@ -114,7 +114,7 @@ function HomePage() {
       {/* HERO */}
       {(!heroBanner || heroBanner.active) && (
         <section className="bg-hero relative overflow-hidden rounded-b-[2.5rem] md:rounded-b-[4rem]">
-          <div className="mx-auto flex flex-col-reverse md:flex-row-reverse items-stretch w-full">
+          <div className="mx-auto flex flex-col md:flex-row-reverse items-stretch w-full">
 
             {/* IMAGE HALF */}
             <div className="relative w-full md:w-1/2 h-[450px] md:h-auto min-h-[500px] lg:min-h-[700px]">
@@ -170,8 +170,8 @@ function HomePage() {
             </div>
 
             {/* TEXT HALF */}
-            <div className="relative z-10 flex w-full flex-col justify-center px-6 py-16 md:w-1/2 md:py-24 lg:px-16">
-              <ScrollReveal className="max-w-xl mx-auto md:mr-auto md:ml-0">
+            <div className="relative z-10 flex w-full flex-col items-center justify-center px-6 py-12 md:items-start md:w-1/2 md:py-24 lg:px-16">
+              <ScrollReveal className="max-w-xl mx-auto text-center md:mr-auto md:ml-0 md:text-left">
                 <span className="mb-4 inline-flex items-center gap-2 rounded-full border border-cream/40 bg-cream/60 px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-cocoa/80 backdrop-blur-sm shadow-sm">
                   <Sparkles className="h-3 w-3 text-primary/90" />
                   {heroBanner?.subtitle || "Premium Kidswear"}
@@ -184,22 +184,24 @@ function HomePage() {
                       return (
                         <>
                           Made for <br />
-                          <span className="relative inline-block text-primary">
-                            Little Gentlemen
-                            <svg
-                              className="absolute -bottom-2 left-0 w-full text-butter"
-                              viewBox="0 0 200 12"
-                              fill="none"
-                            >
-                              <path
-                                d="M2 8C50 2 150 2 198 8"
-                                stroke="currentColor"
-                                strokeWidth="5"
-                                strokeLinecap="round"
-                              />
-                            </svg>
+                          <span className="whitespace-nowrap">
+                            <span className="relative inline-block text-primary">
+                              Little Gentlemen
+                              <svg
+                                className="absolute -bottom-2 left-0 w-full text-butter"
+                                viewBox="0 0 200 12"
+                                fill="none"
+                              >
+                                <path
+                                  d="M2 8C50 2 150 2 198 8"
+                                  stroke="currentColor"
+                                  strokeWidth="5"
+                                  strokeLinecap="round"
+                                />
+                              </svg>
+                            </span>
+                            .
                           </span>
-                          .
                         </>
                       );
                     }
@@ -397,7 +399,7 @@ function HomePage() {
 
       {/* TRUST BAR */}
       <ScrollReveal className="border-y border-border/60 bg-card">
-        <div className="mx-auto grid max-w-7xl gap-6 px-6 py-6 sm:grid-cols-2 md:grid-cols-5">
+        <div className="mx-auto flex max-w-7xl flex-col items-center gap-6 px-6 py-8 sm:flex-row sm:flex-wrap sm:justify-center md:flex-nowrap md:justify-between">
           {[
             { icon: Heart, label: "Comfort First" },
             { icon: Gem, label: "Premium Fabric" },
