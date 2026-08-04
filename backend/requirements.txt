@@ -9,3 +9,4 @@ python-multipart==0.0.9
 slowapi==0.1.9
 Pillow>=10.3.0
 razorpay
+firebase-admin
