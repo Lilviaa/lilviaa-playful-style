@@ -62,6 +62,9 @@ async def get_current_user_token(
                     "token": token
                 }
         except Exception as e:
+            import traceback
+            traceback.print_exc()
+            print(f"Token verification or DB query failed: {e}")
             raise UnauthorizedError(f"Firebase token invalid: {e}")
     else:
         # Fallback to Supabase cookie
