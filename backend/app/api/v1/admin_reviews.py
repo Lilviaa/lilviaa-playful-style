@@ -7,24 +7,10 @@ from app.core.exceptions import AppError
 
 router = APIRouter()
 
-def require_admin(request: Request):
-    token = request.cookies.get("access_token")
-    if not token:
-        raise AppError("Not authenticated", status_code=401)
-    
-    fresh = get_fresh_supabase()
-    user_response = fresh.auth.get_user(token)
-    if not user_response or not user_response.user:
-        raise AppError("Invalid session", status_code=401)
-        
-    supabase = get_supabase()
-    user_data = supabase.table("users").select("role").eq("id", str(user_response.user.id)).single().execute()
-    role = user_data.data.get("role") if user_data.data else "customer"
-    
-    if role not in ["admin", "owner"]:
+def require_admin(user: dict = Depends(get_current_user_token)):
+    if user.get("role") not in ["admin", "owner"]:
         raise AppError("Admin privileges required", status_code=403)
-        
-    return user_response.user.id
+    return user.get("sub")
 
 class ReviewUpdateStatus(BaseModel):
     status: str

@@ -39,16 +39,30 @@ def create_order(order: OrderCreate, request: Request, background_tasks: Backgro
     """Create a new order, validate stock, and deduct stock atomically."""
     supabase = get_supabase()
     
-    # 1. Check user auth
+    # 1. Check user auth gracefully
     user_id = None
     user_email = None
-    token = request.cookies.get("access_token")
-    if token:
+    auth_header = request.headers.get("Authorization")
+    
+    if auth_header and auth_header.startswith("Bearer "):
+        token = auth_header.split(" ")[1]
+        try:
+            import firebase_admin.auth as firebase_auth
+            decoded_token = firebase_auth.verify_id_token(token)
+            email = decoded_token.get('email', '')
+            user_data = supabase.table("users").select("id").eq("email", email).execute()
+            if user_data.data:
+                user_id = user_data.data[0]["id"]
+                user_email = email
+        except Exception:
+            pass
+    elif request.cookies.get("access_token"):
+        token = request.cookies.get("access_token")
         try:
             fresh = get_fresh_supabase()
             user_response = fresh.auth.get_user(token)
             if user_response and user_response.user:
-                user_id = user_response.user.id
+                user_id = str(user_response.user.id)
                 user_email = user_response.user.email
         except Exception:
             pass

@@ -8,7 +8,7 @@ load_dotenv()
 # hello!
 from app.core.config import settings
 from app.core.exceptions import AppError, app_error_handler
-from app.api.v1 import auth, addresses, categories, products, admin_products, orders, webhooks, cart, firebase_auth
+from app.api.v1 import addresses, categories, products, admin_products, orders, webhooks, cart, firebase_auth
 from app.api.v1 import admin_dashboard, admin_orders, admin_customers, admin_coupons
 from app.core.firebase import init_firebase
 
@@ -29,7 +29,6 @@ async def add_trailing_slash_to_missing_routes(request, call_next):
     # If FastAPI redirects it, Vercel strips it again, causing an infinite redirect loop.
     # To fix this elegantly, we internally add the trailing slash before routing.
     prefixes = {
-        "/api/v1/auth",
         "/api/v1/addresses",
         "/api/v1/cart",
         "/api/v1/categories",
@@ -74,11 +73,10 @@ app.add_middleware(SlowAPIMiddleware)
 app.add_exception_handler(AppError, app_error_handler)
 
 # Include Routers
-from app.api.v1 import auth, addresses, categories, products, admin_products, orders, webhooks, cart, banners, reviews, cms
+from app.api.v1 import addresses, categories, products, admin_products, orders, webhooks, cart, banners, reviews, cms
 from app.api.v1 import admin_dashboard, admin_orders, admin_customers, admin_coupons, admin_banners, admin_reviews, admin_cms
 
 # (I will just add them below the others)
-app.include_router(auth.router, prefix="/api/v1/auth", tags=["Auth"])
 app.include_router(firebase_auth.router, prefix="/api/v1/firebase_auth", tags=["Firebase Auth"])
 app.include_router(addresses.router, prefix="/api/v1/addresses", tags=["Addresses"])
 app.include_router(cart.router, prefix="/api/v1/cart", tags=["Cart"])

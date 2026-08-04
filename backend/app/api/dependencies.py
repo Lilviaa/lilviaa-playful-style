@@ -18,6 +18,11 @@ async def verify_csrf_token(request: Request):
     if request.method in ["GET", "HEAD", "OPTIONS"]:
         return
         
+    auth_header = request.headers.get("Authorization")
+    if auth_header and auth_header.startswith("Bearer "):
+        # CSRF is not required for stateless Bearer token authentication
+        return
+        
     cookie_token = request.cookies.get("csrf_token")
     header_token = request.headers.get("X-CSRF-Token")
     

@@ -15,8 +15,6 @@ interface FetchOptions extends RequestInit {
   skipRefresh?: boolean; // Avoid infinite loops if refresh itself fails
 }
 
-let refreshPromise: Promise<Response> | null = null;
-
 /**
  * Core API wrapper that handles cookies, CSRF, and silent token refresh.
  */
@@ -65,41 +63,13 @@ export async function apiFetch(endpoint: string, options: FetchOptions = {}): Pr
   let response = await fetch(url, fetchOptions);
 
   // Handle Token Refresh on 401
-  if (response.status === 401 && !options.skipRefresh && endpoint !== "/auth/login" && endpoint !== "/auth/refresh") {
-    // Attempt to refresh with concurrency lock
-    if (!refreshPromise) {
-      refreshPromise = fetch(`${API_BASE_URL}/auth/refresh`, {
-        method: "POST",
-        credentials: "include",
-        headers: {
-          "X-CSRF-Token": getCookie("csrf_token") || "",
-        }
-      });
-      refreshPromise.finally(() => {
-        refreshPromise = null;
-      });
+  if (response.status === 401 && !options.skipRefresh) {
+    // Refresh failed (expired/invalid). Force logout.
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new Event("session-expired"));
     }
-
-    const refreshResponse = await refreshPromise;
-
-    if (refreshResponse.ok) {
-      // Tokens rotated successfully, retry original request
-      // We need to re-grab the CSRF token in case it changed
-      const newCsrf = getCookie("csrf_token");
-      if (newCsrf && headers.has("X-CSRF-Token")) {
-        headers.set("X-CSRF-Token", newCsrf);
-      }
-      fetchOptions.headers = headers;
-      
-      response = await fetch(url, fetchOptions);
-    } else {
-      // Refresh failed (expired/invalid). Force logout.
-      if (typeof window !== "undefined") {
-        window.dispatchEvent(new Event("session-expired"));
-      }
-      // Return the original 401 response instead of throwing to prevent unhandled rejection alerts
-      return response;
-    }
+    // Return the original 401 response instead of throwing to prevent unhandled rejection alerts
+    return response;
   }
 
   return response;

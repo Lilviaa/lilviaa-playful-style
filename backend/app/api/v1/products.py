@@ -153,8 +153,23 @@ def get_product_by_slug(slug: str, request: Request):
     
     # Check if admin
     is_admin = False
-    token = request.cookies.get("access_token")
-    if token:
+    auth_header = request.headers.get("Authorization")
+    
+    if auth_header and auth_header.startswith("Bearer "):
+        token = auth_header.split(" ")[1]
+        try:
+            import firebase_admin.auth as firebase_auth
+            decoded_token = firebase_auth.verify_id_token(token)
+            email = decoded_token.get('email', '')
+            user_data = supabase.table("users").select("role").eq("email", email).execute()
+            if user_data.data:
+                role = user_data.data[0].get("role")
+                if role in ["admin", "owner"]:
+                    is_admin = True
+        except Exception:
+            pass
+    elif request.cookies.get("access_token"):
+        token = request.cookies.get("access_token")
         try:
             fresh = get_fresh_supabase()
             user_response = fresh.auth.get_user(token)
