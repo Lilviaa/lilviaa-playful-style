@@ -31,6 +31,7 @@ export interface ProductVariant {
   size: string;
   sku: string;
   stock: number;
+  reserved_stock: number;
   sales: number;
   price_override: number | null;
 }

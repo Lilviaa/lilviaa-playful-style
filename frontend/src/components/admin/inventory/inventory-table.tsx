@@ -35,8 +35,7 @@ export function InventoryTable({ data, isLoading, filterLowStock }: InventoryTab
 
   const filteredData = useMemo(() => {
     if (filterLowStock) {
-      // Assuming low stock means less than 5
-      return data.filter((item) => item.stock < 5);
+      return data.filter((item) => (item.stock - item.reserved_stock) < 5);
     }
     return data;
   }, [data, filterLowStock]);
@@ -93,12 +92,50 @@ export function InventoryTable({ data, isLoading, filterLowStock }: InventoryTab
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
             className="-ml-4 hover:bg-black/5 text-cocoa font-bold"
           >
-            Stock
+            Total Stock
             <ArrowUpDown className="ml-2 h-4 w-4" />
           </Button>
         );
       },
       cell: ({ row }) => <span className="font-semibold text-cocoa">{row.original.stock}</span>,
+    },
+    {
+      accessorKey: "reserved_stock",
+      enableGlobalFilter: false,
+      header: ({ column }) => {
+        return (
+          <Button
+            variant="ghost"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+            className="-ml-4 hover:bg-black/5 text-cocoa font-bold"
+          >
+            Reserved
+            <ArrowUpDown className="ml-2 h-4 w-4" />
+          </Button>
+        );
+      },
+      cell: ({ row }) => <span className="font-semibold text-muted-foreground">{row.original.reserved_stock}</span>,
+    },
+    {
+      id: "available_stock",
+      enableGlobalFilter: false,
+      header: ({ column }) => {
+        return (
+          <Button
+            variant="ghost"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+            className="-ml-4 hover:bg-black/5 text-cocoa font-bold"
+          >
+            Available
+            <ArrowUpDown className="ml-2 h-4 w-4" />
+          </Button>
+        );
+      },
+      accessorFn: (row) => row.stock - row.reserved_stock,
+      cell: ({ row }) => {
+        const available = row.original.stock - row.original.reserved_stock;
+        return <span className="font-bold text-cocoa">{available}</span>;
+      },
     },
     {
       accessorKey: "sales",
@@ -121,17 +158,17 @@ export function InventoryTable({ data, isLoading, filterLowStock }: InventoryTab
       id: "status",
       header: "Status",
       enableGlobalFilter: false,
-      accessorFn: (row) => row.stock,
+      accessorFn: (row) => row.stock - row.reserved_stock,
       cell: ({ row }) => {
-        const stock = row.original.stock;
-        if (stock === 0) {
+        const available = row.original.stock - row.original.reserved_stock;
+        if (available <= 0) {
           return (
             <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold bg-rose-100 text-rose-800">
               Out of Stock
             </span>
           );
         }
-        if (stock < 5) {
+        if (available < 5) {
           return (
             <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold bg-amber-100 text-amber-800">
               Low Stock

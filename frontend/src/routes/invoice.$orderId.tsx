@@ -66,11 +66,9 @@ function InvoicePage() {
   const paymentTransaction = order.payment_transactions?.[0] || {};
   const paymentStatus = paymentTransaction.status === 'successful' ? 'Paid' : (order.status === 'delivered' ? 'Paid' : 'Pending');
   
-  let paymentMethodLabel = "N/A";
-  if (order.payment_method === 'upi') paymentMethodLabel = "UPI";
-  else if (order.payment_method === 'card') paymentMethodLabel = "Credit/Debit Card";
+  let paymentMethodLabel = order.payment_method;
+  if (order.payment_method === 'razorpay') paymentMethodLabel = "Online Payment (Razorpay)";
   else if (order.payment_method === 'netbanking') paymentMethodLabel = "Net Banking";
-  else if (order.payment_method === 'cod') paymentMethodLabel = "Cash on Delivery";
   else if (paymentTransaction.razorpay_payment_id) paymentMethodLabel = "Razorpay";
   
   const shippingMethod = "Standard Shipping";

@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -35,6 +35,7 @@ const couponSchema = z.object({
 });
 
 import { useCategories } from "@/lib/products-api";
+import { useProducts } from "@/lib/admin/products-api";
 
 export type CouponFormValues = z.infer<typeof couponSchema>;
 
@@ -47,6 +48,8 @@ interface CouponFormProps {
 
 export function CouponForm({ defaultValues, onSubmit, isPending, submitLabel = "Save Coupon" }: CouponFormProps) {
   const { data: dbCategories = [] } = useCategories();
+  const { data: dbProducts = [] } = useProducts();
+  const [productSearch, setProductSearch] = useState("");
   const {
     register,
     control,
@@ -233,16 +236,51 @@ export function CouponForm({ defaultValues, onSubmit, isPending, submitLabel = "
         )}
 
         {scope === "product" && (
-          <div className="space-y-1.5">
-            <Label className="text-cocoa font-semibold">Product IDs (comma-separated)</Label>
+          <div className="space-y-2">
+            <Label className="text-cocoa font-semibold">Select Products</Label>
             <Input
-              placeholder="e.g. p_1, p_2, p_3"
-              {...register("scope_ids_raw")}
-              className="rounded-xl border-cocoa/20"
+              placeholder="Search products by name or SKU..."
+              value={productSearch}
+              onChange={(e) => setProductSearch(e.target.value)}
+              className="rounded-xl border-cocoa/20 bg-sand/30"
             />
-            <p className="text-xs text-muted-foreground">
-              Enter the internal product IDs from your product management page.
-            </p>
+            <div className="flex flex-wrap gap-2 max-h-48 overflow-y-auto p-1">
+              {dbProducts
+                .filter(
+                  (p) =>
+                    p.name.toLowerCase().includes(productSearch.toLowerCase()) ||
+                    p.slug.toLowerCase().includes(productSearch.toLowerCase())
+                )
+                .map((product) => (
+                  <button
+                    key={product.id}
+                    type="button"
+                    onClick={() => {
+                      const raw = watch("scope_ids_raw") || "";
+                      const parts = raw.split(",").map((s) => s.trim()).filter(Boolean);
+                      if (parts.includes(product.id)) {
+                        setValue("scope_ids_raw", parts.filter((p) => p !== product.id).join(", "));
+                      } else {
+                        setValue("scope_ids_raw", [...parts, product.id].join(", "));
+                      }
+                    }}
+                    className={`px-3 py-1.5 flex flex-col items-start rounded-xl border text-xs font-medium transition-colors ${
+                      (watch("scope_ids_raw") || "").includes(product.id)
+                        ? "bg-cocoa text-white border-cocoa"
+                        : "border-cocoa/20 text-cocoa hover:bg-sand/50 bg-white"
+                    }`}
+                  >
+                    <span className="truncate max-w-[200px]">{product.name}</span>
+                  </button>
+                ))}
+            </div>
+            {dbProducts.length === 0 && (
+              <p className="text-sm text-muted-foreground">No products found.</p>
+            )}
+            <Input
+              type="hidden"
+              {...register("scope_ids_raw")}
+            />
           </div>
         )}
       </section>
