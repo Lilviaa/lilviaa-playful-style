@@ -11,6 +11,7 @@ import {
   signInWithPopup
 } from "firebase/auth";
 import { apiFetch } from "./api";
+import { useRouter } from "@tanstack/react-router";
 
 export function getFirebaseErrorMessage(error: any): string {
   if (!error || !error.code) return error?.message || "An unknown error occurred.";
@@ -65,6 +66,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const router = useRouter();
+
+  // Listen for the global session-expired event from api.ts
+  useEffect(() => {
+    const handleSessionExpired = () => {
+      setUser(null);
+      // Use replace so they can't 'back' into a page that requires auth
+      router.navigate({ to: "/login", replace: true });
+    };
+
+    window.addEventListener("session-expired", handleSessionExpired);
+    return () => window.removeEventListener("session-expired", handleSessionExpired);
+  }, [router]);
 
   // Sync Firebase User with our Backend (Supabase users table)
   const syncWithBackend = async (firebaseUser: any) => {

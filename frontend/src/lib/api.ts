@@ -15,6 +15,8 @@ interface FetchOptions extends RequestInit {
   skipRefresh?: boolean; // Avoid infinite loops if refresh itself fails
 }
 
+let refreshPromise: Promise<Response> | null = null;
+
 /**
  * Core API wrapper that handles cookies, CSRF, and silent token refresh.
  */
@@ -64,14 +66,21 @@ export async function apiFetch(endpoint: string, options: FetchOptions = {}): Pr
 
   // Handle Token Refresh on 401
   if (response.status === 401 && !options.skipRefresh && endpoint !== "/auth/login" && endpoint !== "/auth/refresh") {
-    // Attempt to refresh
-    const refreshResponse = await fetch(`${API_BASE_URL}/auth/refresh`, {
-      method: "POST",
-      credentials: "include",
-      headers: {
-        "X-CSRF-Token": getCookie("csrf_token") || "",
-      }
-    });
+    // Attempt to refresh with concurrency lock
+    if (!refreshPromise) {
+      refreshPromise = fetch(`${API_BASE_URL}/auth/refresh`, {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "X-CSRF-Token": getCookie("csrf_token") || "",
+        }
+      });
+      refreshPromise.finally(() => {
+        refreshPromise = null;
+      });
+    }
+
+    const refreshResponse = await refreshPromise;
 
     if (refreshResponse.ok) {
       // Tokens rotated successfully, retry original request
@@ -85,9 +94,11 @@ export async function apiFetch(endpoint: string, options: FetchOptions = {}): Pr
       response = await fetch(url, fetchOptions);
     } else {
       // Refresh failed (expired/invalid). Force logout.
-      // We could trigger a global event here, but typically the AuthContext
-      // handles session state. We'll throw so the caller knows it failed.
-      throw new Error("Session expired");
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new Event("session-expired"));
+      }
+      // Return the original 401 response instead of throwing to prevent unhandled rejection alerts
+      return response;
     }
   }
 
