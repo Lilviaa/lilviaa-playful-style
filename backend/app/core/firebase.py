@@ -9,25 +9,31 @@ def init_firebase():
         cred_value = os.getenv("FIREBASE_SERVICE_ACCOUNT_JSON")
         
         if cred_value:
-            try:
-                if cred_value.strip().startswith("{"):
-                    import json
+            if cred_value.strip().startswith("{"):
+                import json
+                try:
                     cred_dict = json.loads(cred_value)
-                    # Fix escaped newlines in private_key which is common in env vars
-                    if "private_key" in cred_dict:
-                        cred_dict["private_key"] = cred_dict["private_key"].replace("\\n", "\n")
+                except Exception as e:
+                    raise RuntimeError(f"FIREBASE_SERVICE_ACCOUNT_JSON contains invalid JSON: {e}")
+                
+                # Fix escaped newlines in private_key which is common in env vars
+                if "private_key" in cred_dict:
+                    cred_dict["private_key"] = cred_dict["private_key"].replace("\\n", "\n")
+                
+                try:
                     cred = credentials.Certificate(cred_dict)
                     firebase_admin.initialize_app(cred)
                     print("Firebase Admin initialized successfully using JSON string.")
-                elif os.path.exists(cred_value):
+                except Exception as e:
+                    raise RuntimeError(f"Firebase initialize_app failed with JSON string: {e}")
+            elif os.path.exists(cred_value):
+                try:
                     cred = credentials.Certificate(cred_value)
                     firebase_admin.initialize_app(cred)
                     print("Firebase Admin initialized successfully using service account file.")
-                else:
-                    print(f"WARNING: FIREBASE_SERVICE_ACCOUNT_JSON path '{cred_value}' not found.")
-            except Exception as e:
-                import traceback
-                traceback.print_exc()
-                print(f"WARNING: Failed to initialize Firebase Admin: {e}")
+                except Exception as e:
+                    raise RuntimeError(f"Firebase initialize_app failed with file: {e}")
+            else:
+                raise RuntimeError(f"FIREBASE_SERVICE_ACCOUNT_JSON path '{cred_value}' not found and is not valid JSON.")
         else:
             print("WARNING: FIREBASE_SERVICE_ACCOUNT_JSON not set. Firebase Admin not initialized properly.")
