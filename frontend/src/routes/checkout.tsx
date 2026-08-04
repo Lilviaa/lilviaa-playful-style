@@ -230,7 +230,14 @@ function CheckoutPage() {
               throw new Error("Payment verification failed");
             }
             clear();
-            navigate({ to: "/order-success", replace: true, search: { orderId: orderData.id, amount: orderData.total_amount } });
+            navigate({ 
+              to: "/order-success", 
+              search: { 
+                order_id: orderData.id, 
+                amount: total 
+              },
+              replace: true 
+            });
           } catch (err: any) {
             setPaymentError(err.message || "Failed to verify payment");
             setIsVerifyingPayment(false);

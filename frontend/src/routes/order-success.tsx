@@ -5,12 +5,17 @@ import { z } from "zod";
 import { useCart, formatINR } from "@/lib/cart";
 
 const searchSchema = z.object({
-  orderId: z.string().optional(),
+  order_id: z.string().optional(),
   amount: z.number().optional(),
 });
 
 export const Route = createFileRoute("/order-success")({
-  validateSearch: searchSchema,
+  validateSearch: (search: Record<string, unknown>) => {
+    return {
+      order_id: search.order_id as string | undefined,
+      amount: search.amount ? Number(search.amount) : undefined,
+    }
+  },
   head: () => ({
     meta: [
       { title: "Payment Successful! — lilviaa" },
@@ -21,21 +26,21 @@ export const Route = createFileRoute("/order-success")({
 });
 
 function OrderSuccessPage() {
+  const search = Route.useSearch();
   const { clear } = useCart();
-  const { orderId, amount: searchAmount } = Route.useSearch();
   const [orderNumber, setOrderNumber] = useState("");
-  const [amount] = useState(searchAmount || 0);
+  const amount = search.amount || 0;
 
   useEffect(() => {
-    if (orderId) {
-      setOrderNumber(orderId.split('-')[0].toUpperCase());
+    if (search.order_id) {
+      setOrderNumber(search.order_id.split('-')[0].toUpperCase());
     } else {
       setOrderNumber(`LVA-${Math.floor(10000 + Math.random() * 90000)}`);
     }
     // Clear the cart
     clear();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [search.order_id]);
 
   // Calculate estimated delivery dates
   const today = new Date();
@@ -59,7 +64,7 @@ function OrderSuccessPage() {
         <div className="rounded-3xl bg-card border border-border p-6 shadow-cute mb-10 text-left space-y-4">
           <div className="flex justify-between items-center border-b border-border pb-4">
             <span className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Order ID</span>
-            <span className="font-bold text-cocoa text-lg">#{orderNumber}</span>
+            <span className="font-bold text-cocoa text-lg">{orderNumber.startsWith('LVA-') ? orderNumber : `#LVA-${orderNumber.substring(0, 8).toUpperCase()}`}</span>
           </div>
           <div className="flex justify-between items-center border-b border-border pb-4">
             <span className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Amount Paid</span>
