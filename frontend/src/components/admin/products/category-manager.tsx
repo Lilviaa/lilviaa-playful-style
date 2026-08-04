@@ -103,7 +103,7 @@ export function CategoryManager({ children }: { children: React.ReactNode }) {
 
       const matchesCategory = selectedCategory === "all" || p.category === selectedCategory;
 
-      return matchesSearch && matchesCategory;
+      return matchesSearch && matchesCategory && p.status !== "archived";
     }) || [];
 
   const handleRenameCategory = async (oldName: string) => {

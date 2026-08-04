@@ -70,6 +70,7 @@ export function DiscountFields({ basePrice, salePrice, saleStart, saleEnd, onCha
             <Input 
               id="sale_price"
               type="number" 
+              min={0}
               value={salePrice === null ? '' : salePrice}
               onChange={(e) => onChange({ sale_price: e.target.value ? parseInt(e.target.value) : 0 })}
               className={salePrice && salePrice >= basePrice ? "border-rose-500" : ""}

@@ -1,6 +1,43 @@
-import { createContext, useContext, useState, ReactNode, useEffect, useCallback } from "react";
+import { createContext, useContext, useState, ReactNode, useEffect } from "react";
+import { auth } from "./firebase";
+import { 
+  onAuthStateChanged, 
+  signInWithEmailAndPassword, 
+  createUserWithEmailAndPassword, 
+  signOut as firebaseSignOut,
+  sendPasswordResetEmail,
+  sendEmailVerification,
+  GoogleAuthProvider,
+  signInWithPopup
+} from "firebase/auth";
 import { apiFetch } from "./api";
-import { z } from "zod";
+
+export function getFirebaseErrorMessage(error: any): string {
+  if (!error || !error.code) return error?.message || "An unknown error occurred.";
+  
+  switch (error.code) {
+    case 'auth/invalid-credential':
+    case 'auth/wrong-password':
+    case 'auth/user-not-found':
+      return "Invalid email or password.";
+    case 'auth/email-already-in-use':
+      return "An account already exists with this email address.";
+    case 'auth/weak-password':
+      return "Password should be at least 6 characters.";
+    case 'auth/network-request-failed':
+      return "Network error. Please check your internet connection.";
+    case 'auth/too-many-requests':
+      return "Too many attempts. Please try again later.";
+    case 'auth/invalid-email':
+      return "Please enter a valid email address.";
+    case 'auth/user-disabled':
+      return "This account has been disabled. Please contact support.";
+    case 'auth/popup-closed-by-user':
+      return "Google sign-in was cancelled.";
+    default:
+      return error.message || "An unexpected error occurred.";
+  }
+}
 
 export interface User {
   id: string;
@@ -18,6 +55,8 @@ interface AuthContextType {
   registerUser: (userData: Record<string, string>) => Promise<User | undefined>;
   logout: () => Promise<void>;
   checkSession: () => Promise<User | null>;
+  resetPassword: (email: string) => Promise<void>;
+  loginWithGoogle: () => Promise<User | undefined>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -27,161 +66,224 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
-  const checkSession = useCallback(async () => {
+  // Sync Firebase User with our Backend (Supabase users table)
+  const syncWithBackend = async (firebaseUser: any) => {
     try {
-      // If we don't have cookies, this will fail with 401. That's fine.
-      const res = await apiFetch("/auth/me");
+      const token = await firebaseUser.getIdToken();
+      // Fetch full profile from our DB
+      const res = await fetch(`${import.meta.env.VITE_API_URL || "http://localhost:8000/api/v1"}/firebase_auth/me`, {
+        headers: {
+          "Authorization": `Bearer ${token}`
+        }
+      });
       if (res.ok) {
         const data = await res.json();
-        setUser(data);
-        return data;
-      } else {
-        setUser(null);
-        return null;
+        if (!data.error) {
+          setUser(data);
+          return data;
+        }
       }
+      setUser(null);
+      return null;
     } catch (e) {
       setUser(null);
       return null;
-    } finally {
-      setIsLoading(false);
     }
-  }, []);
+  };
 
   useEffect(() => {
-    checkSession();
-  }, [checkSession]);
-
-  const login = async (credentials: Record<string, string>) => {
-    // We send form data because OAuth2PasswordRequestForm expects it
-    const formData = new URLSearchParams();
-    formData.append("username", credentials.email);
-    formData.append("password", credentials.password);
-
-    const res = await apiFetch("/auth/login", {
-      method: "POST",
-      body: formData,
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (firebaseUser) {
+        await syncWithBackend(firebaseUser);
+      } else {
+        setUser(null);
       }
+      setIsLoading(false);
     });
 
-    if (!res.ok) {
-      const errData = await res.json();
-      let errorMessage = "Login failed";
-      if (Array.isArray(errData.detail)) {
-        errorMessage = errData.detail.map((e: any) => e.msg).join(", ");
-      } else if (typeof errData.detail === "string") {
-        errorMessage = errData.detail;
-      }
-      throw new Error(errorMessage);
-    }
+    return () => unsubscribe();
+  }, []);
 
-    // Now fetch the profile
-    const userSession = await checkSession();
-    
-    // Attempt cart merge
+  const login = async (credentials: Record<string, string>) => {
     try {
-      const rawCart = localStorage.getItem("lilviaa-cart-v1-guest");
-      if (rawCart) {
-        const parsed = JSON.parse(rawCart);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          const items = parsed.map((item: any) => ({
-            product_variant_id: item.variant_id,
-            quantity: item.qty
-          }));
-          const mergeRes = await apiFetch("/cart/merge", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ items })
-          });
-          if (mergeRes.ok) {
-            const data = await mergeRes.json();
-            if (data.message && data.message.includes("adjusted")) {
-              console.warn(data.message);
+      const userCredential = await signInWithEmailAndPassword(auth, credentials.email, credentials.password);
+      
+      if (!userCredential.user.emailVerified) {
+        // Option to block login if not verified:
+        // await firebaseSignOut(auth);
+        // throw new Error("Please verify your email address before logging in.");
+      }
+      
+      const dbUser = await syncWithBackend(userCredential.user);
+      
+      // Attempt cart merge via our standard apiFetch which now handles the Authorization header
+      try {
+        const rawCart = localStorage.getItem("lilviaa-cart-v1-guest");
+        if (rawCart) {
+          const parsed = JSON.parse(rawCart);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            const items = parsed.map((item: any) => ({
+              product_variant_id: item.variant_id,
+              quantity: item.qty
+            }));
+            const mergeRes = await fetch(`${import.meta.env.VITE_API_URL || "http://localhost:8000/api/v1"}/cart/merge`, {
+              method: "POST",
+              headers: { 
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${await userCredential.user.getIdToken()}`
+              },
+              body: JSON.stringify({ items })
+            });
+            if (mergeRes.ok) {
+              localStorage.removeItem("lilviaa-cart-v1-guest");
             }
           }
         }
-        localStorage.removeItem("lilviaa-cart-v1-guest");
+      } catch (e) {
+        console.error("Failed to merge cart:", e);
       }
-    } catch (e) {
-      console.error("Cart merge failed", e);
+
+      return {
+        ...dbUser,
+        requires_verification: !userCredential.user.emailVerified
+      };
+    } catch (error: any) {
+      throw new Error(getFirebaseErrorMessage(error));
     }
-    
-    return userSession;
   };
 
   const registerUser = async (userData: Record<string, string>) => {
-    const res = await apiFetch("/auth/register", {
-      method: "POST",
-      body: JSON.stringify(userData)
-    });
-
-    const data = await res.json();
-
-    if (!res.ok) {
-      let errorMessage = "Registration failed";
-      if (Array.isArray(data.detail)) {
-        errorMessage = data.detail.map((e: any) => e.msg).join(", ");
-      } else if (typeof data.detail === "string") {
-        errorMessage = data.detail;
-      }
-      throw new Error(errorMessage);
-    }
-
-    // If verification is required, return the data for the caller to handle
-    if (data.requires_verification) {
-      return data; // { message, email, requires_verification }
-    }
-
-    // Fallback: if no verification needed (shouldn't happen with new flow), fetch session
-    const userSession = await checkSession();
-    
-    // Attempt cart merge
     try {
-      const rawCart = localStorage.getItem("lilviaa-cart-v1-guest");
-      if (rawCart) {
-        const parsed = JSON.parse(rawCart);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          const items = parsed.map((item: any) => ({
-            product_variant_id: item.variant_id,
-            quantity: item.qty
-          }));
-          const mergeRes = await apiFetch("/cart/merge", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ items })
-          });
-          if (mergeRes.ok) {
-            const mergeData = await mergeRes.json();
-            if (mergeData.message && mergeData.message.includes("adjusted")) {
-              console.warn(mergeData.message);
-            }
-          }
-        }
-        localStorage.removeItem("lilviaa-cart-v1-guest");
+      // 1. Create in Firebase
+      const userCredential = await createUserWithEmailAndPassword(auth, userData.email, userData.password);
+      
+      // 2. Send Email Verification
+      await sendEmailVerification(userCredential.user);
+
+      // 3. Sync to Supabase via our backend
+      const token = await userCredential.user.getIdToken();
+      const syncRes = await fetch(`${import.meta.env.VITE_API_URL || "http://localhost:8000/api/v1"}/firebase_auth/sync`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          uid: userCredential.user.uid,
+          email: userData.email,
+          full_name: userData.full_name,
+          phone: userData.phone || null
+        })
+      });
+
+      if (!syncRes.ok) {
+        throw new Error("Failed to sync user to database");
       }
-    } catch (e) {
-      console.error("Cart merge failed", e);
+      
+      const dbUser = await syncWithBackend(userCredential.user);
+      
+      return {
+        ...dbUser,
+        requires_verification: !userCredential.user.emailVerified
+      };
+    } catch (error: any) {
+      throw new Error(getFirebaseErrorMessage(error));
     }
-    
-    return userSession;
   };
 
   const logout = async () => {
+    setIsLoggingOut(true);
     try {
-      setIsLoggingOut(true);
-      await apiFetch("/auth/logout", { method: "POST" });
-    } catch (e) {
-      console.error("Logout error", e);
-    } finally {
+      await firebaseSignOut(auth);
       setUser(null);
-      localStorage.removeItem("lilviaa-cart-v1-guest");
+    } finally {
       setIsLoggingOut(false);
     }
   };
 
+  const checkSession = async () => {
+    if (auth.currentUser) {
+      return await syncWithBackend(auth.currentUser);
+    }
+    return null;
+  };
+
+  const resetPassword = async (email: string) => {
+    await sendPasswordResetEmail(auth, email);
+  };
+
+  const loginWithGoogle = async () => {
+    try {
+      const provider = new GoogleAuthProvider();
+      const userCredential = await signInWithPopup(auth, provider);
+      
+      const token = await userCredential.user.getIdToken();
+      const syncRes = await fetch(`${import.meta.env.VITE_API_URL || "http://localhost:8000/api/v1"}/firebase_auth/sync`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          uid: userCredential.user.uid,
+          email: userCredential.user.email || "",
+          full_name: userCredential.user.displayName || "Google User",
+          phone: userCredential.user.phoneNumber || null
+        })
+      });
+
+      if (!syncRes.ok) {
+        throw new Error("Failed to sync Google user to database");
+      }
+
+      const dbUser = await syncWithBackend(userCredential.user);
+      
+      try {
+        const rawCart = localStorage.getItem("lilviaa-cart-v1-guest");
+        if (rawCart) {
+          const parsed = JSON.parse(rawCart);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            const items = parsed.map((item: any) => ({
+              product_variant_id: item.variant_id,
+              quantity: item.qty
+            }));
+            const mergeRes = await fetch(`${import.meta.env.VITE_API_URL || "http://localhost:8000/api/v1"}/cart/merge`, {
+              method: "POST",
+              headers: { 
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${token}`
+              },
+              body: JSON.stringify({ items })
+            });
+            if (mergeRes.ok) {
+              localStorage.removeItem("lilviaa-cart-v1-guest");
+            }
+          }
+        }
+      } catch (e) {
+        console.error("Failed to merge cart:", e);
+      }
+
+      return dbUser;
+    } catch (error: any) {
+      throw new Error(getFirebaseErrorMessage(error));
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, isLoading, isLoggingOut, login, registerUser, logout, checkSession }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        isLoading,
+        isLoggingOut,
+        login,
+        registerUser,
+        logout,
+        checkSession,
+        resetPassword,
+        loginWithGoogle
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

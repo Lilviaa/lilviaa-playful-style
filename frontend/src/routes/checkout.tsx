@@ -187,6 +187,12 @@ function CheckoutPage() {
       }
       
       const orderData = await res.json();
+      
+      if (values.paymentMethod === "cod") {
+        clear();
+        navigate({ to: "/order-success", replace: true, search: { orderId: orderData.id, amount: orderData.total_amount } });
+        return;
+      }
 
       // Razorpay Flow
       const resLoad = await new Promise((resolve) => {
@@ -224,7 +230,7 @@ function CheckoutPage() {
               throw new Error("Payment verification failed");
             }
             clear();
-            navigate({ to: "/order-success", replace: true });
+            navigate({ to: "/order-success", replace: true, search: { orderId: orderData.id, amount: orderData.total_amount } });
           } catch (err: any) {
             setPaymentError(err.message || "Failed to verify payment");
             setIsVerifyingPayment(false);

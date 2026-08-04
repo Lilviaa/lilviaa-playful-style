@@ -105,6 +105,7 @@ export function VariantEditor({ variants, onChange, basePrice }: VariantEditorPr
                   <td className="p-2">
                     <Input 
                       type="number"
+                      min={0}
                       placeholder={basePrice ? `e.g. ${basePrice}` : "e.g. 1999"}
                       value={v.price_override || ''} 
                       onChange={e => updateVariant(i, 'price_override', e.target.value ? parseInt(e.target.value) : null)}

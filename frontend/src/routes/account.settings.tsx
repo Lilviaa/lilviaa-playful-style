@@ -4,7 +4,7 @@ import { useAddresses, useCreateAddress, useUpdateAddress, useDeleteAddress } fr
 import { Settings, MapPin, User, Shield, Key, Trash2, Edit2, Save, Plus } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { useUpdateProfile, useUpdatePassword } from "@/lib/profile-api";
+import { useUpdateProfile, useUpdatePassword, useDeleteAccount } from "@/lib/profile-api";
 import { useState } from "react";
 
 export const Route = createFileRoute("/account/settings")({
@@ -25,9 +25,11 @@ function AccountSettingsPage() {
   
   const updateProfile = useUpdateProfile();
   const updatePassword = useUpdatePassword();
+  const deleteAccount = useDeleteAccount();
   
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isPasswordOpen, setIsPasswordOpen] = useState(false);
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
 
   if (!user) return null;
 
@@ -62,6 +64,19 @@ function AccountSettingsPage() {
         e.currentTarget.reset();
       }
     });
+  };
+
+  const handleDeleteSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    const current_password = formData.get("current_password") as string;
+    
+    if (!current_password) {
+      toast.error("Please enter your current password to verify.");
+      return;
+    }
+    
+    deleteAccount.mutate({ current_password });
   };
 
   const handleAddressSubmit = async (e: React.FormEvent<HTMLFormElement>, id?: string) => {
@@ -296,11 +311,32 @@ function AccountSettingsPage() {
                           </form>
                         </DialogContent>
                       </Dialog>
-                      <button onClick={() => {
-                        if (confirm("Are you sure you want to delete this address?")) {
-                          deleteAddress.mutate(address.id);
-                        }
-                      }} className="text-sm font-semibold text-red-600 hover:underline">Delete</button>
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <button className="text-sm font-semibold text-red-600 hover:underline">Delete</button>
+                        </DialogTrigger>
+                        <DialogContent className="sm:max-w-[400px]">
+                          <DialogHeader>
+                            <DialogTitle className="font-display text-2xl text-cocoa">Delete Address</DialogTitle>
+                          </DialogHeader>
+                          <div className="py-2">
+                            <p className="text-cocoa text-sm">Are you sure you want to delete this address? This action cannot be undone.</p>
+                          </div>
+                          <div className="flex justify-end gap-4 pt-4">
+                            <DialogTrigger asChild>
+                              <button type="button" className="text-sm font-semibold text-muted-foreground hover:text-cocoa">Cancel</button>
+                            </DialogTrigger>
+                            <DialogTrigger asChild>
+                              <button 
+                                onClick={() => deleteAddress.mutate(address.id)} 
+                                className="inline-flex items-center gap-2 rounded-full bg-red-600 px-6 py-2 text-sm font-bold text-white shadow-pop transition-transform hover:-translate-y-0.5"
+                              >
+                                Delete
+                              </button>
+                            </DialogTrigger>
+                          </div>
+                        </DialogContent>
+                      </Dialog>
                     </div>
                   </div>
                 ))}
@@ -343,6 +379,29 @@ function AccountSettingsPage() {
                         <label className="text-sm font-semibold text-cocoa">Confirm New Password</label>
                         <input type="password" name="confirm_password" required className="w-full rounded-xl border-2 border-border bg-background px-4 py-2 text-sm text-cocoa focus:border-primary focus:outline-none" />
                       </div>
+                      
+                      <div className="pt-2 text-right">
+                        <button 
+                          type="button" 
+                          onClick={async () => {
+                            try {
+                              const { auth } = await import("@/lib/firebase");
+                              const { sendPasswordResetEmail } = await import("firebase/auth");
+                              if (user.email) {
+                                await sendPasswordResetEmail(auth, user.email);
+                                toast.success("Password reset email sent!", { description: "Check your inbox for the link." });
+                                setIsPasswordOpen(false);
+                              }
+                            } catch (e: any) {
+                              toast.error(e.message || "Failed to send reset email");
+                            }
+                          }}
+                          className="text-xs font-semibold text-primary hover:underline"
+                        >
+                          Forgot current password? Send reset link
+                        </button>
+                      </div>
+
                       <div className="pt-4 flex justify-between items-center">
                         <DialogTrigger asChild>
                           <button type="button" className="text-sm font-semibold text-muted-foreground hover:text-cocoa">
@@ -363,7 +422,7 @@ function AccountSettingsPage() {
                   <h4 className="font-semibold text-red-700">Delete Account</h4>
                   <p className="text-sm text-red-600/80 mt-0.5">Permanently remove your account and all associated data.</p>
                 </div>
-                <Dialog>
+                <Dialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
                   <DialogTrigger asChild>
                     <button className="inline-flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 text-red-700 px-5 py-2 text-sm font-semibold hover:bg-red-100 transition-colors w-fit shrink-0">
                       <Trash2 className="h-4 w-4" /> Delete
@@ -373,19 +432,23 @@ function AccountSettingsPage() {
                     <DialogHeader>
                       <DialogTitle className="font-display text-2xl text-red-700">Delete Account</DialogTitle>
                     </DialogHeader>
-                    <div className="space-y-4 pt-4">
+                    <form onSubmit={handleDeleteSubmit} className="space-y-4 pt-4">
                       <p className="text-sm text-cocoa">Are you absolutely sure you want to delete your account? This action is permanent and cannot be undone.</p>
+                      <div className="space-y-1.5 mt-4">
+                        <label className="text-sm font-semibold text-cocoa">Enter Current Password to Verify</label>
+                        <input type="password" name="current_password" required className="w-full rounded-xl border-2 border-border bg-background px-4 py-2 text-sm text-cocoa focus:border-red-500 focus:outline-none" />
+                      </div>
                       <div className="pt-4 flex justify-between items-center">
                         <DialogTrigger asChild>
                           <button type="button" className="text-sm font-semibold text-muted-foreground hover:text-cocoa">
                             Cancel
                           </button>
                         </DialogTrigger>
-                        <button onClick={() => toast.success("Account deletion initiated")} className="inline-flex items-center gap-2 rounded-full bg-red-600 px-6 py-2.5 text-sm font-bold text-white shadow-pop transition-transform hover:-translate-y-0.5">
+                        <button type="submit" disabled={deleteAccount.isPending} className="inline-flex items-center gap-2 rounded-full bg-red-600 px-6 py-2.5 text-sm font-bold text-white shadow-pop transition-transform hover:-translate-y-0.5 disabled:opacity-50">
                           <Trash2 className="h-4 w-4" /> Yes, Delete
                         </button>
                       </div>
-                    </div>
+                    </form>
                   </DialogContent>
                 </Dialog>
               </div>

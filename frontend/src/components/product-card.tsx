@@ -31,6 +31,30 @@ export function ProductCard({ product }: { product: Product }) {
     }
   };
 
+  let displayPrice = product.price;
+  let hasMultiplePrices = false;
+  
+  if (product.variants && product.variants.length > 0) {
+    const variantPrices = product.variants
+      .map(v => v.price_override)
+      .filter((p): p is number => p !== null);
+      
+    if (variantPrices.length > 0) {
+      // Some variants might not have an override, in which case they use the base price.
+      // We consider base price in the pool if not ALL variants have overrides.
+      const hasBasePriceVariants = product.variants.some(v => v.price_override === null);
+      const allPrices = hasBasePriceVariants ? [product.price, ...variantPrices] : variantPrices;
+      
+      const minPrice = Math.min(...allPrices);
+      const maxPrice = Math.max(...allPrices);
+      
+      if (minPrice !== maxPrice) {
+        hasMultiplePrices = true;
+      }
+      displayPrice = minPrice;
+    }
+  }
+
   return (
     <ScrollReveal>
       <Link
@@ -75,7 +99,8 @@ export function ProductCard({ product }: { product: Product }) {
           </h3>
           <div className="mt-auto flex items-center gap-2 pt-2">
             <span className="text-base font-bold text-cocoa">
-              {formatINR(product.price)}
+              {hasMultiplePrices && <span className="text-xs font-normal text-muted-foreground mr-1">From</span>}
+              {formatINR(displayPrice)}
             </span>
             {product.compareAt && (
               <span className="text-sm text-muted-foreground line-through">

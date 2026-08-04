@@ -6,7 +6,9 @@ import {
   useReactTable,
   getSortedRowModel,
   getFilteredRowModel,
+  getExpandedRowModel,
   SortingState,
+  ExpandedState,
 } from "@tanstack/react-table";
 import {
   Table,
@@ -17,7 +19,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
-import { ArrowUpDown, Search } from "lucide-react";
+import { ArrowUpDown, Search, ChevronDown, ChevronRight } from "lucide-react";
 import { InventoryItem } from "@/lib/admin/inventory-api";
 import { Button } from "@/components/ui/button";
 
@@ -32,13 +34,35 @@ export function InventoryTable({ data, isLoading, filterLowStock }: InventoryTab
     { id: "stock", desc: false }, // Default sort by lowest stock first
   ]);
   const [globalFilter, setGlobalFilter] = useState("");
+  const [expanded, setExpanded] = useState<ExpandedState>({});
 
-  const filteredData = useMemo(() => {
+  const groupedData = useMemo(() => {
+    let sourceData = data;
     if (filterLowStock) {
-      // Assuming low stock means less than 5
-      return data.filter((item) => item.stock < 5);
+      sourceData = data.filter((item) => item.stock < 5);
     }
-    return data;
+    
+    const productMap = new Map<string, any>();
+    
+    sourceData.forEach(item => {
+      if (!productMap.has(item.product_id)) {
+        productMap.set(item.product_id, {
+          ...item,
+          id: item.product_id, 
+          size: `${sourceData.filter(i => i.product_id === item.product_id).length} Variants`,
+          sku: "Multiple",
+          stock: 0,
+          sales: 0,
+          subRows: [],
+        });
+      }
+      const group = productMap.get(item.product_id);
+      group.stock += item.stock;
+      group.sales += item.sales;
+      group.subRows.push(item);
+    });
+    
+    return Array.from(productMap.values());
   }, [data, filterLowStock]);
 
   const columns: ColumnDef<InventoryItem>[] = [
@@ -49,7 +73,27 @@ export function InventoryTable({ data, isLoading, filterLowStock }: InventoryTab
       cell: ({ row }) => {
         const item = row.original;
         return (
-          <div className="flex items-center gap-3">
+          <div 
+            className={`flex items-center gap-3 ${row.getCanExpand() ? 'cursor-pointer' : ''}`}
+            onClick={row.getToggleExpandedHandler()}
+          >
+            {row.getCanExpand() ? (
+              <button
+                className="text-muted-foreground hover:text-cocoa transition-colors"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  row.toggleExpanded();
+                }}
+              >
+                {row.getIsExpanded() ? (
+                  <ChevronDown className="h-4 w-4" />
+                ) : (
+                  <ChevronRight className="h-4 w-4" />
+                )}
+              </button>
+            ) : (
+              <div className="w-4" /> // spacer for alignment
+            )}
             <div className="h-12 w-12 rounded-lg overflow-hidden bg-white border border-cocoa/10 shrink-0">
               <img
                 src={item.product_image || "https://placehold.co/100"}
@@ -148,17 +192,21 @@ export function InventoryTable({ data, isLoading, filterLowStock }: InventoryTab
   ];
 
   const table = useReactTable({
-    data: filteredData,
+    data: groupedData,
     columns,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
+    getExpandedRowModel: getExpandedRowModel(),
+    getSubRows: row => row.subRows,
     onSortingChange: setSorting,
     onGlobalFilterChange: setGlobalFilter,
+    onExpandedChange: setExpanded,
     globalFilterFn: "includesString",
     state: {
       sorting,
       globalFilter,
+      expanded,
     },
   });
 
@@ -202,10 +250,12 @@ export function InventoryTable({ data, isLoading, filterLowStock }: InventoryTab
               table.getRowModel().rows.map((row) => (
                 <TableRow
                   key={row.id}
-                  className="border-b border-cocoa/5 hover:bg-primary/5 transition-colors duration-200"
+                  className={`border-b border-cocoa/5 transition-colors duration-200 ${
+                    row.parentId ? "bg-sand/10 hover:bg-sand/20" : "hover:bg-primary/5"
+                  }`}
                 >
                   {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
+                    <TableCell key={cell.id} className={row.parentId && cell.column.id === 'product' ? 'pl-8' : ''}>
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </TableCell>
                   ))}

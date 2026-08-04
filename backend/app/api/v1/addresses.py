@@ -24,6 +24,15 @@ def create_address(address_in: AddressCreate, user_id: str = Depends(get_current
     if count_result.count and count_result.count >= 5:
         raise AppError("Maximum of 5 addresses allowed per user.")
         
+    # Check for duplicate identical address
+    duplicate_check = supabase.table("addresses").select("id").eq("user_id", user_id)\
+        .eq("address", address_in.address)\
+        .eq("city", address_in.city)\
+        .eq("zip", address_in.zip).execute()
+        
+    if duplicate_check.data:
+        raise AppError("This exact address is already saved in your account.")
+        
     # Handle default logic
     if address_in.is_default:
         supabase.table("addresses").update({"is_default": False}).eq("user_id", user_id).execute()
@@ -44,6 +53,17 @@ def update_address(address_id: str, address_in: AddressUpdate, user_id: str = De
     existing = supabase.table("addresses").select("id").eq("id", address_id).eq("user_id", user_id).execute()
     if not existing.data:
         raise NotFoundError("Address not found")
+        
+    # Check for duplicate identical address (ignoring the current one)
+    if address_in.address and address_in.city and address_in.zip:
+        duplicate_check = supabase.table("addresses").select("id").eq("user_id", user_id)\
+            .eq("address", address_in.address)\
+            .eq("city", address_in.city)\
+            .eq("zip", address_in.zip)\
+            .neq("id", address_id).execute()
+            
+        if duplicate_check.data:
+            raise AppError("Another identical address already exists in your account.")
         
     # Handle default logic
     if address_in.is_default:

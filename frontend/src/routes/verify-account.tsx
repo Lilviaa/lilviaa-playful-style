@@ -1,9 +1,9 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { ShieldCheck, ArrowLeft } from "lucide-react";
+import { ShieldCheck } from "lucide-react";
 import { useState, useEffect } from "react";
-import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { apiFetch } from "@/lib/api";
+import { auth } from "@/lib/firebase";
+import { sendEmailVerification } from "firebase/auth";
 import { useAuth } from "@/lib/auth";
 
 export const Route = createFileRoute("/verify-account")({
@@ -20,76 +20,75 @@ export const Route = createFileRoute("/verify-account")({
 
 function VerifyAccountPage() {
   const navigate = useNavigate();
-  const { checkSession } = useAuth();
   const { email } = Route.useSearch();
-  const [otp, setOtp] = useState("");
+  const { user } = useAuth();
   const [loading, setLoading] = useState(false);
-  const [otpVerified, setOtpVerified] = useState(false);
-  const [otpError, setOtpError] = useState("");
-  const [resendCountdown, setResendCountdown] = useState(30);
-  const [resendCount, setResendCount] = useState(1);
+  const [resendCountdown, setResendCountdown] = useState(0);
 
+  // Initialize countdown from sessionStorage if the page is reloaded
   useEffect(() => {
-    if (resendCountdown > 0) {
-      const timer = setTimeout(() => setResendCountdown(resendCountdown - 1), 1000);
-      return () => clearTimeout(timer);
+    const sentAt = sessionStorage.getItem("verificationSentAt");
+    if (!sentAt) {
+      // If no timestamp, assume the email was just sent during registration
+      sessionStorage.setItem("verificationSentAt", Date.now().toString());
+      setResendCountdown(60);
+    } else {
+      const elapsed = Math.floor((Date.now() - parseInt(sentAt)) / 1000);
+      if (elapsed < 60) {
+        setResendCountdown(60 - elapsed);
+      }
     }
+  }, []);
+
+  // Handle the countdown timer ticking
+  useEffect(() => {
+    if (resendCountdown <= 0) return;
+    
+    const timer = setInterval(() => {
+      setResendCountdown((prev) => prev - 1);
+    }, 1000);
+    
+    return () => clearInterval(timer);
   }, [resendCountdown]);
 
+  // Poll Firebase to check if the user has clicked the link in the other tab
   useEffect(() => {
-    if (otp.length === 6 && !otpVerified) {
-      verifyAccount();
-    }
-  }, [otp]);
+    // Only start polling when Firebase has finished initializing the user
+    if (!auth.currentUser) return;
 
-  async function verifyAccount() {
-    setLoading(true);
-    setOtpError("");
-    try {
-      const res = await apiFetch("/auth/verify-account", {
-        method: "POST",
-        body: JSON.stringify({ email, otp }),
-      });
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.detail || "Invalid OTP");
+    const interval = setInterval(async () => {
+      if (auth.currentUser) {
+        await auth.currentUser.reload();
+        if (auth.currentUser.emailVerified) {
+          clearInterval(interval);
+          toast.success("Account Verified!", { description: "You have been automatically logged in." });
+          navigate({ to: "/account", replace: true });
+        }
       }
-      setOtpVerified(true);
-      toast.success("Account Verified!", { description: "Welcome to Lilviaa!" });
+    }, 3000); // Check every 3 seconds
 
-      // The verify-account endpoint sets auth cookies, so fetch session
-      await checkSession();
-      
-      // Redirect to homepage after a short delay
-      setTimeout(() => {
-        navigate({ to: "/", replace: true });
-      }, 1500);
-    } catch (err: any) {
-      setOtpError(err.message || "Wrong OTP, try again.");
-      setOtp("");
-    } finally {
-      setLoading(false);
+    return () => clearInterval(interval);
+  }, [user, navigate]); // Added 'user' to dependencies so it triggers after Firebase loads
+
+  async function resendVerificationLink() {
+    if (!auth.currentUser) {
+      toast.error("You must be logged in to resend the verification link.");
+      return;
     }
-  }
-
-  async function resendOtp() {
+    
     setLoading(true);
     try {
-      const res = await apiFetch("/auth/resend-verify-otp", {
-        method: "POST",
-        body: JSON.stringify({ email }),
-      });
-      if (!res.ok) {
-        throw new Error("Failed to resend code");
-      }
-      toast.success("Code Resent!", { description: "Check your email for the new verification code." });
+      await sendEmailVerification(auth.currentUser);
+      toast.success("Link Resent!", { description: "Check your email for the new verification link." });
 
-      // Calculate backoff timer: 30s, 60s, 120s... max 5 mins
-      const nextTimeout = Math.min(30 * Math.pow(2, resendCount), 300);
-      setResendCountdown(nextTimeout);
-      setResendCount(prev => prev + 1);
+      sessionStorage.setItem("verificationSentAt", Date.now().toString());
+      setResendCountdown(60);
     } catch (err: any) {
-      toast.error("Error", { description: err.message || "Failed to resend code." });
+      if (err.code === "auth/too-many-requests" || err.message?.includes("too-many-requests")) {
+        toast.error("Please wait a moment", { description: "We recently sent an email. Please check your spam folder or wait a minute before trying again." });
+      } else {
+        toast.error("Error", { description: err.message || "Failed to resend link." });
+      }
     } finally {
       setLoading(false);
     }
@@ -113,60 +112,37 @@ function VerifyAccountPage() {
       </div>
       <h1 className="font-display text-4xl text-cocoa">Verify your email</h1>
       <p className="mt-2 text-center text-muted-foreground">
-        Enter the 6-digit code sent to <strong className="text-cocoa">{email}</strong>.
+        We've sent a secure verification link to <strong className="text-cocoa">{email}</strong>.
       </p>
 
-      <div className="mt-8 w-full rounded-3xl bg-card p-6 shadow-cute sm:p-8">
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <label htmlFor="verify-otp" className="text-sm font-medium leading-none text-cocoa">
-              6-Digit Verification Code
-            </label>
-            <Input
-              id="verify-otp"
-              type="text"
-              maxLength={6}
-              placeholder="123456"
-              value={otp}
-              onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
-              className="text-center tracking-widest font-mono rounded-xl border-2 border-border bg-background px-4 py-2 text-lg text-cocoa focus:border-primary focus:outline-none"
-              required
-              disabled={loading || otpVerified}
-              autoFocus
-            />
-            {otpError && <p className="text-sm font-semibold text-destructive mt-1">{otpError}</p>}
-            {otpVerified && (
-              <p className="text-sm font-semibold text-green-600 mt-1">
-                ✓ Verified! Redirecting...
-              </p>
-            )}
-          </div>
+      <div className="mt-8 w-full rounded-3xl bg-card p-6 shadow-cute sm:p-8 text-center space-y-6">
+        <div className="text-sm text-cocoa">
+          <p className="mb-4">
+            Please check your inbox and click the secure link we sent to verify your account. 
+          </p>
+          <p className="font-medium text-amber-700 bg-amber-50 p-3 rounded-xl border border-amber-200">
+            <strong>Important:</strong> If you do not see the email in your inbox within a few minutes, please check your <strong>Spam or Junk folder</strong>.
+          </p>
+          <p className="mt-4 text-muted-foreground">
+            Once you click the link, this page will automatically log you in!
+          </p>
+        </div>
 
-          <div className="text-center pt-4 flex flex-col gap-2">
-            <button
-              type="button"
-              onClick={resendOtp}
-              disabled={resendCountdown > 0 || loading || otpVerified}
-              className={`text-sm font-semibold transition-colors ${
-                resendCountdown > 0 || otpVerified
-                  ? "text-muted-foreground cursor-not-allowed"
-                  : "text-primary hover:underline"
-              }`}
-            >
-              {resendCountdown > 0
-                ? `Resend code in ${resendCountdown}s`
-                : "Didn't receive code? Resend"}
-            </button>
-          </div>
+        <div className="flex flex-col gap-4">
+          <button
+            type="button"
+            onClick={resendVerificationLink}
+            disabled={resendCountdown > 0 || loading}
+            className={`flex w-full items-center justify-center gap-2 rounded-full px-6 py-3 text-sm font-bold shadow-pop transition-transform ${
+              resendCountdown > 0 || loading
+                ? "bg-muted text-muted-foreground cursor-not-allowed"
+                : "bg-primary text-primary-foreground hover:scale-105 active:scale-95"
+            }`}
+          >
+            {loading ? "Sending..." : resendCountdown > 0 ? `Resend Link in ${resendCountdown}s` : "Resend Verification Link"}
+          </button>
         </div>
       </div>
-
-      <Link
-        to="/login"
-        className="mt-8 flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-cocoa transition-colors"
-      >
-        <ArrowLeft className="h-4 w-4" /> Back to log in
-      </Link>
     </div>
   );
 }

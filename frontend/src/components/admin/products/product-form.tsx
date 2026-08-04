@@ -386,6 +386,7 @@ export function ProductForm({ initialData }: ProductFormProps) {
                 <Input
                   id="base_price"
                   type="number"
+                  min={0}
                   value={formData.base_price || ""}
                   onChange={(e) => updateField("base_price", parseInt(e.target.value) || 0)}
                   placeholder="e.g. 1999"

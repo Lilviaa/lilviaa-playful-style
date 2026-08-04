@@ -14,15 +14,23 @@ export const Route = createFileRoute("/account")({
 });
 
 function AccountLayout() {
-  const { user, logout, isLoggingOut } = useAuth();
+  const { user, logout, isLoggingOut, isLoading } = useAuth();
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
   useEffect(() => {
-    if (!user) {
+    if (!isLoading && !user) {
       navigate({ to: "/login", search: { redirect: pathname }, replace: true });
     }
-  }, [user, navigate, pathname]);
+  }, [user, isLoading, navigate, pathname]);
+
+  if (isLoading) {
+    return (
+      <div className="flex min-h-[50vh] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   if (!user) return null;
 

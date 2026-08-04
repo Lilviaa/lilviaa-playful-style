@@ -267,7 +267,7 @@ function HomePage() {
             View all collections <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
           </Link>
         </div>
-        <div className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mt-10 grid grid-cols-2 gap-3 sm:gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {(cmsCategoryTiles.length > 0 ? cmsCategoryTiles : dbCategories.slice(0, 4)).map((c, i) => {
             const isCms = 'label' in c;
             const name = isCms ? c.label : c.name;
@@ -279,7 +279,7 @@ function HomePage() {
               <ScrollReveal key={slugOrId} direction="up" delay={i * 0.1}>
                 <Link
                   to={link}
-                  className="group relative flex aspect-[4/5] w-full flex-col justify-between overflow-hidden rounded-[2.5rem] bg-card p-6 shadow-cute transition-all duration-500 ease-out hover:-translate-y-2 hover:shadow-pop"
+                  className="group relative flex aspect-[4/5] w-full flex-col justify-between overflow-hidden rounded-3xl sm:rounded-[2.5rem] bg-card p-4 sm:p-6 shadow-cute transition-all duration-500 ease-out hover:-translate-y-2 hover:shadow-pop"
                 >
                   {/* Background Image */}
                   <div className="absolute inset-0 z-0 bg-cocoa/20">
@@ -301,7 +301,7 @@ function HomePage() {
 
                   {/* Content */}
                   <div className="relative z-20 mt-auto translate-y-4 transition-transform duration-500 ease-out group-hover:translate-y-0">
-                    <h3 className="font-display text-3xl text-cream md:text-4xl">{name}</h3>
+                    <h3 className="font-display text-2xl sm:text-3xl text-cream md:text-4xl">{name}</h3>
                     <div className="mt-3 flex items-center gap-2 opacity-0 transition-opacity duration-500 ease-out group-hover:opacity-100">
                       <span className="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2 text-xs font-bold text-primary-foreground shadow-pop">
                         Explore {name.toLowerCase()} <ArrowRight className="h-3 w-3" />

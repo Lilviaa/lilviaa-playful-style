@@ -19,8 +19,10 @@ export function useInventoryVariants() {
       if (!res.ok) throw new Error("Failed to fetch products");
       const products: ProductWithDetails[] = await res.json();
       
+      const activeProducts = products.filter(p => p.status !== "archived");
+      
       const items: InventoryItem[] = [];
-      for (const product of products) {
+      for (const product of activeProducts) {
         if (!product.variants) continue;
         for (const variant of product.variants) {
           items.push({

@@ -1,9 +1,16 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { CheckCircle2, ShoppingBag, FileText } from "lucide-react";
 import { useEffect, useState } from "react";
+import { z } from "zod";
 import { useCart, formatINR } from "@/lib/cart";
 
+const searchSchema = z.object({
+  orderId: z.string().optional(),
+  amount: z.number().optional(),
+});
+
 export const Route = createFileRoute("/order-success")({
+  validateSearch: searchSchema,
   head: () => ({
     meta: [
       { title: "Payment Successful! — lilviaa" },
@@ -15,12 +22,16 @@ export const Route = createFileRoute("/order-success")({
 
 function OrderSuccessPage() {
   const { clear } = useCart();
+  const { orderId, amount: searchAmount } = Route.useSearch();
   const [orderNumber, setOrderNumber] = useState("");
-  const [amount] = useState(3149); // Placeholder/mock amount
+  const [amount] = useState(searchAmount || 0);
 
   useEffect(() => {
-    // Generate order number only once on mount to avoid hydration mismatch
-    setOrderNumber(`LVA-${Math.floor(10000 + Math.random() * 90000)}`);
+    if (orderId) {
+      setOrderNumber(orderId.split('-')[0].toUpperCase());
+    } else {
+      setOrderNumber(`LVA-${Math.floor(10000 + Math.random() * 90000)}`);
+    }
     // Clear the cart
     clear();
     // eslint-disable-next-line react-hooks/exhaustive-deps

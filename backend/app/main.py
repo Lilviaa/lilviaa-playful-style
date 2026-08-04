@@ -8,8 +8,11 @@ load_dotenv()
 # hello!
 from app.core.config import settings
 from app.core.exceptions import AppError, app_error_handler
-from app.api.v1 import auth, addresses, categories, products, admin_products, orders, webhooks, cart
+from app.api.v1 import auth, addresses, categories, products, admin_products, orders, webhooks, cart, firebase_auth
 from app.api.v1 import admin_dashboard, admin_orders, admin_customers, admin_coupons
+from app.core.firebase import init_firebase
+
+init_firebase()
 
 app = FastAPI(
     title="Lilviaa E-Commerce API",
@@ -76,6 +79,7 @@ from app.api.v1 import admin_dashboard, admin_orders, admin_customers, admin_cou
 
 # (I will just add them below the others)
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["Auth"])
+app.include_router(firebase_auth.router, prefix="/api/v1/firebase_auth", tags=["Firebase Auth"])
 app.include_router(addresses.router, prefix="/api/v1/addresses", tags=["Addresses"])
 app.include_router(cart.router, prefix="/api/v1/cart", tags=["Cart"])
 app.include_router(categories.router, prefix="/api/v1/categories", tags=["Categories"])

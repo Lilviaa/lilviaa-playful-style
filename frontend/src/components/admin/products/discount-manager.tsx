@@ -206,6 +206,7 @@ export function DiscountManager({ children }: { children: React.ReactNode }) {
                   <div className="relative flex-1 sm:max-w-[120px]">
                     <Input
                       type="number"
+                      min={0}
                       placeholder="Amount..."
                       value={bulkDiscountPrice}
                       onChange={(e) => setBulkDiscountPrice(e.target.value)}
@@ -277,8 +278,8 @@ export function DiscountManager({ children }: { children: React.ReactNode }) {
                           </p>
                         </div>
                         {p.sale_price !== null && (
-                          <div className="text-[10px] font-bold bg-rose-100 text-rose-700 px-2 py-0.5 rounded-full">
-                            ₹{p.base_price - p.sale_price} OFF
+                          <div className="text-[10px] font-bold bg-rose-100 text-rose-700 px-2 py-0.5 rounded-full whitespace-nowrap">
+                            ₹{p.base_price - p.sale_price} OFF ({Math.round(((p.base_price - p.sale_price) / p.base_price) * 100)}%)
                           </div>
                         )}
                       </div>
@@ -295,6 +296,7 @@ export function DiscountManager({ children }: { children: React.ReactNode }) {
                           </span>
                           <Input
                             type="number"
+                            min={0}
                             autoFocus
                             value={editingPrice.price}
                             onChange={(e) => setEditingPrice({ id: p.id, price: e.target.value })}

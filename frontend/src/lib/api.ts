@@ -1,3 +1,5 @@
+import { auth } from "./firebase";
+
 /**
  * Helper to read a specific cookie by name
  */
@@ -27,6 +29,17 @@ export async function apiFetch(endpoint: string, options: FetchOptions = {}): Pr
 
   const headers = new Headers(options.headers || {});
   
+  if (auth.currentUser) {
+    try {
+      const token = await auth.currentUser.getIdToken();
+      if (token) {
+        headers.set("Authorization", `Bearer ${token}`);
+      }
+    } catch (e) {
+      console.warn("Failed to get Firebase token", e);
+    }
+  }
+
   // Set Content-Type by default if there's a body and it's not FormData
   if (options.body && !(options.body instanceof FormData) && !headers.has("Content-Type")) {
     headers.set("Content-Type", "application/json");

@@ -585,9 +585,11 @@ export function ProductTable({
                         </div>
                         <div className="flex flex-col items-end">
                           <span className="font-semibold text-cocoa">
-                            {quickViewProduct.sale_price !== null
-                              ? formatINR(quickViewProduct.sale_price)
-                              : formatINR(quickViewProduct.base_price)}
+                            {v.price_override !== null && v.price_override !== undefined
+                              ? formatINR(v.price_override)
+                              : quickViewProduct.sale_price !== null
+                                ? formatINR(quickViewProduct.sale_price)
+                                : formatINR(quickViewProduct.base_price)}
                           </span>
                           <span
                             className={cn(

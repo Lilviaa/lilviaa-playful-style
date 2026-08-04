@@ -161,12 +161,9 @@ export function useDeleteProducts() {
 
   return useMutation({
     mutationFn: async (ids: string[]) => {
-      // Our backend doesn't have a bulk delete or even a single delete endpoint yet,
-      // because we only implemented CREATE for Milestone 3! So we'll archive them instead.
       for (const id of ids) {
         await apiFetch(`/admin/products/${id}`, {
-          method: "PUT",
-          body: JSON.stringify({ status: "archived" })
+          method: "DELETE"
         });
       }
       return { success: true };
@@ -174,7 +171,7 @@ export function useDeleteProducts() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-products"] });
       queryClient.invalidateQueries({ queryKey: ["products"] });
-      toast.success("Products archived successfully");
+      toast.success("Products deleted permanently");
     },
   });
 }
