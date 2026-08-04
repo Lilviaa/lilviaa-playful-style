@@ -45,6 +45,7 @@ async def razorpay_webhook(request: Request, x_razorpay_signature: str = Header(
         payment_entity = data["payload"]["payment"]["entity"]
         razorpay_order_id = payment_entity.get("order_id")
         razorpay_payment_id = payment_entity.get("id")
+        captured_method = payment_entity.get("method")
 
         if not razorpay_order_id:
             return {"status": "ignored", "reason": "No order_id in payment.captured payload"}
@@ -54,6 +55,11 @@ async def razorpay_webhook(request: Request, x_razorpay_signature: str = Header(
         if not tx_res.data:
             return {"status": "ignored", "reason": "Transaction not found"}
         tx = tx_res.data[0]
+        order_id = tx["order_id"]
+
+        # 1. ALWAYS capture the specific payment method if it exists, even if already processed
+        if captured_method:
+            supabase.table("orders").update({"payment_method": captured_method}).eq("id", order_id).execute()
 
         if tx["status"] == "successful":
             return {"status": "already_processed"}
