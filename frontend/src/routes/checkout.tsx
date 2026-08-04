@@ -39,7 +39,7 @@ const formSchema = z.object({
   city: z.string().min(2, { message: "City is required." }),
   state: z.string().min(2, { message: "State is required." }),
   zip: z.string().min(4, { message: "ZIP code is required." }),
-  paymentMethod: z.enum(["upi", "card", "netbanking"], {
+  paymentMethod: z.enum(["razorpay"], {
     required_error: "Please select a payment method.",
   }),
 });
@@ -125,7 +125,7 @@ function CheckoutPage() {
       city: "",
       state: "",
       zip: "",
-      paymentMethod: "upi",
+      paymentMethod: "razorpay",
     },
   });
 
@@ -499,64 +499,29 @@ function CheckoutPage() {
                                 className="grid grid-cols-1 gap-3"
                               >
                                 <FormItem className="space-y-0">
-                                <FormLabel 
-                                  className={`flex items-center space-x-3 rounded-2xl border bg-background p-4 shadow-sm hover:border-primary transition-colors cursor-pointer ${field.value === 'upi' ? 'border-primary ring-1 ring-primary bg-primary/5' : 'border-border'}`}
-                                >
-                                  <FormControl>
-                                    <RadioGroupItem value="upi" className="mt-0.5" />
-                                  </FormControl>
-                                  <div className="flex flex-1 items-center justify-between">
-                                    <div className="flex items-center gap-3">
-                                      <SmartphoneNfc className={`h-5 w-5 ${field.value === 'upi' ? 'text-primary' : 'text-muted-foreground'}`} />
-                                      <span className="font-bold text-cocoa text-base">UPI</span>
+                                  <FormLabel 
+                                    className={`flex items-center space-x-3 rounded-2xl border bg-background p-4 shadow-sm hover:border-primary transition-colors cursor-pointer ${field.value === 'razorpay' ? 'border-primary ring-1 ring-primary bg-primary/5' : 'border-border'}`}
+                                  >
+                                    <FormControl>
+                                      <RadioGroupItem value="razorpay" className="mt-0.5" />
+                                    </FormControl>
+                                    <div className="flex flex-1 items-center justify-between">
+                                      <div className="flex items-center gap-3">
+                                        <SmartphoneNfc className={`h-5 w-5 ${field.value === 'razorpay' ? 'text-primary' : 'text-muted-foreground'}`} />
+                                        <div className="flex flex-col">
+                                          <span className="font-bold text-cocoa text-base">Pay Online via Razorpay</span>
+                                          <span className="text-xs text-muted-foreground font-medium">UPI, Credit/Debit Cards, NetBanking, Wallets</span>
+                                        </div>
+                                      </div>
+                                      <div className="flex gap-2 text-xs font-bold text-muted-foreground flex-wrap justify-end">
+                                        <img src="/asset/Checkout_logo/upi_logo_icon_169316.png" alt="UPI" className="h-6 w-auto object-contain bg-white rounded-md p-1 border border-border shadow-sm" />
+                                        <img src="/asset/Checkout_logo/VISA-logo-768x432.png" alt="Visa" className="h-6 w-auto object-contain bg-white rounded-md p-1 border border-border shadow-sm" />
+                                      </div>
                                     </div>
-                                    <div className="flex gap-2 text-xs font-bold text-muted-foreground flex-wrap justify-end">
-                                      <img src="/asset/Checkout_logo/pngwing.com.png" alt="GPay" className="h-6 w-auto object-contain bg-white rounded-md p-1 border border-border shadow-sm" />
-                                      <img src="/asset/Checkout_logo/pngwing.com (1).png" alt="PhonePe" className="h-6 w-auto object-contain bg-white rounded-md p-1 border border-border shadow-sm" />
-                                      <img src="/asset/Checkout_logo/upi_logo_icon_169316.png" alt="BHIM UPI" className="h-6 w-auto object-contain bg-white rounded-md p-1 border border-border shadow-sm" />
-                                    </div>
-                                  </div>
-                                </FormLabel>
-                              </FormItem>
+                                  </FormLabel>
+                                </FormItem>
 
-                                <FormItem className="space-y-0">
-                                <FormLabel 
-                                  className={`flex items-center space-x-3 rounded-2xl border bg-background p-4 shadow-sm hover:border-primary transition-colors cursor-pointer ${field.value === 'card' ? 'border-primary ring-1 ring-primary bg-primary/5' : 'border-border'}`}
-                                >
-                                  <FormControl>
-                                    <RadioGroupItem value="card" className="mt-0.5" />
-                                  </FormControl>
-                                  <div className="flex flex-1 items-center justify-between">
-                                    <div className="flex items-center gap-3">
-                                      <CreditCard className={`h-5 w-5 ${field.value === 'card' ? 'text-primary' : 'text-muted-foreground'}`} />
-                                      <span className="font-bold text-cocoa text-base">Credit / Debit Card</span>
-                                    </div>
-                                    <div className="flex gap-2 text-xs font-bold text-muted-foreground flex-wrap justify-end">
-                                      <img src="/asset/Checkout_logo/VISA-logo-768x432.png" alt="Visa" className="h-6 w-auto object-contain bg-white rounded-md p-1 border border-border shadow-sm" />
-                                      <img src="/asset/Checkout_logo/masterCard.png" alt="Mastercard" className="h-6 w-auto object-contain bg-white rounded-md p-1 border border-border shadow-sm" />
-                                    </div>
-                                  </div>
-                                </FormLabel>
-                              </FormItem>
 
-                                <FormItem className="space-y-0">
-                                <FormLabel 
-                                  className={`flex items-center space-x-3 rounded-2xl border bg-background p-4 shadow-sm hover:border-primary transition-colors cursor-pointer ${field.value === 'netbanking' ? 'border-primary ring-1 ring-primary bg-primary/5' : 'border-border'}`}
-                                >
-                                  <FormControl>
-                                    <RadioGroupItem value="netbanking" className="mt-0.5" />
-                                  </FormControl>
-                                  <div className="flex flex-1 items-center justify-between">
-                                    <div className="flex items-center gap-3">
-                                      <Landmark className={`h-5 w-5 ${field.value === 'netbanking' ? 'text-primary' : 'text-muted-foreground'}`} />
-                                      <span className="font-bold text-cocoa text-base">Net Banking</span>
-                                    </div>
-                                    <div className="flex gap-1 text-xs font-semibold text-muted-foreground">
-                                      <span>All Major Indian Banks Supported</span>
-                                    </div>
-                                  </div>
-                                </FormLabel>
-                              </FormItem>
                               </RadioGroup>
                             </FormControl>
                             <FormMessage />

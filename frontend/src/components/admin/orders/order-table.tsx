@@ -85,11 +85,15 @@ export function OrderTable({ data, isLoading }: OrderTableProps) {
     {
       accessorKey: "payment_method",
       header: "Payment",
-      cell: ({ row }) => (
-        <span className="uppercase text-xs font-medium text-muted-foreground">
-          {row.original.payment_method}
-        </span>
-      ),
+      cell: ({ row }) => {
+        const method = row.original.payment_method;
+        const displayMethod = method === 'razorpay' ? 'RAZORPAY (PENDING)' : method;
+        return (
+          <span className={`uppercase text-xs font-medium ${method === 'razorpay' ? 'text-amber-600' : 'text-muted-foreground'}`}>
+            {displayMethod}
+          </span>
+        );
+      },
     },
     {
       accessorKey: "status",

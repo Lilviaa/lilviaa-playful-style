@@ -120,13 +120,19 @@ export function CategoryTilesEditor() {
       }
     } catch (e) {}
 
-    // Factory fallback
-    setTiles([
-      { id: "CT-1", image_url: "https://images.unsplash.com/photo-1518831959646-742c3a14ebf7?auto=format&fit=crop&q=80&w=400", label: "Kurtas", link: "/shop?category=kurta", sort_order: 1 },
-      { id: "CT-2", image_url: "https://images.unsplash.com/photo-1514090458221-65bb69cf63e6?auto=format&fit=crop&q=80&w=400", label: "Shirts", link: "/shop?category=shirt", sort_order: 2 },
-      { id: "CT-3", image_url: "https://images.unsplash.com/photo-1522771930-78848d9293e8?auto=format&fit=crop&q=80&w=400", label: "Ethnic", link: "/shop?category=ethnic", sort_order: 3 },
-      { id: "CT-4", image_url: "https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9?auto=format&fit=crop&q=80&w=400", label: "Party", link: "/shop?category=party", sort_order: 4 }
-    ]);
+    // Factory fallback using real categories if available
+    if (categories && categories.length > 0) {
+      const defaultTiles = categories.slice(0, 4).map((c, i) => ({
+        id: `CT-${i + 1}`,
+        image_url: "https://images.unsplash.com/photo-1518831959646-742c3a14ebf7?auto=format&fit=crop&q=80&w=400", // Fallback placeholder image
+        label: c.name,
+        link: `/shop?category=${c.slug}`,
+        sort_order: i + 1,
+      }));
+      setTiles(defaultTiles);
+    } else {
+      setTiles([]);
+    }
     toast.info("Restored original values. Click 'Save Tiles' to apply.");
   };
 

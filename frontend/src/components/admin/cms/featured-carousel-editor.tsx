@@ -146,12 +146,17 @@ export function FeaturedCarouselEditor() {
       }
     } catch (e) {}
 
-    // Factory fallback
-    setFeatured([
-      { id: "FP-1", product_id: "p_1", sort_order: 1 },
-      { id: "FP-2", product_id: "p_2", sort_order: 2 },
-      { id: "FP-3", product_id: "p_3", sort_order: 3 },
-    ]);
+    // Factory fallback using real published products
+    const defaultProducts = products.filter(p => p.status === "published").slice(0, 3);
+    if (defaultProducts.length > 0) {
+      setFeatured(defaultProducts.map((p, i) => ({
+        id: `FP-${i+1}`,
+        product_id: p.id,
+        sort_order: i + 1
+      })));
+    } else {
+      setFeatured([]);
+    }
     setSection({
       id: `CMS-${Date.now()}`,
       key: "featured_products_section",

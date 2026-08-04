@@ -79,7 +79,6 @@ export function OrderDetailDrawer({ order, isOpen, onClose, onPrint }: OrderDeta
     updateTracking({ orderId: order.id, trackingNumber });
   };
 
-  const isCOD = order.payment_method === "cod";
 
   return (
     <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
@@ -115,29 +114,6 @@ export function OrderDetailDrawer({ order, isOpen, onClose, onPrint }: OrderDeta
             <h3 className="font-semibold text-cocoa mb-2">Order Status</h3>
             <OrderStatusStepper order={order} onUpdateStatus={handleUpdateStatus} />
 
-            {isCOD && order.status === "confirmed" && (
-              <div className="mt-4 p-4 bg-amber-50 rounded-xl border border-amber-200 flex items-start gap-3">
-                <Checkbox
-                  id="callConfirmed"
-                  checked={order.call_confirmed}
-                  onCheckedChange={(checked) =>
-                    updateCallConfirmed({ orderId: order.id, confirmed: checked as boolean })
-                  }
-                  className="mt-1 border-amber-400 data-[state=checked]:bg-amber-500"
-                />
-                <div className="grid gap-1.5 leading-none">
-                  <label
-                    htmlFor="callConfirmed"
-                    className="text-sm font-semibold leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-amber-900"
-                  >
-                    Call Confirmed (COD Requirement)
-                  </label>
-                  <p className="text-sm text-amber-700">
-                    You must call the customer to confirm this COD order before you can pack it.
-                  </p>
-                </div>
-              </div>
-            )}
           </section>
 
           {/* Customer & Shipping */}
@@ -217,9 +193,13 @@ export function OrderDetailDrawer({ order, isOpen, onClose, onPrint }: OrderDeta
                   <span>{formatINR(order.total)}</span>
                 </div>
               </div>
-              <div className="mt-4 flex gap-2">
-                <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-800 uppercase border border-slate-200">
-                  {order.payment_method}
+              <div className="mt-4 flex flex-wrap gap-2">
+                <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold uppercase border ${
+                  order.payment_method === 'razorpay' 
+                    ? 'bg-amber-50 text-amber-800 border-amber-200' 
+                    : 'bg-slate-100 text-slate-800 border-slate-200'
+                }`}>
+                  {order.payment_method === 'razorpay' ? 'Razorpay (Pending Confirm)' : order.payment_method}
                 </span>
                 <span className="inline-flex items-center rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-semibold text-emerald-800 capitalize border border-emerald-200">
                   {order.payment_status}
@@ -335,7 +315,7 @@ export function OrderDetailDrawer({ order, isOpen, onClose, onPrint }: OrderDeta
                       reason: returnReason,
                       reason_note: returnNote,
                       unboxing_video_provided: hasVideo,
-                      refund_method: order.payment_method === "cod" ? "bank_transfer" : "original_payment",
+                      refund_method: "original_payment",
                       refund_amount: order.total,
                       items: (order.items || []).map((item, i) => ({
                         id: `RI-new-${i}`,

@@ -174,7 +174,7 @@ def create_order(order: OrderCreate, request: Request, background_tasks: Backgro
     if abs(calculated_total - order.total_amount) > 1.0:
         raise AppError(f"Price mismatch: Server calculated ₹{calculated_total}, but frontend sent ₹{order.total_amount}. Please refresh the cart.", status_code=400)
             
-    is_cod = (order.payment_method == "cod")
+
 
     shipping_snapshot = {
         "full_name": order.full_name or "",
@@ -188,7 +188,7 @@ def create_order(order: OrderCreate, request: Request, background_tasks: Backgro
     # 4. Create the Order and reserve/deduct stock atomically via RPC
     rpc_args = {
         "p_user_id": user_id,
-        "p_status": "processing" if is_cod else "pending",
+        "p_status": "pending",
         "p_total_amount": float(calculated_total),
         "p_shipping_amount": float(shipping_amount),
         "p_payment_method": order.payment_method,
@@ -196,7 +196,6 @@ def create_order(order: OrderCreate, request: Request, background_tasks: Backgro
         "p_shipping_address": shipping_snapshot,
         "p_coupon_id": coupon_id,
         "p_discount_amount": float(discount_amount),
-        "p_is_cod": is_cod,
         "p_items": [{
             "product_variant_id": item.product_variant_id,
             "quantity": item.quantity,
@@ -222,10 +221,6 @@ def create_order(order: OrderCreate, request: Request, background_tasks: Backgro
     except Exception as e:
         raise AppError(f"Order created but failed to fetch details: {str(e)}")
 
-    if is_cod:
-        if user_email:
-            background_tasks.add_task(send_order_confirmation_email, user_email, created_order, order_items_data)
-        return created_order
 
     # 6. Razorpay Flow
     rzp = get_razorpay_client()
@@ -304,7 +299,20 @@ def verify_payment(req: VerifyPaymentRequest, background_tasks: BackgroundTasks)
 
     # 4. Update Order
     order_id = tx["order_id"]
-    supabase.table("orders").update({"status": "processing"}).eq("id", order_id).execute()
+    
+    # Fetch actual payment method from Razorpay (important for localhost testing where webhooks don't arrive)
+    captured_method = None
+    try:
+        payment = rzp.payment.fetch(req.razorpay_payment_id)
+        captured_method = payment.get("method")
+    except Exception:
+        pass
+
+    order_update_data = {"status": "processing"}
+    if captured_method:
+        order_update_data["payment_method"] = captured_method
+        
+    supabase.table("orders").update(order_update_data).eq("id", order_id).execute()
 
     # 5. Convert reserved stock to deducted stock
     items_res = supabase.table("order_items").select("*").eq("order_id", order_id).execute()
