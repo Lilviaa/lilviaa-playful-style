@@ -7,6 +7,7 @@ requires-python = ">=3.11"
 dependencies = [
     "boto3>=1.43.53",
     "fastapi>=0.139.2",
+    "firebase-admin>=7.5.0",
     "passlib[bcrypt]>=1.7.4",
     "pillow>=12.3.0",
     "pydantic-settings>=2.14.2",
