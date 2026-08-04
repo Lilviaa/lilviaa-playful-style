@@ -13,6 +13,9 @@ def init_firebase():
                 if cred_value.strip().startswith("{"):
                     import json
                     cred_dict = json.loads(cred_value)
+                    # Fix escaped newlines in private_key which is common in env vars
+                    if "private_key" in cred_dict:
+                        cred_dict["private_key"] = cred_dict["private_key"].replace("\\n", "\n")
                     cred = credentials.Certificate(cred_dict)
                     firebase_admin.initialize_app(cred)
                     print("Firebase Admin initialized successfully using JSON string.")
@@ -23,6 +26,8 @@ def init_firebase():
                 else:
                     print(f"WARNING: FIREBASE_SERVICE_ACCOUNT_JSON path '{cred_value}' not found.")
             except Exception as e:
+                import traceback
+                traceback.print_exc()
                 print(f"WARNING: Failed to initialize Firebase Admin: {e}")
         else:
             print("WARNING: FIREBASE_SERVICE_ACCOUNT_JSON not set. Firebase Admin not initialized properly.")
