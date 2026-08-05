@@ -20,6 +20,15 @@ class CompanySettingsBase(BaseModel):
     youtube_url: Optional[str] = None
     whatsapp_number: Optional[str] = None
     support_email: Optional[str] = None
+    
+    # Billing & Shipping Settings
+    enable_gst: bool = False
+    gst_percentage: float = 0.0
+    home_state: str = "Tamil Nadu"
+    shipping_charge_home: float = 0.0
+    shipping_charge_other: float = 0.0
+    enable_free_shipping: bool = False
+    free_shipping_above: float = 0.0
 
 class CompanySettingsUpdate(CompanySettingsBase):
     pass

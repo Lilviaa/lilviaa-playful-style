@@ -178,17 +178,40 @@ def create_order(order: OrderCreate, request: Request, background_tasks: Backgro
         discount_amount = validation.get("discountAmount", 0)
         coupon_id = validation.get("coupon_id")
         
-        shipping_amount = 0 if validation.get("freeShipping") else (0 if calculated_subtotal >= 3000 else 79)
+    # Fetch Company Settings
+    settings_res = supabase.table("company_settings").select("*").limit(1).execute()
+    settings = settings_res.data[0] if settings_res.data else {}
+    
+    enable_gst = settings.get("enable_gst", False)
+    gst_percentage = float(settings.get("gst_percentage") or 0.0)
+    home_state = settings.get("home_state", "Tamil Nadu")
+    shipping_charge_home = float(settings.get("shipping_charge_home") or 0.0)
+    shipping_charge_other = float(settings.get("shipping_charge_other") or 0.0)
+    enable_free_shipping = settings.get("enable_free_shipping", False)
+    free_shipping_above = float(settings.get("free_shipping_above") or 0.0)
+
+    taxable_amount = max(0.0, calculated_subtotal - discount_amount)
+    
+    coupon_free_shipping = False
+    if order.coupon_code and 'validation' in locals() and validation.get("freeShipping"):
+        coupon_free_shipping = True
+
+    if coupon_free_shipping or (enable_free_shipping and calculated_subtotal >= free_shipping_above):
+        shipping_amount = 0.0
     else:
-        shipping_amount = 0 if calculated_subtotal >= 3000 else 79
+        cust_state = (order.state or "").strip().lower()
+        if cust_state == home_state.strip().lower():
+            shipping_amount = shipping_charge_home
+        else:
+            shipping_amount = shipping_charge_other
 
-    calculated_total = calculated_subtotal + shipping_amount - discount_amount
-    calculated_total = max(0.0, calculated_total)
-
-    if abs(calculated_total - order.total_amount) > 1.0:
-        raise AppError(f"Price mismatch: Server calculated ₹{calculated_total}, but frontend sent ₹{order.total_amount}. Please refresh the cart.", status_code=400)
-            
-
+    if enable_gst:
+        gst_amount = (taxable_amount * gst_percentage) / 100.0
+    else:
+        gst_amount = 0.0
+        gst_percentage = 0.0
+        
+    calculated_total = taxable_amount + shipping_amount + gst_amount
 
     shipping_snapshot = {
         "full_name": order.full_name or "",
@@ -204,11 +227,16 @@ def create_order(order: OrderCreate, request: Request, background_tasks: Backgro
         "p_user_id": user_id,
         "p_status": "pending",
         "p_total_amount": float(calculated_total),
+        "p_subtotal": float(calculated_subtotal),
+        "p_taxable_amount": float(taxable_amount),
+        "p_gst_percentage": float(gst_percentage),
+        "p_gst_amount": float(gst_amount),
         "p_shipping_amount": float(shipping_amount),
         "p_payment_method": order.payment_method,
         "p_shipping_address_id": shipping_address_id,
         "p_shipping_address": shipping_snapshot,
         "p_coupon_id": coupon_id,
+        "p_coupon_code": order.coupon_code,
         "p_discount_amount": float(discount_amount),
         "p_items": [{
             "product_variant_id": item.product_variant_id,

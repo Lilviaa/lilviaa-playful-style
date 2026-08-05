@@ -21,8 +21,8 @@ class OrderCreate(BaseModel):
     save_as_default: Optional[bool] = False
     
     payment_method: str
-    total_amount: float
-    shipping_amount: float
+    total_amount: Optional[float] = None
+    shipping_amount: Optional[float] = None
     items: List[OrderItemCreate]
     
     coupon_code: Optional[str] = None
@@ -43,7 +43,11 @@ class OrderResponse(BaseModel):
     user_id: Optional[str] = None
     status: str
     total_amount: float
+    subtotal: Optional[float] = 0.0
+    taxable_amount: Optional[float] = 0.0
     shipping_amount: float
+    gst_percentage: Optional[float] = 0.0
+    gst_amount: Optional[float] = 0.0
     payment_method: str
     shipping_address_id: Optional[str] = None
     coupon_code: Optional[str] = None

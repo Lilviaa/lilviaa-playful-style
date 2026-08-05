@@ -6,8 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Loader2, UploadCloud, Building2, Phone, Mail, Globe, MapPin, Share2 } from "lucide-react";
+import { Loader2, UploadCloud, Building2, Phone, Mail, Globe, MapPin, Share2, Calculator } from "lucide-react";
 import { toast } from "sonner";
+import { Switch } from "@/components/ui/switch";
 
 export const Route = createFileRoute("/admin/shop")({
   component: CompanySettingsPage,
@@ -35,6 +36,14 @@ function CompanySettingsPage() {
     instagram_url: "",
     youtube_url: "",
     whatsapp_number: "",
+    whatsapp_number: "",
+    enable_gst: false,
+    gst_percentage: 0,
+    home_state: "Tamil Nadu",
+    shipping_charge_home: 0,
+    shipping_charge_other: 0,
+    enable_free_shipping: false,
+    free_shipping_above: 0,
   });
 
   useEffect(() => {
@@ -44,7 +53,15 @@ function CompanySettingsPage() {
   }, [settings]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData((prev: any) => ({ ...prev, [e.target.name]: e.target.value }));
+    const { name, value, type } = e.target;
+    setFormData((prev: any) => ({
+      ...prev,
+      [name]: type === 'number' ? Number(value) : value
+    }));
+  };
+
+  const handleSwitchChange = (name: string, checked: boolean) => {
+    setFormData((prev: any) => ({ ...prev, [name]: checked }));
   };
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -228,6 +245,110 @@ function CompanySettingsPage() {
               <Label>YouTube URL</Label>
               <Input name="youtube_url" value={formData.youtube_url || ""} onChange={handleChange} />
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Billing & Shipping */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Calculator className="h-5 w-5 text-primary" /> Billing & Shipping Settings
+            </CardTitle>
+            <CardDescription>Configure GST and shipping calculation rules</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            
+            {/* GST Settings */}
+            <div className="space-y-4 pb-4 border-b border-border">
+              <h3 className="font-semibold text-cocoa">Tax Settings</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="flex items-center justify-between p-4 border rounded-lg bg-sand/10">
+                  <div className="space-y-0.5">
+                    <Label className="text-base font-semibold">Enable GST Calculation</Label>
+                    <p className="text-sm text-muted-foreground">Automatically add GST to orders.</p>
+                  </div>
+                  <Switch 
+                    checked={formData.enable_gst || false} 
+                    onCheckedChange={(c) => handleSwitchChange("enable_gst", c)} 
+                  />
+                </div>
+                
+                {formData.enable_gst && (
+                  <div className="space-y-2">
+                    <Label>GST Percentage (%)</Label>
+                    <Input 
+                      type="number" 
+                      name="gst_percentage" 
+                      value={formData.gst_percentage || ""} 
+                      onChange={handleChange} 
+                      placeholder="e.g., 18" 
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Shipping Settings */}
+            <div className="space-y-4">
+              <h3 className="font-semibold text-cocoa">Shipping Settings</h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label>Home State (Case Insensitive)</Label>
+                  <Input 
+                    name="home_state" 
+                    value={formData.home_state || ""} 
+                    onChange={handleChange} 
+                    placeholder="e.g., Tamil Nadu" 
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Shipping Charge (Home State) ₹</Label>
+                  <Input 
+                    type="number" 
+                    name="shipping_charge_home" 
+                    value={formData.shipping_charge_home || ""} 
+                    onChange={handleChange} 
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Shipping Charge (Other States) ₹</Label>
+                  <Input 
+                    type="number" 
+                    name="shipping_charge_other" 
+                    value={formData.shipping_charge_other || ""} 
+                    onChange={handleChange} 
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                <div className="flex items-center justify-between p-4 border rounded-lg bg-sand/10">
+                  <div className="space-y-0.5">
+                    <Label className="text-base font-semibold">Enable Free Shipping Threshold</Label>
+                    <p className="text-sm text-muted-foreground">Offer free shipping over a certain amount.</p>
+                  </div>
+                  <Switch 
+                    checked={formData.enable_free_shipping || false} 
+                    onCheckedChange={(c) => handleSwitchChange("enable_free_shipping", c)} 
+                  />
+                </div>
+
+                {formData.enable_free_shipping && (
+                  <div className="space-y-2">
+                    <Label>Free Shipping Above (₹)</Label>
+                    <Input 
+                      type="number" 
+                      name="free_shipping_above" 
+                      value={formData.free_shipping_above || ""} 
+                      onChange={handleChange} 
+                      placeholder="e.g., 3000" 
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+
           </CardContent>
         </Card>
 

@@ -75,12 +75,13 @@ function InvoicePage() {
 
   const items = order.order_items || [];
   
-  // Calculate Subtotal dynamically from items
-  const subtotal = items.reduce((sum: number, item: any) => sum + (item.quantity * item.unit_price), 0);
+  // Extract stored snapshots with fallback to recalculation for old orders
+  const subtotal = order.subtotal !== undefined ? order.subtotal : items.reduce((sum: number, item: any) => sum + (item.quantity * item.unit_price), 0);
   const shipping = order.shipping_amount || 0;
-  
-  // Discount is not explicitly stored in the database, so we do not derive it to avoid fabricating data.
-  // GST is also missing.
+  const discount = order.discount_amount || 0;
+  const taxableAmount = order.taxable_amount !== undefined ? order.taxable_amount : Math.max(0, subtotal - discount);
+  const gstAmount = order.gst_amount || 0;
+  const gstPercentage = order.gst_percentage || 0;
 
   const handlePrint = () => {
     window.print();
@@ -260,10 +261,28 @@ function InvoicePage() {
                 <span>Subtotal</span>
                 <span className="font-bold">{formatINR(subtotal)}</span>
               </div>
+              {discount > 0 && (
+                <div className="flex justify-between items-center text-green-600">
+                  <span>Discount {order.coupon_code ? `(${order.coupon_code})` : ''}</span>
+                  <span className="font-bold">- {formatINR(discount)}</span>
+                </div>
+              )}
+              {gstAmount > 0 && (
+                <div className="flex justify-between items-center">
+                  <span>Taxable Amount</span>
+                  <span className="font-bold">{formatINR(taxableAmount)}</span>
+                </div>
+              )}
               <div className="flex justify-between items-center">
                 <span>Shipping</span>
                 <span className="font-bold">{shipping === 0 ? 'Free' : formatINR(shipping)}</span>
               </div>
+              {gstAmount > 0 && (
+                <div className="flex justify-between items-center">
+                  <span>GST ({gstPercentage}%)</span>
+                  <span className="font-bold">{formatINR(gstAmount)}</span>
+                </div>
+              )}
               
               <div className="h-px bg-[#E8D9CE] my-2" />
               

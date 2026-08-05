@@ -22,6 +22,15 @@ export interface CompanySettings {
   support_email?: string;
   created_at?: string;
   updated_at?: string;
+  
+  // Billing & Shipping Settings
+  enable_gst?: boolean;
+  gst_percentage?: number;
+  home_state?: string;
+  shipping_charge_home?: number;
+  shipping_charge_other?: number;
+  enable_free_shipping?: boolean;
+  free_shipping_above?: number;
 }
 
 // Public hook to fetch settings

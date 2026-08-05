@@ -4,6 +4,7 @@ import { useAuth } from "@/lib/auth";
 import { useAddresses } from "@/lib/addresses-api";
 import { API_URL } from "@/lib/products-api";
 import { apiFetch } from "@/lib/api";
+import { useCompanySettings } from "@/lib/admin/settings-api";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -60,11 +61,7 @@ function CheckoutPage() {
   const [isApplyingCoupon, setIsApplyingCoupon] = useState(false);
   const [couponError, setCouponError] = useState("");
   const [couponSuccess, setCouponSuccess] = useState("");
-
-  const discount = appliedCoupon?.valid ? appliedCoupon.discountAmount : 0;
-  const freeShipping = appliedCoupon?.valid ? appliedCoupon.freeShipping : false;
-  const shipping = freeShipping ? 0 : (subtotal === 0 ? 0 : subtotal >= 3000 ? 0 : 79);
-  const total = subtotal + shipping - discount;
+  const { data: settings } = useCompanySettings();
 
   const [activeStep, setActiveStep] = useState("step-1");
   const [completedSteps, setCompletedSteps] = useState<string[]>([]);
@@ -72,6 +69,43 @@ function CheckoutPage() {
   const [isVerifyingPayment, setIsVerifyingPayment] = useState(false);
   const [paymentError, setPaymentError] = useState<string | null>(null);
   const [isSummaryExpanded, setIsSummaryExpanded] = useState(false);
+
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      fullName: user?.full_name || "",
+      email: user?.email || "",
+      phone: user?.phone || "",
+      address: "",
+      city: "",
+      state: "",
+      zip: "",
+      paymentMethod: "razorpay",
+    },
+  });
+
+  const discount = appliedCoupon?.valid ? appliedCoupon.discountAmount : 0;
+  const taxableAmount = Math.max(0, subtotal - discount);
+  
+  const customerState = form.watch("state") || "";
+  let shipping = 0;
+  
+  const freeShipping = appliedCoupon?.valid ? appliedCoupon.freeShipping : false;
+  
+  if (settings) {
+    if (freeShipping || (settings.enable_free_shipping && subtotal >= (settings.free_shipping_above || 0))) {
+      shipping = 0;
+    } else if (customerState.trim().toLowerCase() === (settings.home_state || "").trim().toLowerCase()) {
+      shipping = settings.shipping_charge_home || 0;
+    } else {
+      shipping = settings.shipping_charge_other || 0;
+    }
+  } else {
+    shipping = freeShipping ? 0 : (subtotal >= 3000 ? 0 : 79);
+  }
+
+  const gstAmount = settings?.enable_gst ? (taxableAmount * (settings.gst_percentage || 0)) / 100 : 0;
+  const total = taxableAmount + shipping + gstAmount;
 
   async function handleApplyCoupon() {
     if (!couponCodeInput.trim()) return;
@@ -115,19 +149,7 @@ function CheckoutPage() {
     setCouponSuccess("");
   }
 
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      fullName: user?.full_name || "",
-      email: user?.email || "",
-      phone: user?.phone || "",
-      address: "",
-      city: "",
-      state: "",
-      zip: "",
-      paymentMethod: "razorpay",
-    },
-  });
+  // Form has been hoisted above the calculation logic to allow watch()
 
   useEffect(() => {
     if (user) {
@@ -165,8 +187,6 @@ function CheckoutPage() {
         state: values.state,
         zip: values.zip,
         payment_method: values.paymentMethod,
-        total_amount: total,
-        shipping_amount: shipping,
         save_as_default: (document.getElementById("save-address") as HTMLInputElement)?.checked ?? false,
         items: items.map(it => ({
           product_variant_id: it.variant_id,
@@ -795,22 +815,36 @@ function CheckoutPage() {
                   <dt>Subtotal</dt>
                   <dd className="font-semibold text-cocoa">{formatINR(subtotal)}</dd>
                 </div>
-                <div className="flex justify-between">
-                  <dt>Shipping</dt>
-                  <dd className="font-semibold text-cocoa">
-                    {shipping === 0 ? "Free" : formatINR(shipping)}
-                  </dd>
-                </div>
                 {discount > 0 && (
                   <div className="flex justify-between text-green-600">
                     <dt>Discount</dt>
                     <dd className="font-semibold">- {formatINR(discount)}</dd>
                   </div>
                 )}
+                {settings?.enable_gst && (
+                  <div className="flex justify-between">
+                    <dt>Taxable Amount</dt>
+                    <dd className="font-semibold text-cocoa">{formatINR(taxableAmount)}</dd>
+                  </div>
+                )}
+                <div className="flex justify-between">
+                  <dt>Shipping</dt>
+                  <dd className="font-semibold text-cocoa">
+                    {shipping === 0 ? (
+                       <span className="text-green-600 uppercase text-xs tracking-wider">Free</span>
+                    ) : formatINR(shipping)}
+                  </dd>
+                </div>
+                {settings?.enable_gst && (
+                  <div className="flex justify-between">
+                    <dt>GST ({settings.gst_percentage}%)</dt>
+                    <dd className="font-semibold text-cocoa">{formatINR(gstAmount)}</dd>
+                  </div>
+                )}
               </dl>
               
               <div className="mt-4 border-t border-border pt-4 flex justify-between text-xl font-black text-cocoa">
-                <span>Total</span>
+                <span>Grand Total</span>
                 <span>{formatINR(total)}</span>
               </div>
 
@@ -819,8 +853,8 @@ function CheckoutPage() {
                 <div className="text-muted-foreground">{deliveryString}</div>
                 <div className="mt-3 font-bold text-cocoa mb-1">Shipping Partner</div>
                 <div className="text-muted-foreground">DTDC Courier</div>
-                {shipping > 0 && (
-                  <div className="mt-3 text-primary font-bold text-xs">Free Shipping above {formatINR(3000)}</div>
+                {shipping > 0 && settings?.enable_free_shipping && (
+                  <div className="mt-3 text-primary font-bold text-xs">Free Shipping above {formatINR(settings.free_shipping_above || 0)}</div>
                 )}
               </div>
 
