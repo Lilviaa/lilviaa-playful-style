@@ -91,16 +91,16 @@ export function BulkActionsBar({ selectedIds, selectedProducts, clearSelection }
   };
 
   return (
-    <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-bottom-10 fade-in duration-300">
-      <div className="flex items-center gap-4 rounded-full border border-white/60 bg-white/70 backdrop-blur-xl px-6 py-3 shadow-[0_8px_30px_rgb(0,0,0,0.12)]">
-        <div className="flex items-center gap-2 border-r border-border pr-4">
+    <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-bottom-10 fade-in duration-300 w-full px-4 max-w-fit">
+      <div className="flex items-center gap-4 rounded-full border border-white/60 bg-white/70 backdrop-blur-xl px-4 md:px-6 py-3 shadow-[0_8px_30px_rgb(0,0,0,0.12)] overflow-x-auto whitespace-nowrap hide-scrollbar">
+        <div className="flex items-center gap-2 border-r border-border pr-4 shrink-0">
           <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
             {count}
           </span>
           <span className="text-sm font-semibold text-cocoa">selected</span>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 shrink-0">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
@@ -193,7 +193,7 @@ export function BulkActionsBar({ selectedIds, selectedProducts, clearSelection }
           </AlertDialog>
         </div>
 
-        <div className="border-l border-border pl-4">
+        <div className="border-l border-border pl-4 shrink-0">
           <Button
             variant="ghost"
             size="sm"

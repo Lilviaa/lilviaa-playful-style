@@ -564,19 +564,19 @@ export function ProductTable({
                   </div>
                 </div>
 
-                <div className="flex justify-between items-center mt-1 pl-9">
-                   <div className="flex flex-col">
-                     <span className="text-xs text-muted-foreground">Price</span>
-                     <span className="font-bold text-cocoa">{formatINR(product.base_price)}</span>
-                   </div>
-                   <div className="flex flex-col items-center">
-                     <span className="text-xs text-muted-foreground">Stock</span>
-                     <span className="font-semibold text-cocoa">{product.total_stock}</span>
-                   </div>
-                   <div className="flex flex-col items-end">
-                     <span className="text-xs text-muted-foreground mb-0.5">Status</span>
-                     <StatusBadge status={product.status as any} />
-                   </div>
+                <div className="flex justify-between items-center mt-2 bg-sand/30 p-2.5 rounded-xl border border-cocoa/5 text-sm w-full">
+                  <div className="flex flex-col items-center flex-1 border-r border-cocoa/10">
+                    <span className="text-[10px] uppercase tracking-wider text-muted-foreground mb-0.5">Price</span>
+                    <span className="font-bold text-cocoa">{formatINR(product.base_price)}</span>
+                  </div>
+                  <div className="flex flex-col items-center flex-1 border-r border-cocoa/10">
+                    <span className="text-[10px] uppercase tracking-wider text-muted-foreground mb-0.5">Stock</span>
+                    <span className="font-semibold text-cocoa">{product.total_stock}</span>
+                  </div>
+                  <div className="flex flex-col items-center flex-1">
+                    <span className="text-[10px] uppercase tracking-wider text-muted-foreground mb-0.5">Status</span>
+                    <StatusBadge status={product.status as any} />
+                  </div>
                 </div>
                 
                 {isDeletingRow && (

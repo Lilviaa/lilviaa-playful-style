@@ -70,11 +70,11 @@ function AdminProductsPage() {
           <h1 className="font-display text-3xl font-bold text-cocoa">Products</h1>
           <p className="text-muted-foreground mt-1">Manage your catalog, variants, and pricing.</p>
         </div>
-        <div className="flex flex-col sm:flex-row items-center gap-3 mt-4 sm:mt-0">
+        <div className="flex flex-row items-center gap-2 sm:gap-3 mt-4 sm:mt-0 w-full sm:w-auto overflow-x-auto pb-2 sm:pb-0 hide-scrollbar shrink-0">
           <CategoryManager>
             <Button
               variant="outline"
-              className="border-border text-cocoa bg-white shadow-sm hover:bg-muted/50"
+              className="border-border text-cocoa bg-white shadow-sm hover:bg-muted/50 shrink-0"
             >
               <FolderTree className="mr-2 h-4 w-4 text-muted-foreground" /> Categories
             </Button>
@@ -83,7 +83,7 @@ function AdminProductsPage() {
           <DiscountManager>
             <Button
               variant="outline"
-              className="border-border text-cocoa bg-white shadow-sm hover:bg-muted/50"
+              className="border-border text-cocoa bg-white shadow-sm hover:bg-muted/50 shrink-0"
             >
               <Tag className="mr-2 h-4 w-4 text-muted-foreground" /> Discounts
             </Button>
@@ -91,7 +91,7 @@ function AdminProductsPage() {
 
           <Button
             asChild
-            className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm"
+            className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm shrink-0"
           >
             <Link to="/admin/products/new">
               <Plus className="mr-2 h-4 w-4" /> Add Product
