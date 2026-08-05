@@ -301,26 +301,8 @@ export function ProductForm({ initialData }: ProductFormProps) {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="gender">For (Gender)</Label>
-                  <Select
-                    value={formData.gender || "unisex"}
-                    onValueChange={(val) => updateField("gender", val)}
-                  >
-                    <SelectTrigger id="gender">
-                      <SelectValue placeholder="Select gender" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="unisex">Unisex</SelectItem>
-                      <SelectItem value="boys">Boys</SelectItem>
-                      <SelectItem value="girls">Girls</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="tag">Collection (Badge)</Label>
+              <div className="space-y-2">
+                <Label htmlFor="tag">Collection (Badge)</Label>
                   <Select
                     value={formData.tag || "none"}
                     onValueChange={(val) => updateField("tag", val === "none" ? null : val)}
@@ -336,7 +318,6 @@ export function ProductForm({ initialData }: ProductFormProps) {
                     </SelectContent>
                   </Select>
                 </div>
-              </div>
 
               <div className="space-y-2">
                 <Label htmlFor="description">Description</Label>

@@ -31,18 +31,10 @@ export const Route = createFileRoute("/shop")({
   component: ShopPage,
 });
 
-const genders = [
-  { v: "all", l: "Everyone" },
-  { v: "boys", l: "Boys" },
-  { v: "girls", l: "Girls" },
-  { v: "unisex", l: "Unisex" },
-] as const;
-
 function ShopPage() {
   const search = Route.useSearch();
   const [cat, setCat] = useState<string>(search.category ?? "all");
   const [tag, setTag] = useState<string>(search.tag ?? "all");
-  const [gender, setGender] = useState<string>("all");
   const [sort, setSort] = useState<string>("featured");
 
   const { data: products = [], isLoading } = useProducts(
@@ -54,10 +46,9 @@ function ShopPage() {
   const items = useMemo(() => {
     return products.filter(
       (p) =>
-        (gender === "all" || p.gender === gender) &&
         (tag === "all" || p.tag === tag),
     );
-  }, [gender, tag, products]);
+  }, [tag, products]);
 
   return (
     <div>
@@ -84,13 +75,6 @@ function ShopPage() {
               options={[
                 { v: "all", l: "All" },
                 ...dbCategories
-                  .filter(c => 
-                    gender === "all" || 
-                    gender === "unisex" ||
-                    !c.applicable_genders ||
-                    c.applicable_genders.includes(gender) ||
-                    c.applicable_genders.includes("unisex")
-                  )
                   .map((c) => ({ v: c.slug, l: c.name })),
               ]}
             />
@@ -106,7 +90,6 @@ function ShopPage() {
             value={tag}
             onChange={setTag}
           />
-          <FilterGroup label="For" options={genders as any} value={gender} onChange={setGender} />
           <div className="mt-2 flex w-full flex-col gap-2 sm:ml-auto sm:mt-0 sm:w-auto sm:flex-row sm:items-center z-10">
             <span className="text-sm font-semibold text-cocoa">Sort:</span>
             <CustomSelect
