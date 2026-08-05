@@ -56,11 +56,11 @@ export function ProductCard({ product }: { product: Product }) {
   }
 
   return (
-    <ScrollReveal>
+    <ScrollReveal className="h-full">
       <Link
         to="/products/$slug"
         params={{ slug: product.slug }}
-        className="group relative flex flex-col overflow-hidden rounded-3xl bg-card shadow-cute transition-all hover:-translate-y-1 hover:shadow-pop"
+        className="h-full group relative flex flex-col overflow-hidden rounded-3xl bg-card shadow-cute transition-all hover:-translate-y-1 hover:shadow-pop"
       >
         <div className="relative aspect-square overflow-hidden bg-sand">
           <img
