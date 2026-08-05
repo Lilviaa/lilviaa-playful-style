@@ -59,8 +59,24 @@ async def get_current_user_token(
                     "token": token
                 }
             else:
+                # Auto-sync user if they don't exist in Supabase but have a valid Firebase token
+                import uuid
+                new_user_id = str(uuid.uuid4())
+                
+                admin.table("users").insert({
+                    "id": new_user_id,
+                    "email": email,
+                    "role": "customer",
+                    "is_verified": True
+                }).execute()
+                
+                admin.table("user_profiles").insert({
+                    "user_id": new_user_id,
+                    "full_name": email.split("@")[0] if email else "User",
+                }).execute()
+                
                 return {
-                    "sub": firebase_uid,
+                    "sub": new_user_id,
                     "firebase_uid": firebase_uid,
                     "email": email,
                     "role": "customer",
