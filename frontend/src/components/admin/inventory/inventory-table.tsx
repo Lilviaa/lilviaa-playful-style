@@ -22,6 +22,7 @@ import { Input } from "@/components/ui/input";
 import { ArrowUpDown, Search, ChevronDown, ChevronRight } from "lucide-react";
 import { InventoryItem } from "@/lib/admin/inventory-api";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 interface InventoryTableProps {
   data: InventoryItem[];
@@ -122,6 +123,7 @@ export function InventoryTable({ data, isLoading, filterLowStock }: InventoryTab
     },
     {
       accessorKey: "sku",
+      meta: { className: "hidden md:table-cell" },
       header: "SKU",
       cell: ({ row }) => (
         <span className="font-mono text-xs text-muted-foreground">{row.original.sku}</span>
@@ -130,6 +132,7 @@ export function InventoryTable({ data, isLoading, filterLowStock }: InventoryTab
     {
       accessorKey: "stock",
       enableGlobalFilter: false,
+      meta: { className: "hidden sm:table-cell" },
       header: ({ column }) => {
         return (
           <Button
@@ -147,6 +150,7 @@ export function InventoryTable({ data, isLoading, filterLowStock }: InventoryTab
     {
       accessorKey: "reserved_stock",
       enableGlobalFilter: false,
+      meta: { className: "hidden md:table-cell" },
       header: ({ column }) => {
         return (
           <Button
@@ -185,6 +189,7 @@ export function InventoryTable({ data, isLoading, filterLowStock }: InventoryTab
     {
       accessorKey: "sales",
       enableGlobalFilter: false,
+      meta: { className: "hidden lg:table-cell" },
       header: ({ column }) => {
         return (
           <Button
@@ -203,6 +208,7 @@ export function InventoryTable({ data, isLoading, filterLowStock }: InventoryTab
       id: "status",
       header: "Status",
       enableGlobalFilter: false,
+      meta: { className: "hidden sm:table-cell" },
       accessorFn: (row) => row.stock - row.reserved_stock,
       cell: ({ row }) => {
         const available = row.original.stock - row.original.reserved_stock;
@@ -274,7 +280,7 @@ export function InventoryTable({ data, isLoading, filterLowStock }: InventoryTab
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id} className="hover:bg-transparent border-0">
                 {headerGroup.headers.map((header) => (
-                  <TableHead key={header.id} className="text-cocoa font-bold">
+                  <TableHead key={header.id} className={cn("text-cocoa font-bold whitespace-nowrap", (header.column.columnDef.meta as any)?.className)}>
                     {header.isPlaceholder
                       ? null
                       : flexRender(header.column.columnDef.header, header.getContext())}
@@ -293,7 +299,7 @@ export function InventoryTable({ data, isLoading, filterLowStock }: InventoryTab
                   }`}
                 >
                   {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id} className={row.parentId && cell.column.id === 'product' ? 'pl-8' : ''}>
+                    <TableCell key={cell.id} className={cn(row.parentId && cell.column.id === 'product' ? 'pl-8' : '', (cell.column.columnDef.meta as any)?.className)}>
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </TableCell>
                   ))}

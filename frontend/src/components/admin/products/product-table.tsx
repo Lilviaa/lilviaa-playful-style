@@ -182,6 +182,7 @@ export function ProductTable({
     },
     {
       accessorKey: "category",
+      meta: { className: "hidden md:table-cell" },
       header: ({ column }) => {
         return (
           <Button
@@ -240,6 +241,7 @@ export function ProductTable({
     },
     {
       accessorKey: "total_stock",
+      meta: { className: "hidden md:table-cell" },
       header: ({ column }) => {
         return (
           <Button
@@ -265,6 +267,7 @@ export function ProductTable({
     },
     {
       accessorKey: "status",
+      meta: { className: "hidden sm:table-cell" },
       header: ({ column }) => {
         return (
           <Button
@@ -405,7 +408,7 @@ export function ProductTable({
           {table.getHeaderGroups().map((headerGroup) => (
             <TableRow key={headerGroup.id} className="hover:bg-transparent border-0 group">
               {headerGroup.headers.map((header) => (
-                <TableHead key={header.id} className="text-cocoa font-bold">
+                <TableHead key={header.id} className={cn("text-cocoa font-bold whitespace-nowrap", (header.column.columnDef.meta as any)?.className)}>
                   {header.isPlaceholder
                     ? null
                     : flexRender(header.column.columnDef.header, header.getContext())}
@@ -418,8 +421,8 @@ export function ProductTable({
           {isLoading ? (
             Array.from({ length: 5 }).map((_, i) => (
               <TableRow key={`skeleton-${i}`}>
-                {columns.map((_, j) => (
-                  <TableCell key={`cell-${i}-${j}`} className="py-4">
+                {columns.map((col, j) => (
+                  <TableCell key={`cell-${i}-${j}`} className={cn("py-4", (col.meta as any)?.className)}>
                     <Skeleton className="h-5 w-[80%] rounded-md" />
                   </TableCell>
                 ))}
@@ -459,7 +462,7 @@ export function ProductTable({
                 }}
               >
                 {row.getVisibleCells().map((cell) => (
-                  <TableCell key={cell.id} className="relative">
+                  <TableCell key={cell.id} className={cn("relative", (cell.column.columnDef.meta as any)?.className)}>
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
                   </TableCell>
                 ))}
