@@ -148,22 +148,32 @@ export function PromoStripEditor() {
         </div>
       )}
       
-      <div className="pt-4 border-t border-cocoa/10 flex items-center justify-end gap-3">
-        <Button variant="ghost" onClick={handleSetAsDefault} className="rounded-full px-4 text-xs font-semibold text-cocoa/50 hover:text-cocoa hover:bg-cocoa/5 mr-auto">
-          Set as Default
-        </Button>
-        {hasUnsavedChanges && (
-          <span className="text-[11px] font-medium text-amber-600 mr-2 flex items-center gap-1.5">
-            <span className="h-1.5 w-1.5 rounded-full bg-amber-500"></span>
-            Unsaved changes
-          </span>
-        )}
-        <Button variant="outline" onClick={handleResetToDefault} className="rounded-full px-6 text-cocoa/70 border-cocoa/20 hover:bg-cocoa/5">
-          Reset to Default
-        </Button>
-        <Button onClick={handleSave} disabled={isPending || !hasUnsavedChanges} className="bg-cocoa hover:bg-cocoa/90 disabled:opacity-50 text-white rounded-full px-8 transition-all">
-          {isPending ? "Saving..." : "Save Changes"}
-        </Button>
+      <div className="pt-4 border-t border-cocoa/10 flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-3">
+        <div className="flex w-full sm:w-auto items-center justify-between sm:mr-auto mb-2 sm:mb-0">
+          <Button variant="ghost" onClick={handleSetAsDefault} className="rounded-full px-4 text-xs font-semibold text-cocoa/50 hover:text-cocoa hover:bg-cocoa/5 -ml-2 sm:ml-0">
+            Set as Default
+          </Button>
+          {hasUnsavedChanges && (
+            <span className="text-[11px] font-medium text-amber-600 sm:hidden flex items-center gap-1.5">
+              <span className="h-1.5 w-1.5 rounded-full bg-amber-500"></span>
+              Unsaved changes
+            </span>
+          )}
+        </div>
+        <div className="flex w-full sm:w-auto items-center justify-end gap-2 sm:gap-3">
+          {hasUnsavedChanges && (
+            <span className="text-[11px] font-medium text-amber-600 hidden sm:flex items-center gap-1.5 mr-2">
+              <span className="h-1.5 w-1.5 rounded-full bg-amber-500"></span>
+              Unsaved changes
+            </span>
+          )}
+          <Button variant="outline" onClick={handleResetToDefault} className="flex-1 sm:flex-none rounded-full px-4 sm:px-6 text-cocoa/70 border-cocoa/20 hover:bg-cocoa/5 text-xs sm:text-sm">
+            Reset to Default
+          </Button>
+          <Button onClick={handleSave} disabled={isPending || !hasUnsavedChanges} className="flex-1 sm:flex-none bg-cocoa hover:bg-cocoa/90 disabled:opacity-50 text-white rounded-full px-4 sm:px-8 transition-all text-xs sm:text-sm">
+            {isPending ? "Saving..." : "Save Changes"}
+          </Button>
+        </div>
       </div>
     </div>
   );

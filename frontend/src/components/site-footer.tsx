@@ -2,6 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { Instagram, Facebook, Youtube } from "lucide-react";
 import logoAsset from "@/assets/lilviaa-logo.png.asset.json";
 import { SizeGuide } from "@/components/size-guide";
+import { useCompanySettings } from "@/lib/admin/settings-api";
 
 const WhatsAppIcon = ({ className }: { className?: string }) => (
   <svg className={className} viewBox="0 0 24 24" fill="currentColor">
@@ -10,19 +11,43 @@ const WhatsAppIcon = ({ className }: { className?: string }) => (
 );
 
 export function SiteFooter() {
+  const { data: settings } = useCompanySettings();
+
+  const storeName = settings?.company_name || "Lil Viaaa";
+  const storeAddress = settings?.address_line 
+    ? `${settings.address_line}, ${settings.city}, ${settings.state} - ${settings.pincode}`
+    : "Lil Viaa, Mettupalayam Bus Stop, P.N. Road, Tiruppur, Tamil Nadu";
+    
+  const phone = settings?.phone_primary 
+    ? `${settings.phone_primary} ${settings.phone_secondary ? `/ ${settings.phone_secondary}` : ''}`
+    : "+91 82201 27481 / +91 82201 27170";
+
+  const instagram = settings?.instagram_url || "https://www.instagram.com/lil_viaa/";
+  const facebook = settings?.facebook_url || "https://www.facebook.com/lilviaa";
+  const youtube = settings?.youtube_url || "https://www.youtube.com/@LilViaa-b4w";
+  
+  const whatsappPhone = settings?.phone_primary 
+    ? settings.phone_primary.replace(/[^0-9]/g, '') 
+    : "919843153154";
+  const whatsappUrl = `https://api.whatsapp.com/send?phone=${whatsappPhone}`;
+
   return (
     <footer className="mt-16 bg-cocoa text-cream">
       <div className="mx-auto flex max-w-7xl flex-col gap-10 px-6 py-10 md:flex-row md:justify-between lg:px-8">
         <div className="max-w-md">
           <div className="inline-block rounded-2xl bg-cream p-3 shadow-sm">
-            <img src={logoAsset.url} alt="lilviaa" className="h-16 w-auto" />
+            {settings?.logo_url ? (
+              <img src={settings.logo_url} alt={storeName} className="h-16 w-auto object-contain" />
+            ) : (
+              <img src={logoAsset.url} alt={storeName} className="h-16 w-auto" />
+            )}
           </div>
           <p className="mt-5 text-base leading-relaxed text-cream/90">
             Playful, high-quality clothing for the tiny humans who steal the show.
           </p>
           <div className="mt-5 space-y-1.5 text-base text-cream/90">
-            <p><strong>Store:</strong> Lil Viaa, Mettupalayam Bus Stop, P.N. Road, Tiruppur, Tamil Nadu</p>
-            <p><strong>Phone:</strong> +91 82201 27481 / +91 82201 27170</p>
+            <p><strong>Store:</strong> {storeAddress}</p>
+            <p><strong>Phone:</strong> {phone}</p>
           </div>
           <div className="mt-5 relative group cursor-pointer overflow-hidden rounded-2xl">
             <a 
@@ -48,16 +73,16 @@ export function SiteFooter() {
             ></iframe>
           </div>
           <div className="mt-7 flex gap-4">
-            <a className="rounded-full bg-cream/10 p-3 transition-all hover:scale-105 hover:bg-cream/20" href="https://www.instagram.com/lil_viaa/" target="_blank" rel="noreferrer" aria-label="Instagram">
+            <a className="rounded-full bg-cream/10 p-3 transition-all hover:scale-105 hover:bg-cream/20" href={instagram} target="_blank" rel="noreferrer" aria-label="Instagram">
               <Instagram className="h-5 w-5" />
             </a>
-            <a className="rounded-full bg-cream/10 p-3 transition-all hover:scale-105 hover:bg-cream/20" href="https://api.whatsapp.com/send?phone=919843153154" target="_blank" rel="noreferrer" aria-label="WhatsApp">
+            <a className="rounded-full bg-cream/10 p-3 transition-all hover:scale-105 hover:bg-cream/20" href={whatsappUrl} target="_blank" rel="noreferrer" aria-label="WhatsApp">
               <WhatsAppIcon className="h-5 w-5" />
             </a>
-            <a className="rounded-full bg-cream/10 p-3 transition-all hover:scale-105 hover:bg-cream/20" href="https://www.facebook.com/lilviaa" target="_blank" rel="noreferrer" aria-label="Facebook">
+            <a className="rounded-full bg-cream/10 p-3 transition-all hover:scale-105 hover:bg-cream/20" href={facebook} target="_blank" rel="noreferrer" aria-label="Facebook">
               <Facebook className="h-5 w-5" />
             </a>
-            <a className="rounded-full bg-cream/10 p-3 transition-all hover:scale-105 hover:bg-cream/20" href="https://www.youtube.com/@LilViaa-b4w" target="_blank" rel="noreferrer" aria-label="YouTube">
+            <a className="rounded-full bg-cream/10 p-3 transition-all hover:scale-105 hover:bg-cream/20" href={youtube} target="_blank" rel="noreferrer" aria-label="YouTube">
               <Youtube className="h-5 w-5" />
             </a>
           </div>
@@ -97,7 +122,7 @@ export function SiteFooter() {
         </div>
       </div>
       <div className="flex flex-col items-center justify-between gap-4 border-t border-cream/10 px-6 py-5 text-cream/60 md:flex-row">
-        <div className="text-sm">© {new Date().getFullYear()} Lil Viaaa. All Rights Reserved.</div>
+        <div className="text-sm">© {new Date().getFullYear()} {storeName}. All Rights Reserved.</div>
         <div className="text-xs">
           Powered by <a href="https://www.arcvex.in/" target="_blank" rel="noopener noreferrer" className="font-semibold text-cream hover:underline">ARCVEX</a>
         </div>

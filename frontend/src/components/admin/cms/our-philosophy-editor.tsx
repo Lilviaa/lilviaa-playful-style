@@ -172,16 +172,20 @@ export function OurPhilosophyEditor() {
         </div>
       </div>
       
-      <div className="pt-4 border-t border-cocoa/10 flex items-center justify-end gap-3">
-        <Button variant="ghost" onClick={handleSetAsDefault} className="rounded-full px-4 text-xs font-semibold text-cocoa/50 hover:text-cocoa hover:bg-cocoa/5 mr-auto">
-          Set as Default
-        </Button>
-        <Button variant="outline" onClick={handleResetToDefault} className="rounded-full px-6 text-cocoa/70 border-cocoa/20 hover:bg-cocoa/5">
-          Reset to Default
-        </Button>
-        <Button onClick={handleSave} disabled={isSectionPending || isCardsPending} className="bg-cocoa hover:bg-cocoa/90 text-white rounded-full px-8">
-          {isSectionPending || isCardsPending ? "Saving..." : "Save Changes"}
-        </Button>
+      <div className="pt-4 border-t border-cocoa/10 flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-3">
+        <div className="flex w-full sm:w-auto items-center justify-between sm:mr-auto mb-2 sm:mb-0">
+          <Button variant="ghost" onClick={handleSetAsDefault} className="rounded-full px-4 text-xs font-semibold text-cocoa/50 hover:text-cocoa hover:bg-cocoa/5 -ml-2 sm:ml-0">
+            Set as Default
+          </Button>
+        </div>
+        <div className="flex w-full sm:w-auto items-center justify-end gap-2 sm:gap-3">
+          <Button variant="outline" onClick={handleResetToDefault} className="flex-1 sm:flex-none rounded-full px-4 sm:px-6 text-cocoa/70 border-cocoa/20 hover:bg-cocoa/5 text-xs sm:text-sm">
+            Reset to Default
+          </Button>
+          <Button onClick={handleSave} disabled={isSectionPending || isCardsPending} className="flex-1 sm:flex-none bg-cocoa hover:bg-cocoa/90 text-white rounded-full px-4 sm:px-8 transition-all text-xs sm:text-sm">
+            {isSectionPending || isCardsPending ? "Saving..." : "Save Changes"}
+          </Button>
+        </div>
       </div>
     </div>
   );
