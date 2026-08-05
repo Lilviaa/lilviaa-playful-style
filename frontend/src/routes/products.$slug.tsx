@@ -269,7 +269,7 @@ function ProductPage() {
             </span>
           )}
           
-          <h1 className="font-['Outfit'] text-3xl font-bold tracking-tight text-gray-900 md:text-4xl">
+          <h1 className="font-['Playfair_Display'] text-4xl font-semibold tracking-tight text-cocoa md:text-5xl">
             {product.name}
           </h1>
           
