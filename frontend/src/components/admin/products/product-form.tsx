@@ -345,7 +345,6 @@ export function ProductForm({ initialData }: ProductFormProps) {
               />
             </div>
           </div>
-          </div>
         </div>
 
         {/* Sidebar Column */}
@@ -435,7 +434,6 @@ export function ProductForm({ initialData }: ProductFormProps) {
                 </div>
               )}
             </div>
-          </div>
           </div>
         </div>
       </div>
