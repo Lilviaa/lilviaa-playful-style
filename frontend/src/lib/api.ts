@@ -29,11 +29,24 @@ export async function apiFetch(endpoint: string, options: FetchOptions = {}): Pr
 
   const headers = new Headers(options.headers || {});
   
+  // Wait for Firebase auth to be fully ready before checking currentUser.
+  // This prevents a race condition where currentUser is null during page navigation
+  // even though the user is actually logged in (Firebase just hasn't loaded from cache yet).
+  let hadToken = false;
+  if (typeof window !== "undefined") {
+    try {
+      await auth.authStateReady();
+    } catch (_) {
+      // ignore — auth may not be initialized in SSR
+    }
+  }
+  
   if (auth.currentUser) {
     try {
       const token = await auth.currentUser.getIdToken();
       if (token) {
         headers.set("Authorization", `Bearer ${token}`);
+        hadToken = true;
       }
     } catch (e) {
       console.warn("Failed to get Firebase token", e);
@@ -62,8 +75,10 @@ export async function apiFetch(endpoint: string, options: FetchOptions = {}): Pr
 
   let response = await fetch(url, fetchOptions);
 
-  // Handle Token Refresh on 401
-  if (response.status === 401 && !options.skipRefresh) {
+  // Handle Token Refresh on 401 — only fire session-expired if we actually sent
+  // a token. If no token was attached (e.g. public endpoint), a 401 is expected
+  // and should NOT trigger a logout.
+  if (response.status === 401 && !options.skipRefresh && hadToken) {
     // Refresh failed (expired/invalid). Force logout.
     if (typeof window !== "undefined") {
       window.dispatchEvent(new Event("session-expired"));

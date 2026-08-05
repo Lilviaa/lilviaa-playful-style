@@ -264,12 +264,12 @@ function ProductPage() {
         {/* Right Column - Sticky Details */}
         <div className="flex flex-col lg:sticky lg:top-24 h-fit">
           {product.tag && (
-            <span className="mb-3 inline-block self-start border border-primary/20 bg-primary/5 text-primary px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest">
+            <span className="mb-3 inline-block self-start bg-amber-200/90 text-amber-900 px-3 py-1 text-[10px] font-bold uppercase tracking-widest rounded-full">
               {product.tag}
             </span>
           )}
           
-          <h1 className="font-display text-3xl leading-tight text-cocoa md:text-4xl">
+          <h1 className="font-['Outfit'] text-3xl font-bold tracking-tight text-gray-900 md:text-4xl">
             {product.name}
           </h1>
           
@@ -290,14 +290,7 @@ function ProductPage() {
             )}
           </div>
 
-          <div className="mt-4 flex flex-col gap-2 text-sm font-medium text-cocoa/90">
-            <div className="flex items-center gap-2">
-              <span className="flex items-center justify-center h-4 w-4 rounded-full bg-green-100 text-green-700 text-[10px] font-bold">✓</span> Ships in 2–4 Days
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="flex items-center justify-center h-4 w-4 rounded-full bg-green-100 text-green-700 text-[10px] font-bold">✓</span> Free Shipping above ₹3000
-            </div>
-          </div>
+
 
           <hr className="my-8 border-border" />
 
@@ -307,20 +300,20 @@ function ProductPage() {
               <div className="mb-3 flex items-center justify-between">
                 <div className="text-sm font-bold text-cocoa uppercase tracking-wider">Select Size</div>
                 <SizeGuide>
-                  <button className="flex items-center gap-1.5 text-xs font-bold text-cocoa hover:text-primary transition-colors uppercase tracking-widest">
-                    <Ruler className="h-3.5 w-3.5" /> Size guide
+                  <button className="text-[11px] font-bold text-primary hover:underline uppercase tracking-wide">
+                    Size guide
                   </button>
                 </SizeGuide>
               </div>
-              <div className="flex flex-wrap gap-3">
+              <div className="flex flex-wrap gap-2">
                 {product.sizes.map((s) => (
                   <button
                     key={s}
                     onClick={() => setSize(s)}
-                    className={`min-w-[4rem] px-4 py-3 text-sm font-bold transition-all ${
+                    className={`px-5 py-2 text-sm font-semibold rounded-full transition-all border ${
                       size === s
-                        ? "bg-cocoa text-white ring-1 ring-cocoa"
-                        : "bg-transparent text-cocoa border border-border hover:border-cocoa"
+                        ? "bg-primary text-white border-primary shadow-sm"
+                        : "bg-white text-gray-700 border-gray-200 hover:border-primary/50"
                     }`}
                   >
                     {s}
@@ -384,6 +377,21 @@ function ProductPage() {
             >
               Buy it Now
             </button>
+          </div>
+
+          {/* 3 Info Cards (New UI style) */}
+          <div className="mt-8 flex flex-wrap gap-3">
+            <div className="flex items-center gap-2 bg-[#F7F2EC] px-4 py-2.5 rounded-full text-xs font-semibold text-cocoa shadow-sm">
+              <Truck className="h-4 w-4 text-primary" /> Free ship &gt; ₹3000
+            </div>
+            <div className="flex items-center gap-2 bg-[#F7F2EC] px-4 py-2.5 rounded-full text-xs font-semibold text-cocoa shadow-sm">
+              <ShieldCheck className="h-4 w-4 text-primary" /> Skin-safe fabric
+            </div>
+            <SizeGuide>
+              <button className="flex items-center gap-2 bg-[#F7F2EC] px-4 py-2.5 rounded-full text-xs font-semibold text-cocoa hover:text-primary transition-colors shadow-sm">
+                <Ruler className="h-4 w-4 text-primary" /> Check size guide
+              </button>
+            </SizeGuide>
           </div>
 
           {/* SKU, Category & Payments */}
