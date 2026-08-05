@@ -110,8 +110,9 @@ export function OrderTable({ data, isLoading }: OrderTableProps) {
 
   return (
     <>
-      <div className="rounded-2xl border border-cocoa/10 bg-white shadow-sm overflow-hidden">
-        <Table>
+      <div className="rounded-2xl border border-cocoa/10 bg-white shadow-sm overflow-hidden flex flex-col">
+        <div className="hidden md:block">
+          <Table>
           <TableHeader className="bg-sand/50 border-b border-cocoa/10">
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id} className="hover:bg-transparent border-0">
@@ -162,6 +163,62 @@ export function OrderTable({ data, isLoading }: OrderTableProps) {
             )}
           </TableBody>
         </Table>
+        </div>
+
+        {/* Mobile Card Layout */}
+        <div className="flex flex-col md:hidden divide-y divide-cocoa/10">
+          {isLoading ? (
+            Array.from({ length: 3 }).map((_, i) => (
+              <div key={`mob-skeleton-${i}`} className="p-4 flex flex-col gap-3">
+                 <Skeleton className="h-5 w-1/3" />
+                 <Skeleton className="h-4 w-1/2" />
+                 <Skeleton className="h-12 w-full rounded-xl mt-2" />
+              </div>
+            ))
+          ) : table.getRowModel().rows?.length ? (
+            table.getRowModel().rows.map((row) => {
+              const order = row.original;
+              return (
+                <div 
+                  key={row.id} 
+                  onClick={() => handleRowClick(order)}
+                  className="flex flex-col gap-2 p-4 bg-white hover:bg-primary/5 transition-colors cursor-pointer"
+                >
+                  <div className="flex justify-between items-start">
+                    <span className="font-semibold text-cocoa leading-tight">{formatOrderId(order.id)}</span>
+                    <span className="text-xs text-muted-foreground">{new Date(order.created_at).toLocaleDateString()}</span>
+                  </div>
+                  
+                  <div className="flex flex-col">
+                    <span className="font-medium text-cocoa text-sm">{order.shipping_address.fullName}</span>
+                    <span className="text-xs text-muted-foreground">{order.items?.length || 0} item{order.items?.length === 1 ? '' : 's'}</span>
+                  </div>
+
+                  <div className="flex justify-between items-center mt-2 bg-sand/30 p-2.5 rounded-xl border border-cocoa/5 text-sm w-full">
+                    <div className="flex flex-col items-center flex-1 border-r border-cocoa/10">
+                      <span className="text-[10px] uppercase tracking-wider text-muted-foreground mb-0.5">Total</span>
+                      <span className="font-bold text-cocoa">{formatINR(order.total)}</span>
+                    </div>
+                    <div className="flex flex-col items-center flex-1 border-r border-cocoa/10">
+                      <span className="text-[10px] uppercase tracking-wider text-muted-foreground mb-0.5">Payment</span>
+                      <span className={`text-[9px] font-semibold text-center ${order.payment_method === 'razorpay' ? 'text-amber-600' : 'text-muted-foreground uppercase'}`}>
+                        {order.payment_method === 'razorpay' ? 'RAZORPAY (PENDING)' : order.payment_method}
+                      </span>
+                    </div>
+                    <div className="flex flex-col items-center flex-1">
+                      <span className="text-[10px] uppercase tracking-wider text-muted-foreground mb-0.5">Status</span>
+                      <OrderStatusBadge status={order.status} />
+                    </div>
+                  </div>
+                </div>
+              );
+            })
+          ) : (
+            <div className="p-8 text-center text-muted-foreground">
+              No orders found.
+            </div>
+          )}
+        </div>
       </div>
 
       <OrderDetailDrawer

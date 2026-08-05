@@ -68,7 +68,8 @@ export function CouponTable({ data, isLoading }: CouponTableProps) {
   }
 
   return (
-    <div className="rounded-2xl border border-cocoa/10 bg-white shadow-sm overflow-hidden">
+    <div className="rounded-2xl border border-cocoa/10 bg-white shadow-sm overflow-hidden flex flex-col">
+      <div className="hidden md:block">
       <table className="w-full text-sm">
         <thead className="bg-sand/50 border-b border-cocoa/10">
           <tr>
@@ -177,6 +178,66 @@ export function CouponTable({ data, isLoading }: CouponTableProps) {
           })}
         </tbody>
       </table>
+      </div>
+
+      {/* Mobile Card Layout */}
+      <div className="flex flex-col md:hidden divide-y divide-cocoa/10">
+        {data.map((coupon) => {
+          const status = getCouponStatus(coupon);
+          const usageStr = coupon.usage_limit_total
+            ? `${coupon.times_used ?? 0} / ${coupon.usage_limit_total}`
+            : `${coupon.times_used ?? 0} / ∞`;
+          
+          const valueStr = coupon.type === "flat"
+            ? formatINR(coupon.value)
+            : coupon.type === "percent"
+            ? `${coupon.value}%`
+            : "—";
+
+          return (
+            <div key={coupon.id} className="flex flex-col gap-2 p-4 bg-white hover:bg-primary/5 transition-colors">
+              <div className="flex justify-between items-start">
+                <div className="flex items-center gap-2">
+                  <code className="font-mono font-bold text-cocoa bg-sand/50 px-2 py-0.5 rounded text-sm">
+                    {coupon.code}
+                  </code>
+                  <Badge variant="outline" className="text-[10px]">{typeLabel[coupon.type]}</Badge>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Switch
+                    checked={coupon.active}
+                    onCheckedChange={(checked) => toggle({ id: coupon.id, active: checked })}
+                    className="scale-75"
+                  />
+                  <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => navigate({ to: "/admin/coupons/$couponId", params: { couponId: coupon.id }, search: { edit: true } })}>
+                    <Pencil className="h-4 w-4 text-muted-foreground" />
+                  </Button>
+                </div>
+              </div>
+
+              <div className="flex justify-between items-center text-xs text-muted-foreground mt-1">
+                <span>Min: {formatINR(coupon.min_cart_value)}</span>
+                <span>Valid: {new Date(coupon.end_date).toLocaleDateString()}</span>
+              </div>
+
+              <div className="flex justify-between items-center mt-2 bg-sand/30 p-2.5 rounded-xl border border-cocoa/5 text-sm w-full">
+                <div className="flex flex-col items-center flex-1 border-r border-cocoa/10">
+                  <span className="text-[10px] uppercase tracking-wider text-muted-foreground mb-0.5">Value</span>
+                  <span className="font-bold text-cocoa">{valueStr}</span>
+                </div>
+                <div className="flex flex-col items-center flex-1 border-r border-cocoa/10">
+                  <span className="text-[10px] uppercase tracking-wider text-muted-foreground mb-0.5">Usage</span>
+                  <span className="font-semibold text-cocoa">{usageStr}</span>
+                </div>
+                <div className="flex flex-col items-center flex-1">
+                  <span className="text-[10px] uppercase tracking-wider text-muted-foreground mb-0.5">Status</span>
+                  {statusBadge(status)}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }

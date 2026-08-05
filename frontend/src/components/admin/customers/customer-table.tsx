@@ -93,8 +93,9 @@ export function CustomerTable({ data, isLoading }: CustomerTableProps) {
   });
 
   return (
-    <div className="rounded-2xl border border-cocoa/10 bg-white shadow-sm overflow-hidden">
-      <Table>
+    <div className="rounded-2xl border border-cocoa/10 bg-white shadow-sm overflow-hidden flex flex-col">
+      <div className="hidden md:block">
+        <Table>
         <TableHeader className="bg-sand/50 border-b border-cocoa/10">
           {table.getHeaderGroups().map((headerGroup) => (
             <TableRow key={headerGroup.id} className="hover:bg-transparent border-0">
@@ -135,6 +136,59 @@ export function CustomerTable({ data, isLoading }: CustomerTableProps) {
           )}
         </TableBody>
       </Table>
+      </div>
+
+      {/* Mobile Card Layout */}
+      <div className="flex flex-col md:hidden divide-y divide-cocoa/10">
+        {isLoading && !table.getRowModel().rows?.length ? (
+          <div className="p-8 text-center text-muted-foreground">Loading customers...</div>
+        ) : table.getRowModel().rows?.length ? (
+          table.getRowModel().rows.map((row) => {
+            const customer = row.original;
+            return (
+              <div 
+                key={row.id} 
+                onClick={() => handleRowClick(customer)}
+                className="flex flex-col gap-2 p-4 bg-white hover:bg-primary/5 transition-colors cursor-pointer"
+              >
+                <div className="flex justify-between items-start">
+                  <div className="flex flex-col">
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold text-cocoa leading-tight">{customer.name}</span>
+                      {customer.is_guest && (
+                        <Badge variant="outline" className="text-[10px] h-4 px-1.5 bg-slate-50">
+                          Guest
+                        </Badge>
+                      )}
+                    </div>
+                    <span className="text-xs text-muted-foreground mt-0.5">{customer.email}</span>
+                  </div>
+                  <span className="text-xs text-muted-foreground">{customer.phone || "—"}</span>
+                </div>
+                
+                <div className="flex justify-between items-center mt-2 bg-sand/30 p-2.5 rounded-xl border border-cocoa/5 text-sm w-full">
+                  <div className="flex flex-col items-center flex-1 border-r border-cocoa/10">
+                    <span className="text-[10px] uppercase tracking-wider text-muted-foreground mb-0.5">Orders</span>
+                    <span className="font-bold text-cocoa">{customer.total_orders || 0}</span>
+                  </div>
+                  <div className="flex flex-col items-center flex-1 border-r border-cocoa/10">
+                    <span className="text-[10px] uppercase tracking-wider text-muted-foreground mb-0.5">Spend</span>
+                    <span className="font-semibold text-emerald-700">{formatINR(customer.total_spend || 0)}</span>
+                  </div>
+                  <div className="flex flex-col items-center flex-1">
+                    <span className="text-[10px] uppercase tracking-wider text-muted-foreground mb-0.5">Joined</span>
+                    <span className="font-medium text-cocoa text-[11px]">{new Date(customer.created_at).toLocaleDateString()}</span>
+                  </div>
+                </div>
+              </div>
+            );
+          })
+        ) : (
+          <div className="p-8 text-center text-muted-foreground">
+            No customers found.
+          </div>
+        )}
+      </div>
     </div>
   );
 }
