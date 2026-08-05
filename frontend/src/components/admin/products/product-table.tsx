@@ -402,9 +402,10 @@ export function ProductTable({
   });
 
   return (
-    <div className="rounded-2xl border border-cocoa/10 bg-white shadow-sm overflow-hidden">
-      <Table>
-        <TableHeader className="bg-sand/50 border-b border-cocoa/10">
+    <div className="rounded-2xl border border-cocoa/10 bg-white shadow-sm overflow-hidden flex flex-col">
+      <div className="hidden md:block">
+        <Table>
+          <TableHeader className="bg-sand/50 border-b border-cocoa/10">
           {table.getHeaderGroups().map((headerGroup) => (
             <TableRow key={headerGroup.id} className="hover:bg-transparent border-0 group">
               {headerGroup.headers.map((header) => (
@@ -485,6 +486,113 @@ export function ProductTable({
           )}
         </TableBody>
       </Table>
+      </div>
+
+      {/* Mobile Card Layout */}
+      <div className="flex flex-col md:hidden divide-y divide-cocoa/10">
+        {isLoading ? (
+          Array.from({ length: 5 }).map((_, i) => (
+            <div key={`mob-skeleton-${i}`} className="flex gap-4 p-4">
+              <Skeleton className="h-16 w-16 rounded-md shrink-0 bg-sand" />
+              <div className="flex flex-col gap-2 flex-1">
+                <Skeleton className="h-4 w-3/4" />
+                <Skeleton className="h-4 w-1/2" />
+              </div>
+            </div>
+          ))
+        ) : table.getRowModel().rows?.length ? (
+          table.getRowModel().rows.map((row) => {
+            const product = row.original;
+            const isDeletingRow = deleteProducts.isPending && deleteProducts.variables?.includes(product.id);
+            const thumbnail = product.images.length > 0 ? product.images[0].url : "";
+            
+            return (
+              <div
+                key={row.id}
+                data-state={row.getIsSelected() && "selected"}
+                className={cn(
+                  "flex flex-col gap-3 p-4 relative transition-colors duration-200 hover:bg-primary/5",
+                  row.getIsSelected() ? "bg-muted" : "bg-white",
+                  isDeletingRow && "opacity-60 pointer-events-none bg-muted/50"
+                )}
+                onClick={(e) => {
+                  if (
+                    (e.target as HTMLElement).closest("button") ||
+                    (e.target as HTMLElement).closest("a") ||
+                    (e.target as HTMLElement).closest("[role='menuitem']") ||
+                    (e.target as HTMLElement).closest("[role='dialog']")
+                  ) {
+                    return;
+                  }
+                  if (Object.keys(table.getState().rowSelection).length > 0) {
+                    row.toggleSelected();
+                    return;
+                  }
+                  setQuickViewProduct(product);
+                }}
+              >
+                <div className="flex justify-between items-start">
+                  <div className="flex items-center gap-3">
+                    <div onClick={e => e.stopPropagation()} className="pt-0.5">
+                      {flexRender(
+                        row.getVisibleCells().find((c) => c.column.id === "select")?.column.columnDef.cell,
+                        row.getVisibleCells().find((c) => c.column.id === "select")?.getContext()!
+                      )}
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <div className="h-14 w-14 shrink-0 overflow-hidden rounded-md border border-border bg-sand">
+                        {thumbnail ? (
+                          <img src={thumbnail} alt={product.name} className="h-full w-full object-cover" />
+                        ) : (
+                          <div className="flex h-full w-full items-center justify-center bg-muted">
+                            <span className="text-[10px] text-muted-foreground">No img</span>
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex flex-col min-w-0">
+                        <span className="font-semibold text-cocoa leading-tight truncate">{product.name}</span>
+                        <span className="text-xs text-muted-foreground mt-0.5">{product.category || "Uncategorized"}</span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div onClick={e => e.stopPropagation()}>
+                     {flexRender(
+                        row.getVisibleCells().find((c) => c.column.id === "actions")?.column.columnDef.cell,
+                        row.getVisibleCells().find((c) => c.column.id === "actions")?.getContext()!
+                      )}
+                  </div>
+                </div>
+
+                <div className="flex justify-between items-center mt-1 pl-9">
+                   <div className="flex flex-col">
+                     <span className="text-xs text-muted-foreground">Price</span>
+                     <span className="font-bold text-cocoa">{formatINR(product.base_price)}</span>
+                   </div>
+                   <div className="flex flex-col items-center">
+                     <span className="text-xs text-muted-foreground">Stock</span>
+                     <span className="font-semibold text-cocoa">{product.total_stock}</span>
+                   </div>
+                   <div className="flex flex-col items-end">
+                     <span className="text-xs text-muted-foreground mb-0.5">Status</span>
+                     <StatusBadge status={product.status as any} />
+                   </div>
+                </div>
+                
+                {isDeletingRow && (
+                  <div className="absolute inset-0 flex items-center justify-center z-20">
+                    <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                  </div>
+                )}
+              </div>
+            );
+          })
+        ) : (
+          <div className="p-8 text-center text-muted-foreground">
+            No products found.
+          </div>
+        )}
+      </div>
 
       <Dialog open={!!quickViewProduct} onOpenChange={(open) => !open && setQuickViewProduct(null)}>
         <DialogContent className="sm:max-w-md bg-sand border-cocoa/10">

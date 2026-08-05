@@ -274,8 +274,9 @@ export function InventoryTable({ data, isLoading, filterLowStock }: InventoryTab
         )}
       </div>
 
-      <div className="rounded-2xl border border-cocoa/10 bg-white shadow-sm overflow-hidden">
-        <Table>
+      <div className="rounded-2xl border border-cocoa/10 bg-white shadow-sm overflow-hidden flex flex-col">
+        <div className="hidden md:block">
+          <Table>
           <TableHeader className="bg-sand/50 border-b border-cocoa/10">
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id} className="hover:bg-transparent border-0">
@@ -317,6 +318,61 @@ export function InventoryTable({ data, isLoading, filterLowStock }: InventoryTab
             )}
           </TableBody>
         </Table>
+        </div>
+
+        {/* Mobile Card Layout */}
+        <div className="flex flex-col md:hidden divide-y divide-cocoa/10">
+          {table.getRowModel().rows?.length ? (
+            table.getRowModel().rows.map((row) => {
+              const item = row.original;
+              const isSubRow = !!row.parentId;
+              return (
+                <div key={row.id} className={cn("flex flex-col gap-2 p-4", isSubRow ? "bg-sand/10 pl-8" : "bg-white")}>
+                  {!isSubRow ? (
+                    <div className="flex justify-between items-start">
+                      <div onClick={row.getToggleExpandedHandler()} className="flex gap-3 flex-1 items-center cursor-pointer">
+                        <div className="text-muted-foreground">
+                          {row.getIsExpanded() ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                        </div>
+                        <div className="h-12 w-12 rounded-lg overflow-hidden bg-white border border-cocoa/10 shrink-0">
+                          <img src={item.product_image || "https://placehold.co/100"} alt={item.product_name} className="h-full w-full object-cover" />
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="font-semibold text-cocoa leading-tight">{item.product_name}</span>
+                          <span className="text-xs text-muted-foreground mt-0.5">{item.size}</span>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex justify-between items-center mb-1">
+                      <span className="font-medium text-cocoa text-sm">{item.size}</span>
+                      <span className="font-mono text-[10px] text-muted-foreground bg-black/5 px-2 py-0.5 rounded-full">{item.sku}</span>
+                    </div>
+                  )}
+
+                  <div className="flex justify-between items-center mt-2 bg-sand/30 p-2.5 rounded-xl border border-cocoa/5 text-sm">
+                    <div className="flex flex-col items-center flex-1 border-r border-cocoa/10">
+                      <span className="text-[10px] uppercase tracking-wider text-muted-foreground mb-0.5">Avail</span>
+                      <span className="font-bold text-cocoa">{item.stock - (item.reserved_stock || 0)}</span>
+                    </div>
+                    <div className="flex flex-col items-center flex-1 border-r border-cocoa/10">
+                      <span className="text-[10px] uppercase tracking-wider text-muted-foreground mb-0.5">Rsvd</span>
+                      <span className="font-semibold text-muted-foreground">{item.reserved_stock || 0}</span>
+                    </div>
+                    <div className="flex flex-col items-center flex-1">
+                      <span className="text-[10px] uppercase tracking-wider text-muted-foreground mb-0.5">Sold</span>
+                      <span className="font-semibold text-cocoa">{item.sales}</span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })
+          ) : (
+            <div className="p-8 text-center text-muted-foreground">
+              {isLoading ? "Loading inventory..." : "No items found."}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
