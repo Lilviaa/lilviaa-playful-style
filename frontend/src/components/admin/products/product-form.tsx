@@ -13,7 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
+
 import { ProductWithDetails, ProductStatus, useSaveProduct } from "@/lib/admin/products-api";
 import { VariantEditor } from "./variant-editor";
 import { ImageUploader } from "./image-uploader";
@@ -193,13 +193,10 @@ export function ProductForm({ initialData }: ProductFormProps) {
         </div>
       </div>
 
-      <ResizablePanelGroup
-        direction="horizontal"
-        className="h-[calc(100vh-12rem)] min-h-[600px] items-stretch"
-      >
+      <div className="flex flex-col lg:flex-row gap-6 lg:gap-8 pb-8 items-start">
         {/* Main Column */}
-        <ResizablePanel defaultSize={65} minSize={40}>
-          <div className="space-y-8 pr-6 pb-8 h-full">
+        <div className="w-full lg:w-[65%] space-y-8 h-full">
+          <div className="space-y-8 h-full">
             {/* Basic Info */}
             <div className="space-y-4 rounded-xl border border-border bg-card p-6 shadow-sm">
               <h2 className="text-lg font-bold text-cocoa">Basic Information</h2>
@@ -348,16 +345,12 @@ export function ProductForm({ initialData }: ProductFormProps) {
               />
             </div>
           </div>
-        </ResizablePanel>
-
-        <ResizableHandle
-          withHandle
-          className="bg-transparent relative z-10 hover:bg-border/50 transition-colors"
-        />
+          </div>
+        </div>
 
         {/* Sidebar Column */}
-        <ResizablePanel defaultSize={35} minSize={25}>
-          <div className="space-y-8 pl-6 pb-8 h-full">
+        <div className="w-full lg:w-[35%] space-y-8 h-full">
+          <div className="space-y-8 h-full">
             {/* Pricing */}
             <div className="space-y-4 rounded-xl border border-border bg-card p-6 shadow-sm">
               <h2 className="text-lg font-bold text-cocoa">Pricing</h2>
@@ -443,8 +436,9 @@ export function ProductForm({ initialData }: ProductFormProps) {
               )}
             </div>
           </div>
-        </ResizablePanel>
-      </ResizablePanelGroup>
+          </div>
+        </div>
+      </div>
     </form>
   );
 }
