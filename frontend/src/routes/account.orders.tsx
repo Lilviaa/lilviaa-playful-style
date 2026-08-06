@@ -117,7 +117,7 @@ function AccountOrdersPage() {
                   </DialogTrigger>
                   <DialogContent className="sm:max-w-md">
                     <DialogHeader>
-                      <DialogTitle>Track Package: {order.id}</DialogTitle>
+                      <DialogTitle>Track Package: {order.tracking_number || `ORD-LV-${parseInt(order.id.replace(/-/g, '').substring(0, 6), 16).toString().padStart(6, '0')}`}</DialogTitle>
                     </DialogHeader>
                     <div className="space-y-6 py-4">
                       <div className="flex gap-4">

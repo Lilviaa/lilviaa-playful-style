@@ -66,12 +66,22 @@ function InvoicePage() {
   const paymentTransaction = order.payment_transactions?.[0] || {};
   const paymentStatus = paymentTransaction.status === 'successful' ? 'Paid' : (order.status === 'delivered' ? 'Paid' : 'Pending');
   
-  let paymentMethodLabel = order.payment_method;
-  if (order.payment_method === 'razorpay') paymentMethodLabel = "Online Payment (Razorpay)";
-  else if (order.payment_method === 'netbanking') paymentMethodLabel = "Net Banking";
-  else if (paymentTransaction.razorpay_payment_id) paymentMethodLabel = "Razorpay";
+  let paymentMethodLabel = order.payment_method || 'Online';
+  if (order.payment_method === 'razorpay' || paymentTransaction?.razorpay_payment_id) {
+    paymentMethodLabel = "Razorpay";
+    const method = paymentTransaction?.method || order.payment_details?.method;
+    if (method) {
+      paymentMethodLabel += ` (${method.toUpperCase()})`;
+    } else {
+      paymentMethodLabel += " (Online)";
+    }
+  } else if (order.payment_method === 'cod') {
+    paymentMethodLabel = "Cash on Delivery";
+  } else if (order.payment_method === 'netbanking') {
+    paymentMethodLabel = "Net Banking";
+  }
   
-  const shippingMethod = "Standard Shipping";
+  const shippingMethod = "DTDC";
 
   const items = order.order_items || [];
   
@@ -89,6 +99,12 @@ function InvoicePage() {
 
   return (
     <div className="min-h-screen bg-gray-100 py-8 print:py-0 print:bg-white flex justify-center font-['Nunito',sans-serif]">
+      <style>{`
+        @media print {
+          @page { margin: 0; size: A4 portrait; }
+          body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
+      `}</style>
       {/* Floating Print Action (Hidden in print) */}
       <div className="fixed top-6 right-6 flex flex-col gap-3 print:hidden z-50">
         <button 
@@ -194,18 +210,18 @@ function InvoicePage() {
         </div>
 
         {/* COMPACT STATUS ROW */}
-        <div className="mt-4 bg-[#FCF8F2] border border-[#F4EBE1] rounded-lg p-3 flex flex-wrap gap-x-8 gap-y-2 text-xs print:break-inside-avoid">
-          <div><strong className="text-[#8C6D56] uppercase tracking-wide text-[10px] block mb-0.5">Payment Method</strong><span className="font-bold">{paymentMethodLabel}</span></div>
+        <div className="mt-4 bg-[#FCF8F2] border border-[#F4EBE1] rounded-lg p-4 grid grid-cols-3 gap-4 text-xs text-center print:break-inside-avoid">
+          <div><strong className="text-[#8C6D56] uppercase tracking-wide text-[10px] block mb-1">Payment Method</strong><span className="font-bold">{paymentMethodLabel}</span></div>
           <div>
-            <strong className="text-[#8C6D56] uppercase tracking-wide text-[10px] block mb-0.5">Payment Status</strong>
+            <strong className="text-[#8C6D56] uppercase tracking-wide text-[10px] block mb-1">Payment Status</strong>
             <span className={`font-bold ${paymentStatus === 'Paid' ? 'text-[#1E8A53]' : 'text-[#856404]'}`}>{paymentStatus}</span>
           </div>
-          <div><strong className="text-[#8C6D56] uppercase tracking-wide text-[10px] block mb-0.5">Shipping Method</strong><span className="font-bold">{shippingMethod}</span></div>
+          <div><strong className="text-[#8C6D56] uppercase tracking-wide text-[10px] block mb-1">Shipping Partner</strong><span className="font-bold">{shippingMethod}</span></div>
         </div>
 
         {/* ITEMS TABLE */}
-        <div className="mt-5 rounded-xl overflow-hidden border border-[#F4EBE1]">
-          <table className="w-full text-left text-[#5C3A21] text-xs">
+        <div className="mt-5 border-t border-[#8C6D56]/20 pt-4">
+          <table className="w-full text-left text-[#5C3A21] text-xs rounded-xl overflow-hidden border border-[#F4EBE1]">
             <thead className="bg-[#FCEAE8] font-extrabold uppercase tracking-wider">
               <tr>
                 <th className="py-2 px-3 text-[#5C3A21] w-8">#</th>
