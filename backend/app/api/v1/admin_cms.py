@@ -7,7 +7,7 @@ from app.core.exceptions import AppError
 from app.models.settings import CompanySettingsResponse, CompanySettingsUpdate
 from app.core.limiter import limiter, PreAuthRateLimit, get_admin_id
 
-router = APIRouter(dependencies=[Depends(require_admin)])
+router = APIRouter()
 
 # -----------------
 # Upload Endpoints
@@ -24,12 +24,12 @@ class UploadResponse(BaseModel):
     file_path: str
     public_url: str
 
-@router.post("/upload/request-url", response_model=UploadResponse, dependencies=[Depends(PreAuthRateLimit("15/minute"))])
+@router.post("/upload/request-url", response_model=UploadResponse, dependencies=[Depends(PreAuthRateLimit("15/minute")), Depends(require_admin)])
 @limiter.limit("15/minute", key_func=get_admin_id)
 def request_upload_url(req: UploadRequest, request: Request):
     return storage_service.generate_presigned_url(req.filename, req.content_type, folder="cms")
 
-@router.put("/upload/direct/cms/{filename}", dependencies=[Depends(PreAuthRateLimit("15/minute"))])
+@router.put("/upload/direct/cms/{filename}", dependencies=[Depends(PreAuthRateLimit("15/minute")), Depends(require_admin)])
 @limiter.limit("15/minute", key_func=get_admin_id)
 async def direct_upload(filename: str, request: Request):
     file_bytes = await request.body()
@@ -46,14 +46,14 @@ class HeroSlideBase(BaseModel):
 class HeroSlideUpdate(HeroSlideBase):
     id: str
 
-@router.get("/hero-slides", dependencies=[Depends(PreAuthRateLimit("60/minute"))])
+@router.get("/hero-slides", dependencies=[Depends(PreAuthRateLimit("60/minute")), Depends(require_admin)])
 @limiter.limit("60/minute", key_func=get_admin_id)
 def list_hero_slides(request: Request):
     supabase = get_supabase()
     res = supabase.table("hero_slides").select("*").order("sort_order", desc=False).execute()
     return res.data
 
-@router.put("/hero-slides", dependencies=[Depends(PreAuthRateLimit("30/minute"))])
+@router.put("/hero-slides", dependencies=[Depends(PreAuthRateLimit("30/minute")), Depends(require_admin)])
 @limiter.limit("30/minute", key_func=get_admin_id)
 def update_hero_slides(slides: List[HeroSlideUpdate], request: Request):
     supabase = get_supabase()
@@ -78,14 +78,14 @@ class CategoryTileBase(BaseModel):
 class CategoryTileUpdate(CategoryTileBase):
     id: str
 
-@router.get("/category-tiles", dependencies=[Depends(PreAuthRateLimit("60/minute"))])
+@router.get("/category-tiles", dependencies=[Depends(PreAuthRateLimit("60/minute")), Depends(require_admin)])
 @limiter.limit("60/minute", key_func=get_admin_id)
 def list_category_tiles(request: Request):
     supabase = get_supabase()
     res = supabase.table("category_tiles").select("*").order("sort_order", desc=False).execute()
     return res.data
 
-@router.put("/category-tiles", dependencies=[Depends(PreAuthRateLimit("30/minute"))])
+@router.put("/category-tiles", dependencies=[Depends(PreAuthRateLimit("30/minute")), Depends(require_admin)])
 @limiter.limit("30/minute", key_func=get_admin_id)
 def update_category_tiles(tiles: List[CategoryTileUpdate], request: Request):
     supabase = get_supabase()
@@ -108,14 +108,14 @@ class FeaturedProductBase(BaseModel):
 class FeaturedProductUpdate(FeaturedProductBase):
     id: str
 
-@router.get("/featured-products", dependencies=[Depends(PreAuthRateLimit("60/minute"))])
+@router.get("/featured-products", dependencies=[Depends(PreAuthRateLimit("60/minute")), Depends(require_admin)])
 @limiter.limit("60/minute", key_func=get_admin_id)
 def list_featured_products(request: Request):
     supabase = get_supabase()
     res = supabase.table("featured_products").select("*, products(*)").order("sort_order", desc=False).execute()
     return res.data
 
-@router.put("/featured-products", dependencies=[Depends(PreAuthRateLimit("30/minute"))])
+@router.put("/featured-products", dependencies=[Depends(PreAuthRateLimit("30/minute")), Depends(require_admin)])
 @limiter.limit("30/minute", key_func=get_admin_id)
 def update_featured_products(products: List[FeaturedProductUpdate], request: Request):
     supabase = get_supabase()
@@ -137,7 +137,7 @@ class CmsSectionUpdate(BaseModel):
     image_url: Optional[str] = None
     secondary_image_url: Optional[str] = None
 
-@router.get("/sections/{section_key}", dependencies=[Depends(PreAuthRateLimit("60/minute"))])
+@router.get("/sections/{section_key}", dependencies=[Depends(PreAuthRateLimit("60/minute")), Depends(require_admin)])
 @limiter.limit("60/minute", key_func=get_admin_id)
 def get_cms_section(section_key: str, request: Request):
     supabase = get_supabase()
@@ -146,7 +146,7 @@ def get_cms_section(section_key: str, request: Request):
         return None
     return res.data[0]
 
-@router.put("/sections/{section_key}", dependencies=[Depends(PreAuthRateLimit("30/minute"))])
+@router.put("/sections/{section_key}", dependencies=[Depends(PreAuthRateLimit("30/minute")), Depends(require_admin)])
 @limiter.limit("30/minute", key_func=get_admin_id)
 def update_cms_section(section_key: str, section: CmsSectionUpdate, request: Request):
     supabase = get_supabase()
@@ -174,14 +174,14 @@ class PhilosophyCardBase(BaseModel):
 class PhilosophyCardUpdate(PhilosophyCardBase):
     id: str
 
-@router.get("/philosophy-cards", dependencies=[Depends(PreAuthRateLimit("60/minute"))])
+@router.get("/philosophy-cards", dependencies=[Depends(PreAuthRateLimit("60/minute")), Depends(require_admin)])
 @limiter.limit("60/minute", key_func=get_admin_id)
 def list_philosophy_cards(request: Request):
     supabase = get_supabase()
     res = supabase.table("philosophy_cards").select("*").order("sort_order", desc=False).execute()
     return res.data
 
-@router.put("/philosophy-cards", dependencies=[Depends(PreAuthRateLimit("30/minute"))])
+@router.put("/philosophy-cards", dependencies=[Depends(PreAuthRateLimit("30/minute")), Depends(require_admin)])
 @limiter.limit("30/minute", key_func=get_admin_id)
 def update_philosophy_cards(cards: List[PhilosophyCardUpdate], request: Request):
     supabase = get_supabase()
@@ -198,7 +198,7 @@ def update_philosophy_cards(cards: List[PhilosophyCardUpdate], request: Request)
 # Company Settings
 # -----------------
 
-@router.put("/company-settings", response_model=CompanySettingsResponse, dependencies=[Depends(PreAuthRateLimit("30/minute"))])
+@router.put("/company-settings", response_model=CompanySettingsResponse, dependencies=[Depends(PreAuthRateLimit("30/minute")), Depends(require_admin)])
 @limiter.limit("30/minute", key_func=get_admin_id)
 def update_company_settings(updates: CompanySettingsUpdate, request: Request):
     """Update global company settings"""

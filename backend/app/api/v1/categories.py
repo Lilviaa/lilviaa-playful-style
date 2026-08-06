@@ -25,7 +25,7 @@ def get_categories(request: Request):
 # Admin Routes
 # ──────────────────────────────────────────
 
-@router.post("/", response_model=CategoryResponse, status_code=status.HTTP_201_CREATED, dependencies=[Depends(require_admin), Depends(PreAuthRateLimit("30/minute"))])
+@router.post("/", response_model=CategoryResponse, status_code=status.HTTP_201_CREATED, dependencies=[Depends(PreAuthRateLimit("30/minute")), Depends(require_admin)])
 @limiter.limit("30/minute", key_func=get_admin_id)
 def create_category(category: CategoryCreate, request: Request):
     """Create a new category (Admin only)."""
@@ -40,7 +40,7 @@ def create_category(category: CategoryCreate, request: Request):
             raise AppError("A category with this slug already exists", status_code=400)
         raise AppError(f"Error creating category: {str(e)}")
 
-@router.put("/{category_id}", response_model=CategoryResponse, dependencies=[Depends(require_admin), Depends(PreAuthRateLimit("30/minute"))])
+@router.put("/{category_id}", response_model=CategoryResponse, dependencies=[Depends(PreAuthRateLimit("30/minute")), Depends(require_admin)])
 @limiter.limit("30/minute", key_func=get_admin_id)
 def update_category(category_id: str, updates: CategoryUpdate, request: Request):
     """Update a category (Admin only)."""
@@ -59,7 +59,7 @@ def update_category(category_id: str, updates: CategoryUpdate, request: Request)
             raise AppError("A category with this slug already exists", status_code=400)
         raise AppError(f"Error updating category: {str(e)}")
 
-@router.delete("/{category_id}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(require_admin), Depends(PreAuthRateLimit("30/minute"))])
+@router.delete("/{category_id}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(PreAuthRateLimit("30/minute")), Depends(require_admin)])
 @limiter.limit("30/minute", key_func=get_admin_id)
 def delete_category(category_id: str, request: Request):
     """Delete a category (Admin only). Products linking here will have category_id set to NULL."""

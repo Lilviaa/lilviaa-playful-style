@@ -10,7 +10,7 @@ from app.core.limiter import limiter, PreAuthRateLimit, get_admin_id
 
 # Coupons management is owner-only per frontend UI
 require_owner = require_role(["owner"])
-router = APIRouter(dependencies=[Depends(require_owner)])
+router = APIRouter()
 
 
 class CouponCreate(BaseModel):
@@ -51,7 +51,7 @@ class CouponUpdate(BaseModel):
         return v.upper().strip() if v else v
 
 
-@router.get("/", dependencies=[Depends(PreAuthRateLimit("60/minute"))])
+@router.get("/", dependencies=[Depends(PreAuthRateLimit("60/minute")), Depends(require_owner)])
 @limiter.limit("60/minute", key_func=get_admin_id)
 def list_coupons(request: Request):
     """List all coupons with usage stats."""
@@ -89,7 +89,7 @@ def list_coupons(request: Request):
     return result
 
 
-@router.get("/{coupon_id}", dependencies=[Depends(PreAuthRateLimit("60/minute"))])
+@router.get("/{coupon_id}", dependencies=[Depends(PreAuthRateLimit("60/minute")), Depends(require_owner)])
 @limiter.limit("60/minute", key_func=get_admin_id)
 def get_coupon(coupon_id: UUID, request: Request):
     """Get a single coupon with usage stats."""
@@ -123,7 +123,7 @@ def get_coupon(coupon_id: UUID, request: Request):
     }
 
 
-@router.get("/{coupon_id}/usages", dependencies=[Depends(PreAuthRateLimit("60/minute"))])
+@router.get("/{coupon_id}/usages", dependencies=[Depends(PreAuthRateLimit("60/minute")), Depends(require_owner)])
 @limiter.limit("60/minute", key_func=get_admin_id)
 def get_coupon_usages(coupon_id: UUID, request: Request):
     """Get usage history for a coupon."""
@@ -158,7 +158,7 @@ def get_coupon_usages(coupon_id: UUID, request: Request):
     return result
 
 
-@router.post("/", dependencies=[Depends(PreAuthRateLimit("30/minute"))])
+@router.post("/", dependencies=[Depends(PreAuthRateLimit("30/minute")), Depends(require_owner)])
 @limiter.limit("30/minute", key_func=get_admin_id)
 def create_coupon(body: CouponCreate, request: Request):
     """Create a new coupon."""
@@ -196,7 +196,7 @@ def create_coupon(body: CouponCreate, request: Request):
         raise AppError(f"Error creating coupon: {str(e)}")
 
 
-@router.put("/{coupon_id}", dependencies=[Depends(PreAuthRateLimit("30/minute"))])
+@router.put("/{coupon_id}", dependencies=[Depends(PreAuthRateLimit("30/minute")), Depends(require_owner)])
 @limiter.limit("30/minute", key_func=get_admin_id)
 def update_coupon(coupon_id: UUID, body: CouponUpdate, request: Request):
     """Update a coupon."""
@@ -227,7 +227,7 @@ def update_coupon(coupon_id: UUID, body: CouponUpdate, request: Request):
         raise AppError(f"Error updating coupon: {str(e)}")
 
 
-@router.delete("/{coupon_id}", dependencies=[Depends(PreAuthRateLimit("30/minute"))])
+@router.delete("/{coupon_id}", dependencies=[Depends(PreAuthRateLimit("30/minute")), Depends(require_owner)])
 @limiter.limit("30/minute", key_func=get_admin_id)
 def delete_coupon(coupon_id: UUID, request: Request):
     """Delete a coupon."""

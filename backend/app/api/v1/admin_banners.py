@@ -6,7 +6,7 @@ from app.api.dependencies import require_admin
 from app.core.exceptions import AppError
 from app.core.limiter import limiter, PreAuthRateLimit, get_admin_id
 
-router = APIRouter(dependencies=[Depends(require_admin)])
+router = APIRouter()
 
 class BannerCreate(BaseModel):
     image_url: Optional[str] = None
@@ -38,14 +38,14 @@ class BannerReorderRequest(BaseModel):
     id: str
     sort_order: int
 
-@router.get("/", dependencies=[Depends(PreAuthRateLimit("60/minute"))])
+@router.get("/", dependencies=[Depends(PreAuthRateLimit("60/minute")), Depends(require_admin)])
 @limiter.limit("60/minute", key_func=get_admin_id)
 def list_banners(request: Request):
     supabase = get_supabase()
     res = supabase.table("banners").select("*").order("sort_order", desc=False).execute()
     return res.data
 
-@router.post("/", dependencies=[Depends(PreAuthRateLimit("30/minute"))])
+@router.post("/", dependencies=[Depends(PreAuthRateLimit("30/minute")), Depends(require_admin)])
 @limiter.limit("30/minute", key_func=get_admin_id)
 def create_banner(banner: BannerCreate, request: Request):
     supabase = get_supabase()
@@ -54,7 +54,7 @@ def create_banner(banner: BannerCreate, request: Request):
     res = supabase.table("banners").insert(banner.model_dump(exclude_none=True)).execute()
     return res.data[0]
 
-@router.put("/{banner_id}", dependencies=[Depends(PreAuthRateLimit("30/minute"))])
+@router.put("/{banner_id}", dependencies=[Depends(PreAuthRateLimit("30/minute")), Depends(require_admin)])
 @limiter.limit("30/minute", key_func=get_admin_id)
 def update_banner(banner_id: str, banner: BannerUpdate, request: Request):
     supabase = get_supabase()
@@ -70,7 +70,7 @@ def update_banner(banner_id: str, banner: BannerUpdate, request: Request):
         raise AppError("Banner not found", status_code=404)
     return res.data[0]
 
-@router.delete("/{banner_id}", dependencies=[Depends(PreAuthRateLimit("30/minute"))])
+@router.delete("/{banner_id}", dependencies=[Depends(PreAuthRateLimit("30/minute")), Depends(require_admin)])
 @limiter.limit("30/minute", key_func=get_admin_id)
 def delete_banner(banner_id: str, request: Request):
     supabase = get_supabase()
@@ -79,7 +79,7 @@ def delete_banner(banner_id: str, request: Request):
         raise AppError("Banner not found", status_code=404)
     return {"message": "Deleted"}
 
-@router.post("/reorder", dependencies=[Depends(PreAuthRateLimit("30/minute"))])
+@router.post("/reorder", dependencies=[Depends(PreAuthRateLimit("30/minute")), Depends(require_admin)])
 @limiter.limit("30/minute", key_func=get_admin_id)
 def reorder_banners(updates: List[BannerReorderRequest], request: Request):
     supabase = get_supabase()

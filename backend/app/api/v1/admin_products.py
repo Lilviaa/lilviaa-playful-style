@@ -11,13 +11,13 @@ from app.core.exceptions import AppError
 from app.core.limiter import limiter, PreAuthRateLimit, get_admin_id
 from app.services.storage_service import storage_service
 
-router = APIRouter(dependencies=[Depends(require_admin)])
+router = APIRouter()
 
 # ──────────────────────────────────────────
 # Products (Admin)
 # ──────────────────────────────────────────
 
-@router.get("/", response_model=List[ProductResponse], dependencies=[Depends(PreAuthRateLimit("60/minute"))])
+@router.get("/", response_model=List[ProductResponse], dependencies=[Depends(PreAuthRateLimit("60/minute")), Depends(require_admin)])
 @limiter.limit("60/minute", key_func=get_admin_id)
 def get_all_products(request: Request):
     """Admin: Fetch all products (draft, published, archived)."""
@@ -28,7 +28,7 @@ def get_all_products(request: Request):
             product["images"].sort(key=lambda x: x.get("sort_order", 0))
     return result.data
 
-@router.post("/", response_model=ProductResponse, status_code=status.HTTP_201_CREATED, dependencies=[Depends(PreAuthRateLimit("30/minute"))])
+@router.post("/", response_model=ProductResponse, status_code=status.HTTP_201_CREATED, dependencies=[Depends(PreAuthRateLimit("30/minute")), Depends(require_admin)])
 @limiter.limit("30/minute", key_func=get_admin_id)
 def create_product(product: ProductCreate, request: Request):
     """Admin: Create a new product."""
@@ -42,7 +42,7 @@ def create_product(product: ProductCreate, request: Request):
             raise AppError("A product with this slug already exists", status_code=400)
         raise AppError(f"Error creating product: {str(e)}")
 
-@router.put("/{product_id}", response_model=ProductResponse, dependencies=[Depends(PreAuthRateLimit("30/minute"))])
+@router.put("/{product_id}", response_model=ProductResponse, dependencies=[Depends(PreAuthRateLimit("30/minute")), Depends(require_admin)])
 @limiter.limit("30/minute", key_func=get_admin_id)
 def update_product(product_id: str, updates: ProductUpdate, request: Request):
     """Admin: Update a product."""
@@ -61,7 +61,7 @@ def update_product(product_id: str, updates: ProductUpdate, request: Request):
             raise AppError("A product with this slug already exists", status_code=400)
         raise AppError(f"Error updating product: {str(e)}")
 
-@router.delete("/{product_id}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(PreAuthRateLimit("30/minute"))])
+@router.delete("/{product_id}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(PreAuthRateLimit("30/minute")), Depends(require_admin)])
 @limiter.limit("30/minute", key_func=get_admin_id)
 def delete_product(product_id: str, request: Request):
     """Admin: Hard delete a product. Used primarily for rollback if variant/image creation fails."""
@@ -73,7 +73,7 @@ def delete_product(product_id: str, request: Request):
 # Variants (Admin)
 # ──────────────────────────────────────────
 
-@router.post("/{product_id}/variants", response_model=ProductVariantResponse, status_code=status.HTTP_201_CREATED, dependencies=[Depends(PreAuthRateLimit("30/minute"))])
+@router.post("/{product_id}/variants", response_model=ProductVariantResponse, status_code=status.HTTP_201_CREATED, dependencies=[Depends(PreAuthRateLimit("30/minute")), Depends(require_admin)])
 @limiter.limit("30/minute", key_func=get_admin_id)
 def add_variant(product_id: str, variant: ProductVariantCreate, request: Request):
     """Admin: Add a variant to a product."""
@@ -88,7 +88,7 @@ def add_variant(product_id: str, variant: ProductVariantCreate, request: Request
             raise AppError("A variant with this SKU already exists", status_code=400)
         raise AppError(f"Error adding variant: {str(e)}")
 
-@router.put("/variants/{variant_id}", response_model=ProductVariantResponse, dependencies=[Depends(PreAuthRateLimit("30/minute"))])
+@router.put("/variants/{variant_id}", response_model=ProductVariantResponse, dependencies=[Depends(PreAuthRateLimit("30/minute")), Depends(require_admin)])
 @limiter.limit("30/minute", key_func=get_admin_id)
 def update_variant(variant_id: str, updates: ProductVariantUpdate, request: Request):
     """Admin: Update a variant."""
@@ -104,7 +104,7 @@ def update_variant(variant_id: str, updates: ProductVariantUpdate, request: Requ
             raise AppError("A variant with this SKU already exists", status_code=400)
         raise AppError(f"Error updating variant: {str(e)}")
 
-@router.delete("/variants/{variant_id}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(PreAuthRateLimit("30/minute"))])
+@router.delete("/variants/{variant_id}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(PreAuthRateLimit("30/minute")), Depends(require_admin)])
 @limiter.limit("30/minute", key_func=get_admin_id)
 def delete_variant(variant_id: str, request: Request):
     """Admin: Delete a variant."""
@@ -116,13 +116,13 @@ def delete_variant(variant_id: str, request: Request):
 # Images (Admin Uploads)
 # ──────────────────────────────────────────
 
-@router.post("/upload/request-url", response_model=UploadResponse, dependencies=[Depends(PreAuthRateLimit("15/minute"))])
+@router.post("/upload/request-url", response_model=UploadResponse, dependencies=[Depends(PreAuthRateLimit("15/minute")), Depends(require_admin)])
 @limiter.limit("15/minute", key_func=get_admin_id)
 def request_upload_url(req: UploadRequest, request: Request):
     """Admin: Request a backend URL to upload and compress a product image."""
     return storage_service.generate_presigned_url(req.filename, req.content_type)
 
-@router.put("/upload/direct/products/{filename}", dependencies=[Depends(PreAuthRateLimit("15/minute"))])
+@router.put("/upload/direct/products/{filename}", dependencies=[Depends(PreAuthRateLimit("15/minute")), Depends(require_admin)])
 @limiter.limit("15/minute", key_func=get_admin_id)
 async def direct_upload(filename: str, request: Request):
     """Admin: Direct upload endpoint for image compression before Supabase."""
@@ -130,7 +130,7 @@ async def direct_upload(filename: str, request: Request):
     storage_service.process_and_upload_image(file_bytes, f"products/{filename}")
     return {"status": "ok"}
 
-@router.post("/upload/confirm", response_model=ProductImageResponse, dependencies=[Depends(PreAuthRateLimit("15/minute"))])
+@router.post("/upload/confirm", response_model=ProductImageResponse, dependencies=[Depends(PreAuthRateLimit("15/minute")), Depends(require_admin)])
 @limiter.limit("15/minute", key_func=get_admin_id)
 def confirm_upload(req: UploadConfirmRequest, request: Request):
     """Admin: Verify the image was uploaded to storage and add it to the product_images table."""
@@ -150,7 +150,7 @@ def confirm_upload(req: UploadConfirmRequest, request: Request):
     
     return result.data[0]
 
-@router.delete("/images/{image_id}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(PreAuthRateLimit("30/minute"))])
+@router.delete("/images/{image_id}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(PreAuthRateLimit("30/minute")), Depends(require_admin)])
 @limiter.limit("30/minute", key_func=get_admin_id)
 def delete_image(image_id: str, request: Request):
     """Admin: Delete an image from the database."""

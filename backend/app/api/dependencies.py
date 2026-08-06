@@ -51,13 +51,15 @@ async def get_current_user_token(
             admin = get_supabase()
             user_data = admin.table("users").select("id, role").eq("email", email).execute()
             if user_data.data:
-                return {
+                user_dict = {
                     "sub": user_data.data[0]["id"],
                     "firebase_uid": firebase_uid,
                     "email": email,
                     "role": user_data.data[0].get("role", "customer"),
                     "token": token
                 }
+                request.state.user = user_dict
+                return user_dict
             else:
                 # Auto-sync user if they don't exist in Supabase but have a valid Firebase token
                 import uuid
@@ -75,13 +77,15 @@ async def get_current_user_token(
                     "full_name": email.split("@")[0] if email else "User",
                 }).execute()
                 
-                return {
+                user_dict = {
                     "sub": new_user_id,
                     "firebase_uid": firebase_uid,
                     "email": email,
                     "role": "customer",
                     "token": token
                 }
+                request.state.user = user_dict
+                return user_dict
         except Exception as e:
             import traceback
             traceback.print_exc()
@@ -104,12 +108,14 @@ async def get_current_user_token(
             user_data = admin.table("users").select("role").eq("id", user_id).single().execute()
             role = user_data.data.get("role", "customer") if user_data.data else "customer"
             
-            return {
+            user_dict = {
                 "sub": user_id,
                 "email": user.email,
                 "role": role,
                 "token": token
             }
+            request.state.user = user_dict
+            return user_dict
         except UnauthorizedError:
             raise
         except Exception:

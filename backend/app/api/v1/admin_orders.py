@@ -6,7 +6,7 @@ from app.db.supabase import get_supabase
 from app.core.exceptions import AppError
 from app.core.limiter import limiter, PreAuthRateLimit, get_admin_id
 
-router = APIRouter(dependencies=[Depends(require_admin)])
+router = APIRouter()
 
 
 class StatusUpdate(BaseModel):
@@ -19,7 +19,7 @@ class CallConfirmedUpdate(BaseModel):
     call_confirmed: bool
 
 
-@router.get("/", dependencies=[Depends(PreAuthRateLimit("60/minute"))])
+@router.get("/", dependencies=[Depends(PreAuthRateLimit("60/minute")), Depends(require_admin)])
 @limiter.limit("60/minute", key_func=get_admin_id)
 def list_orders(
     request: Request,
@@ -134,7 +134,7 @@ def list_orders(
     }
 
 
-@router.patch("/{order_id}/status", dependencies=[Depends(PreAuthRateLimit("30/minute"))])
+@router.patch("/{order_id}/status", dependencies=[Depends(PreAuthRateLimit("30/minute")), Depends(require_admin)])
 @limiter.limit("30/minute", key_func=get_admin_id)
 def update_order_status(order_id: str, body: StatusUpdate, request: Request):
     supabase = get_supabase()
@@ -154,7 +154,7 @@ def update_order_status(order_id: str, body: StatusUpdate, request: Request):
     return {"id": order_id, "status": body.status}
 
 
-@router.patch("/{order_id}/tracking", dependencies=[Depends(PreAuthRateLimit("30/minute"))])
+@router.patch("/{order_id}/tracking", dependencies=[Depends(PreAuthRateLimit("30/minute")), Depends(require_admin)])
 @limiter.limit("30/minute", key_func=get_admin_id)
 def update_tracking(order_id: str, body: TrackingUpdate, request: Request):
     supabase = get_supabase()
@@ -166,7 +166,7 @@ def update_tracking(order_id: str, body: TrackingUpdate, request: Request):
     return {"id": order_id, "tracking_number": body.tracking_number}
 
 
-@router.patch("/{order_id}/call-confirmed", dependencies=[Depends(PreAuthRateLimit("30/minute"))])
+@router.patch("/{order_id}/call-confirmed", dependencies=[Depends(PreAuthRateLimit("30/minute")), Depends(require_admin)])
 @limiter.limit("30/minute", key_func=get_admin_id)
 def update_call_confirmed(order_id: str, body: CallConfirmedUpdate, request: Request):
     supabase = get_supabase()

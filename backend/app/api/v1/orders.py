@@ -305,8 +305,9 @@ def create_order(order: OrderCreate, request: Request, background_tasks: Backgro
         "key_id": os.environ.get("RAZORPAY_KEY_ID")
     }
 
-@router.post("/verify-payment")
-def verify_payment(req: VerifyPaymentRequest, background_tasks: BackgroundTasks):
+@router.post("/verify-payment", dependencies=[Depends(PreAuthRateLimit("10/minute"))])
+@limiter.limit("5/minute", key_func=get_user_id)
+def verify_payment(req: VerifyPaymentRequest, request: Request, background_tasks: BackgroundTasks):
     """Verify Razorpay signature and confirm order."""
     rzp = get_razorpay_client()
     if not rzp:
@@ -388,8 +389,9 @@ def verify_payment(req: VerifyPaymentRequest, background_tasks: BackgroundTasks)
 
     return {"success": True}
 
-@router.post("/{order_id}/retry-payment")
-def retry_payment(order_id: str, user: dict = Depends(get_current_user_token)):
+@router.post("/{order_id}/retry-payment", dependencies=[Depends(PreAuthRateLimit("10/minute"))])
+@limiter.limit("5/minute", key_func=get_user_id)
+def retry_payment(order_id: str, request: Request, user: dict = Depends(get_current_user_token)):
     supabase = get_supabase()
     user_id = user["sub"]
 
@@ -498,8 +500,9 @@ class ValidateCouponRequest(BaseModel):
     items: List[Dict[str, Any]] | None = None
 
 
-@router.get("/me")
-def get_my_orders(response: Response, user: dict = Depends(get_current_user_token)):
+@router.get("/me", dependencies=[Depends(PreAuthRateLimit("120/minute"))])
+@limiter.limit("60/minute", key_func=get_user_id)
+def get_my_orders(response: Response, request: Request, user: dict = Depends(get_current_user_token)):
     # Prevent browser caching of order history across users
     response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
     
@@ -514,8 +517,9 @@ def get_my_orders(response: Response, user: dict = Depends(get_current_user_toke
         
     return res.data
 
-@router.get("/{order_id}")
-def get_order_by_id(order_id: str, user: dict = Depends(get_current_user_token)):
+@router.get("/{order_id}", dependencies=[Depends(PreAuthRateLimit("120/minute"))])
+@limiter.limit("60/minute", key_func=get_user_id)
+def get_order_by_id(order_id: str, request: Request, user: dict = Depends(get_current_user_token)):
     supabase = get_supabase()
     
     # Check if admin/owner or the owner of the order

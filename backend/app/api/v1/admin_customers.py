@@ -6,14 +6,14 @@ from app.db.supabase import get_supabase
 from app.core.exceptions import AppError
 from app.core.limiter import limiter, PreAuthRateLimit, get_admin_id
 
-router = APIRouter(dependencies=[Depends(require_admin)])
+router = APIRouter()
 
 
 class TagsUpdate(BaseModel):
     tags: List[str]
 
 
-@router.get("/", dependencies=[Depends(PreAuthRateLimit("60/minute"))])
+@router.get("/", dependencies=[Depends(PreAuthRateLimit("60/minute")), Depends(require_admin)])
 @limiter.limit("60/minute", key_func=get_admin_id)
 def list_customers(
     request: Request,
@@ -96,7 +96,7 @@ def list_customers(
     return result
 
 
-@router.get("/{customer_id}", dependencies=[Depends(PreAuthRateLimit("60/minute"))])
+@router.get("/{customer_id}", dependencies=[Depends(PreAuthRateLimit("60/minute")), Depends(require_admin)])
 @limiter.limit("60/minute", key_func=get_admin_id)
 def get_customer(customer_id: str, request: Request):
     """Get a single customer's details, addresses, and order history."""
@@ -169,7 +169,7 @@ def get_customer(customer_id: str, request: Request):
     }
 
 
-@router.patch("/{customer_id}/tags", dependencies=[Depends(PreAuthRateLimit("30/minute"))])
+@router.patch("/{customer_id}/tags", dependencies=[Depends(PreAuthRateLimit("30/minute")), Depends(require_admin)])
 @limiter.limit("30/minute", key_func=get_admin_id)
 def update_customer_tags(customer_id: str, body: TagsUpdate, request: Request):
     """Update customer tags (vip, repeat, high_value, etc.)."""
