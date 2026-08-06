@@ -2,6 +2,7 @@ from fastapi import Request
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
+from limits import parse
 
 def get_trusted_ip(request: Request) -> str:
     """Securely extracts the real IP, prioritizing trusted proxies."""
@@ -46,9 +47,13 @@ class PreAuthRateLimit:
             original_key_func = limiter._key_func
             limiter._key_func = self.key_func
             
+            def preauth_dummy():
+                pass
+            preauth_dummy.__name__ = f"preauth_{self.limit.replace('/', '_')}"
+            
             # _check_request_limit expects: request, endpoint_name, limit_list
-            parsed_limit = limiter._strategy.parse_rate_limit(self.limit)
-            limiter._check_request_limit(request, f"preauth:{self.limit}", [parsed_limit])
+            parsed_limit = parse(self.limit)
+            limiter._check_request_limit(request, preauth_dummy, [parsed_limit])
             
         except RateLimitExceeded as exc:
             # Re-raise so the global exception handler catches it
