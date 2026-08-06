@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useAuth } from "@/lib/auth";
-import { Package, Truck, FileText, Star, Download, MapPin, CheckCircle2, Loader2 } from "lucide-react";
+import { Package, Truck, FileText, Star, Download, MapPin, CheckCircle2, Loader2, PackageCheck } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { formatINR } from "@/lib/cart";
 import { apiFetch } from "@/lib/api";
@@ -152,13 +152,11 @@ function AccountOrdersPage() {
                       </div>
                       <div className="flex gap-4">
                         <div className="flex flex-col items-center mt-1">
-                          <div className="h-5 w-5 rounded-full border-2 border-muted/50 flex items-center justify-center">
-                            <div className="h-2.5 w-2.5 rounded-full bg-transparent" />
-                          </div>
+                          <PackageCheck className="h-5 w-5 text-muted-foreground" />
                         </div>
                         <div>
                           <p className="font-bold text-muted-foreground">Delivered</p>
-                          <p className="text-sm text-muted-foreground">Pending delivery confirmation.</p>
+                          <p className="text-sm text-muted-foreground">Your package will be delivered soon.</p>
                         </div>
                       </div>
                     </div>

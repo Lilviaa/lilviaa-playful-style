@@ -147,7 +147,7 @@ export function OrderDetailDrawer({ order, isOpen, onClose, onPrint }: OrderDeta
                 <div key={item.id} className="p-4 flex gap-4">
                   <div className="h-16 w-16 shrink-0 rounded-lg overflow-hidden bg-slate-100 border border-cocoa/10">
                     <img
-                      src={item.product_image_snapshot || "https://placehold.co/100"}
+                      src={(item as any).product_variants?.products?.image_urls?.[0] || item.product_image_snapshot || "https://placehold.co/100"}
                       alt={item.product_name_snapshot}
                       className="h-full w-full object-cover"
                     />
