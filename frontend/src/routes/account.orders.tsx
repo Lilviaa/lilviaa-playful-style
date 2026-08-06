@@ -143,10 +143,22 @@ function AccountOrdersPage() {
                       <div className="flex gap-4">
                         <div className="flex flex-col items-center mt-1">
                           <MapPin className="h-5 w-5 text-muted-foreground" />
+                          <div className="w-0.5 h-12 bg-border my-1" />
                         </div>
                         <div>
                           <p className="font-bold text-muted-foreground">Out for Delivery</p>
                           <p className="text-sm text-muted-foreground">Expected by tomorrow, 9 PM.</p>
+                        </div>
+                      </div>
+                      <div className="flex gap-4">
+                        <div className="flex flex-col items-center mt-1">
+                          <div className="h-5 w-5 rounded-full border-2 border-muted/50 flex items-center justify-center">
+                            <div className="h-2.5 w-2.5 rounded-full bg-transparent" />
+                          </div>
+                        </div>
+                        <div>
+                          <p className="font-bold text-muted-foreground">Delivered</p>
+                          <p className="text-sm text-muted-foreground">Pending delivery confirmation.</p>
                         </div>
                       </div>
                     </div>
