@@ -1,9 +1,10 @@
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, Request
 from pydantic import BaseModel
 from typing import Optional, List
 from app.api.dependencies import require_admin
 from app.db.supabase import get_supabase
 from app.core.exceptions import AppError
+from app.core.limiter import limiter, PreAuthRateLimit, get_admin_id
 
 router = APIRouter(dependencies=[Depends(require_admin)])
 
@@ -18,8 +19,10 @@ class CallConfirmedUpdate(BaseModel):
     call_confirmed: bool
 
 
-@router.get("/")
+@router.get("/", dependencies=[Depends(PreAuthRateLimit("60/minute"))])
+@limiter.limit("60/minute", key_func=get_admin_id)
 def list_orders(
+    request: Request,
     status: Optional[str] = Query(None),
     payment_method: Optional[str] = Query(None, alias="paymentMethod"),
     search: Optional[str] = Query(None),
@@ -131,8 +134,9 @@ def list_orders(
     }
 
 
-@router.patch("/{order_id}/status")
-def update_order_status(order_id: str, body: StatusUpdate):
+@router.patch("/{order_id}/status", dependencies=[Depends(PreAuthRateLimit("30/minute"))])
+@limiter.limit("30/minute", key_func=get_admin_id)
+def update_order_status(order_id: str, body: StatusUpdate, request: Request):
     supabase = get_supabase()
 
     # Verify order exists
@@ -150,8 +154,9 @@ def update_order_status(order_id: str, body: StatusUpdate):
     return {"id": order_id, "status": body.status}
 
 
-@router.patch("/{order_id}/tracking")
-def update_tracking(order_id: str, body: TrackingUpdate):
+@router.patch("/{order_id}/tracking", dependencies=[Depends(PreAuthRateLimit("30/minute"))])
+@limiter.limit("30/minute", key_func=get_admin_id)
+def update_tracking(order_id: str, body: TrackingUpdate, request: Request):
     supabase = get_supabase()
     order_res = supabase.table("orders").select("id").eq("id", order_id).execute()
     if not order_res.data:
@@ -161,8 +166,9 @@ def update_tracking(order_id: str, body: TrackingUpdate):
     return {"id": order_id, "tracking_number": body.tracking_number}
 
 
-@router.patch("/{order_id}/call-confirmed")
-def update_call_confirmed(order_id: str, body: CallConfirmedUpdate):
+@router.patch("/{order_id}/call-confirmed", dependencies=[Depends(PreAuthRateLimit("30/minute"))])
+@limiter.limit("30/minute", key_func=get_admin_id)
+def update_call_confirmed(order_id: str, body: CallConfirmedUpdate, request: Request):
     supabase = get_supabase()
     order_res = supabase.table("orders").select("id").eq("id", order_id).execute()
     if not order_res.data:

@@ -60,13 +60,21 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
+from fastapi.responses import JSONResponse
+from fastapi import Request
 from app.core.limiter import limiter
 
+def custom_rate_limit_handler(request: Request, exc: RateLimitExceeded):
+    # Scrub headers (like X-RateLimit-Reset) to prevent timing attacks
+    return JSONResponse(
+        {"detail": "Too Many Requests"},
+        status_code=429
+    )
+
 app.state.limiter = limiter
-app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+app.add_exception_handler(RateLimitExceeded, custom_rate_limit_handler)
 app.add_middleware(SlowAPIMiddleware)
 
 # Register custom exception handler

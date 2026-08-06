@@ -1,11 +1,13 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Request, Depends
 from app.db.supabase import get_supabase
 from datetime import datetime, timezone
+from app.core.limiter import limiter, PreAuthRateLimit
 
 router = APIRouter()
 
-@router.get("/")
-def get_public_banners():
+@router.get("/", dependencies=[Depends(PreAuthRateLimit("120/minute"))])
+@limiter.limit("120/minute")
+def get_public_banners(request: Request):
     """Fetch active banners for the storefront."""
     supabase = get_supabase()
     now = datetime.now(timezone.utc).isoformat()

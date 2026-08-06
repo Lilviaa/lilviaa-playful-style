@@ -1,14 +1,16 @@
-from fastapi import APIRouter, Request, Header, HTTPException
+from fastapi import APIRouter, Request, Header, HTTPException, Depends
 import os
 import hmac
 import hashlib
 import json
 from app.db.supabase import get_supabase
 from app.core.exceptions import AppError
+from app.core.limiter import limiter, PreAuthRateLimit
 
 router = APIRouter()
 
-@router.post("/razorpay")
+@router.post("/razorpay", dependencies=[Depends(PreAuthRateLimit("200/minute"))])
+@limiter.limit("200/minute")
 async def razorpay_webhook(request: Request, x_razorpay_signature: str = Header(None)):
     import os
     webhook_secret = os.environ.get("RAZORPAY_WEBHOOK_SECRET")

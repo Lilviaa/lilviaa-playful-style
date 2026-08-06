@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, Request
 from pydantic import BaseModel, field_validator
 from typing import Optional, List
 from datetime import datetime, timezone
@@ -6,6 +6,7 @@ from uuid import UUID
 from app.api.dependencies import require_admin, require_role
 from app.db.supabase import get_supabase
 from app.core.exceptions import AppError
+from app.core.limiter import limiter, PreAuthRateLimit, get_admin_id
 
 # Coupons management is owner-only per frontend UI
 require_owner = require_role(["owner"])
@@ -50,8 +51,9 @@ class CouponUpdate(BaseModel):
         return v.upper().strip() if v else v
 
 
-@router.get("/")
-def list_coupons():
+@router.get("/", dependencies=[Depends(PreAuthRateLimit("60/minute"))])
+@limiter.limit("60/minute", key_func=get_admin_id)
+def list_coupons(request: Request):
     """List all coupons with usage stats."""
     supabase = get_supabase()
 
@@ -87,8 +89,9 @@ def list_coupons():
     return result
 
 
-@router.get("/{coupon_id}")
-def get_coupon(coupon_id: UUID):
+@router.get("/{coupon_id}", dependencies=[Depends(PreAuthRateLimit("60/minute"))])
+@limiter.limit("60/minute", key_func=get_admin_id)
+def get_coupon(coupon_id: UUID, request: Request):
     """Get a single coupon with usage stats."""
     supabase = get_supabase()
 
@@ -120,8 +123,9 @@ def get_coupon(coupon_id: UUID):
     }
 
 
-@router.get("/{coupon_id}/usages")
-def get_coupon_usages(coupon_id: UUID):
+@router.get("/{coupon_id}/usages", dependencies=[Depends(PreAuthRateLimit("60/minute"))])
+@limiter.limit("60/minute", key_func=get_admin_id)
+def get_coupon_usages(coupon_id: UUID, request: Request):
     """Get usage history for a coupon."""
     supabase = get_supabase()
 
@@ -154,8 +158,9 @@ def get_coupon_usages(coupon_id: UUID):
     return result
 
 
-@router.post("/")
-def create_coupon(body: CouponCreate):
+@router.post("/", dependencies=[Depends(PreAuthRateLimit("30/minute"))])
+@limiter.limit("30/minute", key_func=get_admin_id)
+def create_coupon(body: CouponCreate, request: Request):
     """Create a new coupon."""
     supabase = get_supabase()
 
@@ -191,8 +196,9 @@ def create_coupon(body: CouponCreate):
         raise AppError(f"Error creating coupon: {str(e)}")
 
 
-@router.put("/{coupon_id}")
-def update_coupon(coupon_id: UUID, body: CouponUpdate):
+@router.put("/{coupon_id}", dependencies=[Depends(PreAuthRateLimit("30/minute"))])
+@limiter.limit("30/minute", key_func=get_admin_id)
+def update_coupon(coupon_id: UUID, body: CouponUpdate, request: Request):
     """Update a coupon."""
     supabase = get_supabase()
 
@@ -221,8 +227,9 @@ def update_coupon(coupon_id: UUID, body: CouponUpdate):
         raise AppError(f"Error updating coupon: {str(e)}")
 
 
-@router.delete("/{coupon_id}")
-def delete_coupon(coupon_id: UUID):
+@router.delete("/{coupon_id}", dependencies=[Depends(PreAuthRateLimit("30/minute"))])
+@limiter.limit("30/minute", key_func=get_admin_id)
+def delete_coupon(coupon_id: UUID, request: Request):
     """Delete a coupon."""
     supabase = get_supabase()
 

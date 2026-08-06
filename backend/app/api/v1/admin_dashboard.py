@@ -1,7 +1,8 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 from app.api.dependencies import require_admin
 from app.db.supabase import get_supabase
 from datetime import datetime, timezone, timedelta
+from app.core.limiter import limiter, PreAuthRateLimit, get_admin_id
 
 router = APIRouter(dependencies=[Depends(require_admin)])
 
@@ -49,8 +50,9 @@ def _pct_change(current: float, previous: float) -> float:
     return round(((current - previous) / previous) * 100, 1)
 
 
-@router.get("/stats")
-def get_dashboard_stats():
+@router.get("/stats", dependencies=[Depends(PreAuthRateLimit("60/minute"))])
+@limiter.limit("60/minute", key_func=get_admin_id)
+def get_dashboard_stats(request: Request):
     supabase = get_supabase()
 
     # --- Revenue aggregates ---

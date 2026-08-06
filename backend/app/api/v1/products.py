@@ -1,7 +1,8 @@
-from fastapi import APIRouter, HTTPException, status, Query, Request
+from fastapi import APIRouter, HTTPException, status, Query, Request, Depends
 from typing import List, Optional
 from datetime import datetime, timezone
 from app.models.public_product import PublicProductResponse
+from app.core.limiter import limiter, PreAuthRateLimit
 from app.db.supabase import get_supabase, get_fresh_supabase
 from app.core.exceptions import AppError
 
@@ -96,8 +97,10 @@ def map_product(row: dict) -> dict:
         
     return result
 
-@router.get("/", response_model=List[PublicProductResponse])
+@router.get("/", response_model=List[PublicProductResponse], dependencies=[Depends(PreAuthRateLimit("60/minute"))])
+@limiter.limit("60/minute")
 def get_products(
+    request: Request,
     category: Optional[str] = None,
     sort: Optional[str] = Query(None, description="price_asc, price_desc, newest"),
     q: Optional[str] = Query(None, description="Search term for name and description"),
@@ -134,8 +137,9 @@ def get_products(
         
     return products
 
-@router.get("/featured", response_model=List[PublicProductResponse])
-def get_featured_products():
+@router.get("/featured", response_model=List[PublicProductResponse], dependencies=[Depends(PreAuthRateLimit("120/minute"))])
+@limiter.limit("120/minute")
+def get_featured_products(request: Request):
     """Fetch featured published products (e.g. tag is bestseller or new). Limit to 8."""
     supabase = get_supabase()
     
@@ -146,7 +150,8 @@ def get_featured_products():
     result = query.execute()
     return [map_product(row) for row in result.data]
 
-@router.get("/{slug}", response_model=PublicProductResponse)
+@router.get("/{slug}", response_model=PublicProductResponse, dependencies=[Depends(PreAuthRateLimit("120/minute"))])
+@limiter.limit("120/minute")
 def get_product_by_slug(slug: str, request: Request):
     """Fetch a single published product by slug. Admins can view drafts/archived."""
     supabase = get_supabase()

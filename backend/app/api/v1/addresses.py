@@ -1,21 +1,24 @@
-from fastapi import APIRouter, Depends, status, HTTPException
+from fastapi import APIRouter, Depends, status, HTTPException, Request
 from typing import List
 from app.models.address import AddressCreate, AddressUpdate, AddressResponse
 from app.api.dependencies import get_current_user_id
 from app.db.supabase import get_supabase
 from app.core.exceptions import AppError, NotFoundError
+from app.core.limiter import limiter, PreAuthRateLimit, get_user_id
 
 router = APIRouter()
 
-@router.get("/", response_model=List[AddressResponse])
-def get_addresses(user_id: str = Depends(get_current_user_id)):
+@router.get("/", response_model=List[AddressResponse], dependencies=[Depends(PreAuthRateLimit("30/minute"))])
+@limiter.limit("10/minute", key_func=get_user_id)
+def get_addresses(request: Request, user_id: str = Depends(get_current_user_id)):
     """Get all addresses for the current user."""
     supabase = get_supabase()
     result = supabase.table("addresses").select("*").eq("user_id", user_id).execute()
     return result.data
 
-@router.post("/", response_model=AddressResponse, status_code=status.HTTP_201_CREATED)
-def create_address(address_in: AddressCreate, user_id: str = Depends(get_current_user_id)):
+@router.post("/", response_model=AddressResponse, status_code=status.HTTP_201_CREATED, dependencies=[Depends(PreAuthRateLimit("30/minute"))])
+@limiter.limit("10/minute", key_func=get_user_id)
+def create_address(address_in: AddressCreate, request: Request, user_id: str = Depends(get_current_user_id)):
     """Create a new address for the current user (Max 5)."""
     supabase = get_supabase()
     
@@ -44,8 +47,9 @@ def create_address(address_in: AddressCreate, user_id: str = Depends(get_current
     result = supabase.table("addresses").insert(address_data).execute()
     return result.data[0]
 
-@router.put("/{address_id}", response_model=AddressResponse)
-def update_address(address_id: str, address_in: AddressUpdate, user_id: str = Depends(get_current_user_id)):
+@router.put("/{address_id}", response_model=AddressResponse, dependencies=[Depends(PreAuthRateLimit("30/minute"))])
+@limiter.limit("10/minute", key_func=get_user_id)
+def update_address(address_id: str, address_in: AddressUpdate, request: Request, user_id: str = Depends(get_current_user_id)):
     """Update an existing address for the current user."""
     supabase = get_supabase()
     
@@ -77,8 +81,9 @@ def update_address(address_id: str, address_in: AddressUpdate, user_id: str = De
     # Return existing if no updates
     return supabase.table("addresses").select("*").eq("id", address_id).eq("user_id", user_id).execute().data[0]
 
-@router.delete("/{address_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_address(address_id: str, user_id: str = Depends(get_current_user_id)):
+@router.delete("/{address_id}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(PreAuthRateLimit("30/minute"))])
+@limiter.limit("10/minute", key_func=get_user_id)
+def delete_address(address_id: str, request: Request, user_id: str = Depends(get_current_user_id)):
     """Delete an address for the current user."""
     supabase = get_supabase()
     

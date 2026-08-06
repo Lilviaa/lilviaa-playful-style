@@ -5,6 +5,7 @@ from pydantic import BaseModel
 from app.api.dependencies import get_current_user_token
 from app.db.supabase import get_supabase
 from app.core.exceptions import AppError
+from app.core.limiter import limiter, PreAuthRateLimit, get_user_id
 
 router = APIRouter()
 
@@ -26,8 +27,9 @@ class ReviewResponse(BaseModel):
     reviewer_name: str
     verified_purchase: bool
 
-@router.get("/featured")
-def get_featured_reviews():
+@router.get("/featured", dependencies=[Depends(PreAuthRateLimit("120/minute"))])
+@limiter.limit("120/minute")
+def get_featured_reviews(request: Request):
     """Fetch the top 3 featured and approved reviews for the landing page."""
     supabase = get_supabase()
     
@@ -60,8 +62,9 @@ def get_featured_reviews():
         })
     return out
 
-@router.get("/product/{product_id}")
-def get_product_reviews(product_id: str, limit: int = Query(10, ge=1, le=50), offset: int = Query(0, ge=0)):
+@router.get("/product/{product_id}", dependencies=[Depends(PreAuthRateLimit("120/minute"))])
+@limiter.limit("120/minute")
+def get_product_reviews(product_id: str, request: Request, limit: int = Query(10, ge=1, le=50), offset: int = Query(0, ge=0)):
     """Fetch approved reviews for a specific product."""
     supabase = get_supabase()
     
@@ -97,8 +100,9 @@ def get_product_reviews(product_id: str, limit: int = Query(10, ge=1, le=50), of
         "count": res.count
     }
 
-@router.post("/", status_code=201)
-def create_review(review: ReviewCreate, user: dict = Depends(get_current_user_token)):
+@router.post("/", status_code=201, dependencies=[Depends(PreAuthRateLimit("20/minute"))])
+@limiter.limit("5/minute", key_func=get_user_id)
+def create_review(review: ReviewCreate, request: Request, user: dict = Depends(get_current_user_token)):
     """Create a new review. Will auto-verify if the user has purchased the item."""
     supabase = get_supabase()
     user_id = user["sub"]
@@ -136,8 +140,9 @@ def create_review(review: ReviewCreate, user: dict = Depends(get_current_user_to
     except Exception as e:
         raise AppError(f"Failed to submit review: {str(e)}", status_code=400)
 
-@router.delete("/{review_id}")
-def delete_review(review_id: str, user: dict = Depends(get_current_user_token)):
+@router.delete("/{review_id}", dependencies=[Depends(PreAuthRateLimit("20/minute"))])
+@limiter.limit("10/minute", key_func=get_user_id)
+def delete_review(review_id: str, request: Request, user: dict = Depends(get_current_user_token)):
     """Delete own review."""
     supabase = get_supabase()
     user_id = user["sub"]

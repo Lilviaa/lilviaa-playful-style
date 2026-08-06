@@ -1,9 +1,10 @@
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, Request
 from pydantic import BaseModel
 from typing import Optional, List
 from app.api.dependencies import require_admin
 from app.db.supabase import get_supabase
 from app.core.exceptions import AppError
+from app.core.limiter import limiter, PreAuthRateLimit, get_admin_id
 
 router = APIRouter(dependencies=[Depends(require_admin)])
 
@@ -12,8 +13,10 @@ class TagsUpdate(BaseModel):
     tags: List[str]
 
 
-@router.get("/")
+@router.get("/", dependencies=[Depends(PreAuthRateLimit("60/minute"))])
+@limiter.limit("60/minute", key_func=get_admin_id)
 def list_customers(
+    request: Request,
     search: Optional[str] = Query(None),
     sort: Optional[str] = Query("recent"),
 ):
@@ -93,8 +96,9 @@ def list_customers(
     return result
 
 
-@router.get("/{customer_id}")
-def get_customer(customer_id: str):
+@router.get("/{customer_id}", dependencies=[Depends(PreAuthRateLimit("60/minute"))])
+@limiter.limit("60/minute", key_func=get_admin_id)
+def get_customer(customer_id: str, request: Request):
     """Get a single customer's details, addresses, and order history."""
     supabase = get_supabase()
 
@@ -165,8 +169,9 @@ def get_customer(customer_id: str):
     }
 
 
-@router.patch("/{customer_id}/tags")
-def update_customer_tags(customer_id: str, body: TagsUpdate):
+@router.patch("/{customer_id}/tags", dependencies=[Depends(PreAuthRateLimit("30/minute"))])
+@limiter.limit("30/minute", key_func=get_admin_id)
+def update_customer_tags(customer_id: str, body: TagsUpdate, request: Request):
     """Update customer tags (vip, repeat, high_value, etc.)."""
     supabase = get_supabase()
 

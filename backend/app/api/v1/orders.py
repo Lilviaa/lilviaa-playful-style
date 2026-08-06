@@ -5,7 +5,7 @@ from app.models.order import OrderCreate, OrderResponse
 from app.db.supabase import get_supabase, get_fresh_supabase
 from app.core.exceptions import AppError
 from app.core.email import send_order_confirmation_email
-from app.core.limiter import limiter
+from app.core.limiter import limiter, PreAuthRateLimit, get_user_id
 import uuid
 import os
 import razorpay
@@ -33,8 +33,8 @@ class VerifyPaymentRequest(BaseModel):
     razorpay_order_id: str
     razorpay_signature: str
 
-@router.post("/", status_code=status.HTTP_201_CREATED)
-@limiter.limit("10/minute")
+@router.post("/", status_code=status.HTTP_201_CREATED, dependencies=[Depends(PreAuthRateLimit("10/minute"))])
+@limiter.limit("5/minute", key_func=get_user_id)
 def create_order(order: OrderCreate, request: Request, background_tasks: BackgroundTasks):
     """Create a new order, validate stock, and deduct stock atomically."""
     supabase = get_supabase()
@@ -642,8 +642,9 @@ def _validate_coupon_logic(code: str, cart_total: float, user_id: str | None, su
     }
 
 
-@router.post("/validate-coupon")
-def validate_coupon(req: ValidateCouponRequest):
+@router.post("/validate-coupon", dependencies=[Depends(PreAuthRateLimit("10/minute"))])
+@limiter.limit("5/minute", key_func=get_user_id)
+def validate_coupon(req: ValidateCouponRequest, request: Request):
     """Validate a coupon code and return the discount amount."""
     supabase = get_supabase()
     

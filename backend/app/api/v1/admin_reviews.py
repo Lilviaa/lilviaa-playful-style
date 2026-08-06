@@ -4,6 +4,7 @@ from pydantic import BaseModel
 from app.api.dependencies import get_current_user_token
 from app.db.supabase import get_supabase, get_fresh_supabase
 from app.core.exceptions import AppError
+from app.core.limiter import limiter, PreAuthRateLimit, get_admin_id
 
 router = APIRouter()
 
@@ -21,8 +22,10 @@ class ReviewUpdateFeatured(BaseModel):
 class ReviewUpdateText(BaseModel):
     text: str
 
-@router.get("/")
+@router.get("/", dependencies=[Depends(PreAuthRateLimit("60/minute"))])
+@limiter.limit("60/minute", key_func=get_admin_id)
 def get_all_reviews(
+    request: Request,
     status: Optional[str] = None,
     limit: int = Query(100, ge=1, le=500),
     offset: int = Query(0, ge=0),
@@ -73,14 +76,16 @@ def get_all_reviews(
         })
     return out
 
-@router.get("/pending-count")
-def get_pending_count(admin_id: str = Depends(require_admin)):
+@router.get("/pending-count", dependencies=[Depends(PreAuthRateLimit("60/minute"))])
+@limiter.limit("60/minute", key_func=get_admin_id)
+def get_pending_count(request: Request, admin_id: str = Depends(require_admin)):
     supabase = get_supabase()
     res = supabase.table("reviews").select("id", count="exact").eq("status", "pending").execute()
     return {"count": res.count or 0}
 
-@router.patch("/{review_id}/status")
-def update_review_status(review_id: str, payload: ReviewUpdateStatus, admin_id: str = Depends(require_admin)):
+@router.patch("/{review_id}/status", dependencies=[Depends(PreAuthRateLimit("30/minute"))])
+@limiter.limit("30/minute", key_func=get_admin_id)
+def update_review_status(review_id: str, payload: ReviewUpdateStatus, request: Request, admin_id: str = Depends(require_admin)):
     if payload.status not in ["pending", "approved", "rejected"]:
         raise AppError("Invalid status", status_code=400)
         
@@ -90,24 +95,27 @@ def update_review_status(review_id: str, payload: ReviewUpdateStatus, admin_id: 
         raise AppError("Review not found", status_code=404)
     return {"message": "Status updated", "status": res.data[0]["status"]}
 
-@router.patch("/{review_id}/feature")
-def update_review_feature(review_id: str, payload: ReviewUpdateFeatured, admin_id: str = Depends(require_admin)):
+@router.patch("/{review_id}/feature", dependencies=[Depends(PreAuthRateLimit("30/minute"))])
+@limiter.limit("30/minute", key_func=get_admin_id)
+def update_review_feature(review_id: str, payload: ReviewUpdateFeatured, request: Request, admin_id: str = Depends(require_admin)):
     supabase = get_supabase()
     res = supabase.table("reviews").update({"is_featured": payload.featured}).eq("id", review_id).execute()
     if not res.data:
         raise AppError("Review not found", status_code=404)
     return {"message": "Feature updated", "is_featured": res.data[0]["is_featured"]}
 
-@router.patch("/{review_id}/text")
-def update_review_text(review_id: str, payload: ReviewUpdateText, admin_id: str = Depends(require_admin)):
+@router.patch("/{review_id}/text", dependencies=[Depends(PreAuthRateLimit("30/minute"))])
+@limiter.limit("30/minute", key_func=get_admin_id)
+def update_review_text(review_id: str, payload: ReviewUpdateText, request: Request, admin_id: str = Depends(require_admin)):
     supabase = get_supabase()
     res = supabase.table("reviews").update({"text": payload.text}).eq("id", review_id).execute()
     if not res.data:
         raise AppError("Review not found", status_code=404)
     return {"message": "Text updated"}
 
-@router.delete("/{review_id}")
-def admin_delete_review(review_id: str, admin_id: str = Depends(require_admin)):
+@router.delete("/{review_id}", dependencies=[Depends(PreAuthRateLimit("30/minute"))])
+@limiter.limit("30/minute", key_func=get_admin_id)
+def admin_delete_review(review_id: str, request: Request, admin_id: str = Depends(require_admin)):
     supabase = get_supabase()
     res = supabase.table("reviews").delete().eq("id", review_id).execute()
     return {"message": "Review deleted"}

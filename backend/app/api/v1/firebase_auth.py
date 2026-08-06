@@ -4,6 +4,7 @@ from app.db.supabase import get_supabase
 from pydantic import BaseModel
 from typing import Optional
 import firebase_admin.auth
+from app.core.limiter import limiter, PreAuthRateLimit, get_user_id
 
 router = APIRouter()
 
@@ -13,8 +14,9 @@ class SyncUserRequest(BaseModel):
     full_name: str
     phone: Optional[str] = None
 
-@router.post("/sync")
-def sync_firebase_user(user: SyncUserRequest):
+@router.post("/sync", dependencies=[Depends(PreAuthRateLimit("5/minute"))])
+@limiter.limit("5/minute")
+def sync_firebase_user(user: SyncUserRequest, request: Request):
     """
     Syncs a newly registered Firebase user into the Supabase 'users' table.
     This ensures they have a profile we can link orders to.
@@ -55,8 +57,9 @@ def sync_firebase_user(user: SyncUserRequest):
     
     return {"status": "error"}
 
-@router.get("/me")
-def get_current_user_profile(token_data: dict = Depends(get_current_user_token)):
+@router.get("/me", dependencies=[Depends(PreAuthRateLimit("120/minute"))])
+@limiter.limit("120/minute", key_func=get_user_id)
+def get_current_user_profile(request: Request, token_data: dict = Depends(get_current_user_token)):
     """
     Returns the user's profile from Supabase, bridging the gap between Firebase auth and our DB.
     """
@@ -85,8 +88,9 @@ class UpdateProfileRequest(BaseModel):
     full_name: Optional[str] = None
     phone: Optional[str] = None
 
-@router.patch("/me")
-def update_current_user_profile(data: UpdateProfileRequest, token_data: dict = Depends(get_current_user_token)):
+@router.patch("/me", dependencies=[Depends(PreAuthRateLimit("30/minute"))])
+@limiter.limit("10/minute", key_func=get_user_id)
+def update_current_user_profile(data: UpdateProfileRequest, request: Request, token_data: dict = Depends(get_current_user_token)):
     """
     Updates the current user's profile in Supabase.
     """
@@ -109,8 +113,9 @@ def update_current_user_profile(data: UpdateProfileRequest, token_data: dict = D
             
     return {"status": "success", "message": "Profile updated"}
 
-@router.delete("/me", status_code=status.HTTP_204_NO_CONTENT)
-def delete_current_user(token_data: dict = Depends(get_current_user_token)):
+@router.delete("/me", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(PreAuthRateLimit("20/minute"))])
+@limiter.limit("3/minute", key_func=get_user_id)
+def delete_current_user(request: Request, token_data: dict = Depends(get_current_user_token)):
     """
     Deletes the current user from our Supabase DB and from Firebase Auth.
     Requires re-authentication on the frontend before calling.

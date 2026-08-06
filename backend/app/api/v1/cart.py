@@ -1,9 +1,10 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 from pydantic import BaseModel
 from typing import List
 from app.db.supabase import get_supabase
 from app.api.dependencies import get_current_user_token
 from app.core.exceptions import AppError
+from app.core.limiter import limiter, PreAuthRateLimit, get_user_id
 
 router = APIRouter(dependencies=[Depends(get_current_user_token)])
 
@@ -17,8 +18,9 @@ class CartItemUpdate(BaseModel):
 class MergeCartRequest(BaseModel):
     items: List[CartItemCreate]
 
-@router.get("/")
-def get_cart(user: dict = Depends(get_current_user_token)):
+@router.get("/", dependencies=[Depends(PreAuthRateLimit("120/minute"))])
+@limiter.limit("60/minute", key_func=get_user_id)
+def get_cart(request: Request, user: dict = Depends(get_current_user_token)):
     """Fetch the authenticated user's cart."""
     supabase = get_supabase()
     user_id = user["sub"]
@@ -32,8 +34,9 @@ def get_cart(user: dict = Depends(get_current_user_token)):
         
     return res.data
 
-@router.post("/")
-def add_to_cart(item: CartItemCreate, user: dict = Depends(get_current_user_token)):
+@router.post("/", dependencies=[Depends(PreAuthRateLimit("120/minute"))])
+@limiter.limit("60/minute", key_func=get_user_id)
+def add_to_cart(item: CartItemCreate, request: Request, user: dict = Depends(get_current_user_token)):
     """Add an item to the cart or increment quantity."""
     supabase = get_supabase()
     user_id = user["sub"]
@@ -77,8 +80,9 @@ def add_to_cart(item: CartItemCreate, user: dict = Depends(get_current_user_toke
             
     return {"success": True, "data": res.data[0]}
 
-@router.put("/{product_variant_id}")
-def update_cart_item(product_variant_id: str, body: CartItemUpdate, user: dict = Depends(get_current_user_token)):
+@router.put("/{product_variant_id}", dependencies=[Depends(PreAuthRateLimit("120/minute"))])
+@limiter.limit("60/minute", key_func=get_user_id)
+def update_cart_item(product_variant_id: str, body: CartItemUpdate, request: Request, user: dict = Depends(get_current_user_token)):
     """Update quantity of a cart item."""
     supabase = get_supabase()
     user_id = user["sub"]
@@ -110,8 +114,9 @@ def update_cart_item(product_variant_id: str, body: CartItemUpdate, user: dict =
         
     return {"success": True, "data": res.data[0]}
 
-@router.delete("/{product_variant_id}")
-def remove_from_cart(product_variant_id: str, user: dict = Depends(get_current_user_token)):
+@router.delete("/{product_variant_id}", dependencies=[Depends(PreAuthRateLimit("120/minute"))])
+@limiter.limit("60/minute", key_func=get_user_id)
+def remove_from_cart(product_variant_id: str, request: Request, user: dict = Depends(get_current_user_token)):
     """Remove item from cart."""
     supabase = get_supabase()
     user_id = user["sub"]
@@ -124,8 +129,9 @@ def remove_from_cart(product_variant_id: str, user: dict = Depends(get_current_u
         
     return {"success": True}
 
-@router.post("/merge")
-def merge_cart(body: MergeCartRequest, user: dict = Depends(get_current_user_token)):
+@router.post("/merge", dependencies=[Depends(PreAuthRateLimit("120/minute"))])
+@limiter.limit("60/minute", key_func=get_user_id)
+def merge_cart(body: MergeCartRequest, request: Request, user: dict = Depends(get_current_user_token)):
     """Merge guest cart with user cart upon login."""
     supabase = get_supabase()
     user_id = user["sub"]
