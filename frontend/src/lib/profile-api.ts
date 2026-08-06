@@ -8,7 +8,7 @@ export function useUpdateProfile() {
   
   return useMutation({
     mutationFn: async (data: { full_name?: string; phone?: string }) => {
-      const res = await apiFetch("/auth/me", {
+      const res = await apiFetch("/firebase_auth/me", {
         method: "PATCH",
         body: JSON.stringify(data),
       });

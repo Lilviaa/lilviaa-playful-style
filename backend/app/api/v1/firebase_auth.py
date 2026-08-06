@@ -81,6 +81,34 @@ def get_current_user_profile(token_data: dict = Depends(get_current_user_token))
         return user
     return {"error": "User not found"}
 
+class UpdateProfileRequest(BaseModel):
+    full_name: Optional[str] = None
+    phone: Optional[str] = None
+
+@router.patch("/me")
+def update_current_user_profile(data: UpdateProfileRequest, token_data: dict = Depends(get_current_user_token)):
+    """
+    Updates the current user's profile in Supabase.
+    """
+    supabase = get_supabase()
+    user_id = token_data["sub"]
+    
+    update_data = {}
+    if data.full_name is not None:
+        update_data["full_name"] = data.full_name
+    if data.phone is not None:
+        update_data["phone"] = data.phone
+        
+    if update_data:
+        profile_res = supabase.table("user_profiles").select("id").eq("user_id", user_id).execute()
+        if profile_res.data:
+            supabase.table("user_profiles").update(update_data).eq("user_id", user_id).execute()
+        else:
+            update_data["user_id"] = user_id
+            supabase.table("user_profiles").insert(update_data).execute()
+            
+    return {"status": "success", "message": "Profile updated"}
+
 @router.delete("/me", status_code=status.HTTP_204_NO_CONTENT)
 def delete_current_user(token_data: dict = Depends(get_current_user_token)):
     """
