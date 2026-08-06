@@ -51,7 +51,7 @@ class CouponUpdate(BaseModel):
         return v.upper().strip() if v else v
 
 
-@router.get("/", dependencies=[Depends(PreAuthRateLimit("60/minute")), Depends(require_owner)])
+@router.get("", dependencies=[Depends(PreAuthRateLimit("60/minute")), Depends(require_owner)])
 @limiter.limit("60/minute", key_func=get_admin_id)
 def list_coupons(request: Request):
     """List all coupons with usage stats."""
@@ -158,7 +158,7 @@ def get_coupon_usages(coupon_id: UUID, request: Request):
     return result
 
 
-@router.post("/", dependencies=[Depends(PreAuthRateLimit("30/minute")), Depends(require_owner)])
+@router.post("", dependencies=[Depends(PreAuthRateLimit("30/minute")), Depends(require_owner)])
 @limiter.limit("30/minute", key_func=get_admin_id)
 def create_coupon(body: CouponCreate, request: Request):
     """Create a new coupon."""

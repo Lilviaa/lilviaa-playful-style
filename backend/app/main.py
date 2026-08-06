@@ -22,35 +22,6 @@ app = FastAPI(
 
 # Set up CORS
 
-@app.middleware("http")
-async def add_trailing_slash_to_missing_routes(request, call_next):
-    # Vercel Rewrites automatically strip the trailing slash from proxy requests.
-    # FastAPI strictly expects trailing slashes for root endpoints like /api/v1/admin/orders/
-    # If FastAPI redirects it, Vercel strips it again, causing an infinite redirect loop.
-    # To fix this elegantly, we internally add the trailing slash before routing.
-    prefixes = {
-        "/api/v1/addresses",
-        "/api/v1/cart",
-        "/api/v1/categories",
-        "/api/v1/products",
-        "/api/v1/orders",
-        "/api/v1/webhooks",
-        "/api/v1/banners",
-        "/api/v1/reviews",
-        "/api/v1/cms",
-        "/api/v1/admin/dashboard",
-        "/api/v1/admin/orders",
-        "/api/v1/admin/customers",
-        "/api/v1/admin/coupons",
-        "/api/v1/admin/banners",
-        "/api/v1/admin/reviews",
-        "/api/v1/admin/products",
-        "/api/v1/admin/cms",
-    }
-    if request.scope.get("path") in prefixes:
-        request.scope["path"] += "/"
-        
-    return await call_next(request)
 
 app.add_middleware(
     CORSMiddleware,

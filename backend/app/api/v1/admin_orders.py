@@ -19,7 +19,7 @@ class CallConfirmedUpdate(BaseModel):
     call_confirmed: bool
 
 
-@router.get("/", dependencies=[Depends(PreAuthRateLimit("60/minute")), Depends(require_admin)])
+@router.get("", dependencies=[Depends(PreAuthRateLimit("60/minute")), Depends(require_admin)])
 @limiter.limit("60/minute", key_func=get_admin_id)
 def list_orders(
     request: Request,

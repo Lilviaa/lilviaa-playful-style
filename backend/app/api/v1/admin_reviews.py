@@ -22,7 +22,7 @@ class ReviewUpdateFeatured(BaseModel):
 class ReviewUpdateText(BaseModel):
     text: str
 
-@router.get("/", dependencies=[Depends(PreAuthRateLimit("60/minute"))])
+@router.get("", dependencies=[Depends(PreAuthRateLimit("60/minute"))])
 @limiter.limit("60/minute", key_func=get_admin_id)
 def get_all_reviews(
     request: Request,

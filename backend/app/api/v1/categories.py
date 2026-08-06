@@ -12,7 +12,7 @@ router = APIRouter()
 # Public Routes
 # ──────────────────────────────────────────
 
-@router.get("/", response_model=List[CategoryResponse], dependencies=[Depends(PreAuthRateLimit("120/minute"))])
+@router.get("", response_model=List[CategoryResponse], dependencies=[Depends(PreAuthRateLimit("120/minute"))])
 @limiter.limit("120/minute")
 def get_categories(request: Request):
     """Fetch all categories, ordered by sort_order."""
@@ -25,7 +25,7 @@ def get_categories(request: Request):
 # Admin Routes
 # ──────────────────────────────────────────
 
-@router.post("/", response_model=CategoryResponse, status_code=status.HTTP_201_CREATED, dependencies=[Depends(PreAuthRateLimit("30/minute")), Depends(require_admin)])
+@router.post("", response_model=CategoryResponse, status_code=status.HTTP_201_CREATED, dependencies=[Depends(PreAuthRateLimit("30/minute")), Depends(require_admin)])
 @limiter.limit("30/minute", key_func=get_admin_id)
 def create_category(category: CategoryCreate, request: Request):
     """Create a new category (Admin only)."""

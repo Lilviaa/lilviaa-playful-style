@@ -97,7 +97,7 @@ def map_product(row: dict) -> dict:
         
     return result
 
-@router.get("/", response_model=List[PublicProductResponse], dependencies=[Depends(PreAuthRateLimit("60/minute"))])
+@router.get("", response_model=List[PublicProductResponse], dependencies=[Depends(PreAuthRateLimit("60/minute"))])
 @limiter.limit("60/minute")
 def get_products(
     request: Request,

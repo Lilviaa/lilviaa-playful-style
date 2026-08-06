@@ -33,7 +33,7 @@ class VerifyPaymentRequest(BaseModel):
     razorpay_order_id: str
     razorpay_signature: str
 
-@router.post("/", status_code=status.HTTP_201_CREATED, dependencies=[Depends(PreAuthRateLimit("10/minute"))])
+@router.post("", status_code=status.HTTP_201_CREATED, dependencies=[Depends(PreAuthRateLimit("10/minute"))])
 @limiter.limit("5/minute", key_func=get_user_id)
 def create_order(order: OrderCreate, request: Request, background_tasks: BackgroundTasks):
     """Create a new order, validate stock, and deduct stock atomically."""

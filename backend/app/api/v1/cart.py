@@ -6,7 +6,7 @@ from app.api.dependencies import get_current_user_token
 from app.core.exceptions import AppError
 from app.core.limiter import limiter, PreAuthRateLimit, get_user_id
 
-router = APIRouter(dependencies=[Depends(get_current_user_token)])
+router = APIRouter()
 
 class CartItemCreate(BaseModel):
     product_variant_id: str
@@ -18,7 +18,7 @@ class CartItemUpdate(BaseModel):
 class MergeCartRequest(BaseModel):
     items: List[CartItemCreate]
 
-@router.get("/", dependencies=[Depends(PreAuthRateLimit("120/minute"))])
+@router.get("", dependencies=[Depends(PreAuthRateLimit("120/minute"))])
 @limiter.limit("60/minute", key_func=get_user_id)
 def get_cart(request: Request, user: dict = Depends(get_current_user_token)):
     """Fetch the authenticated user's cart."""
@@ -34,7 +34,7 @@ def get_cart(request: Request, user: dict = Depends(get_current_user_token)):
         
     return res.data
 
-@router.post("/", dependencies=[Depends(PreAuthRateLimit("120/minute"))])
+@router.post("", dependencies=[Depends(PreAuthRateLimit("120/minute"))])
 @limiter.limit("60/minute", key_func=get_user_id)
 def add_to_cart(item: CartItemCreate, request: Request, user: dict = Depends(get_current_user_token)):
     """Add an item to the cart or increment quantity."""

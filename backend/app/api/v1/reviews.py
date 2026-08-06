@@ -100,7 +100,7 @@ def get_product_reviews(product_id: str, request: Request, limit: int = Query(10
         "count": res.count
     }
 
-@router.post("/", status_code=201, dependencies=[Depends(PreAuthRateLimit("20/minute"))])
+@router.post("", status_code=201, dependencies=[Depends(PreAuthRateLimit("20/minute"))])
 @limiter.limit("5/minute", key_func=get_user_id)
 def create_review(review: ReviewCreate, request: Request, user: dict = Depends(get_current_user_token)):
     """Create a new review. Will auto-verify if the user has purchased the item."""

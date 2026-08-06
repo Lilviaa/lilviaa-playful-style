@@ -17,7 +17,7 @@ router = APIRouter()
 # Products (Admin)
 # ──────────────────────────────────────────
 
-@router.get("/", response_model=List[ProductResponse], dependencies=[Depends(PreAuthRateLimit("60/minute")), Depends(require_admin)])
+@router.get("", response_model=List[ProductResponse], dependencies=[Depends(PreAuthRateLimit("60/minute")), Depends(require_admin)])
 @limiter.limit("60/minute", key_func=get_admin_id)
 def get_all_products(request: Request):
     """Admin: Fetch all products (draft, published, archived)."""
@@ -28,7 +28,7 @@ def get_all_products(request: Request):
             product["images"].sort(key=lambda x: x.get("sort_order", 0))
     return result.data
 
-@router.post("/", response_model=ProductResponse, status_code=status.HTTP_201_CREATED, dependencies=[Depends(PreAuthRateLimit("30/minute")), Depends(require_admin)])
+@router.post("", response_model=ProductResponse, status_code=status.HTTP_201_CREATED, dependencies=[Depends(PreAuthRateLimit("30/minute")), Depends(require_admin)])
 @limiter.limit("30/minute", key_func=get_admin_id)
 def create_product(product: ProductCreate, request: Request):
     """Admin: Create a new product."""

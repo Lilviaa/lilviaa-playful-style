@@ -8,7 +8,7 @@ from app.core.limiter import limiter, PreAuthRateLimit, get_user_id
 
 router = APIRouter()
 
-@router.get("/", response_model=List[AddressResponse], dependencies=[Depends(PreAuthRateLimit("30/minute"))])
+@router.get("", response_model=List[AddressResponse], dependencies=[Depends(PreAuthRateLimit("30/minute"))])
 @limiter.limit("10/minute", key_func=get_user_id)
 def get_addresses(request: Request, user_id: str = Depends(get_current_user_id)):
     """Get all addresses for the current user."""
@@ -16,7 +16,7 @@ def get_addresses(request: Request, user_id: str = Depends(get_current_user_id))
     result = supabase.table("addresses").select("*").eq("user_id", user_id).execute()
     return result.data
 
-@router.post("/", response_model=AddressResponse, status_code=status.HTTP_201_CREATED, dependencies=[Depends(PreAuthRateLimit("30/minute"))])
+@router.post("", response_model=AddressResponse, status_code=status.HTTP_201_CREATED, dependencies=[Depends(PreAuthRateLimit("30/minute"))])
 @limiter.limit("10/minute", key_func=get_user_id)
 def create_address(address_in: AddressCreate, request: Request, user_id: str = Depends(get_current_user_id)):
     """Create a new address for the current user (Max 5)."""

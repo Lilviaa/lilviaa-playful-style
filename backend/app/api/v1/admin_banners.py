@@ -38,14 +38,14 @@ class BannerReorderRequest(BaseModel):
     id: str
     sort_order: int
 
-@router.get("/", dependencies=[Depends(PreAuthRateLimit("60/minute")), Depends(require_admin)])
+@router.get("", dependencies=[Depends(PreAuthRateLimit("60/minute")), Depends(require_admin)])
 @limiter.limit("60/minute", key_func=get_admin_id)
 def list_banners(request: Request):
     supabase = get_supabase()
     res = supabase.table("banners").select("*").order("sort_order", desc=False).execute()
     return res.data
 
-@router.post("/", dependencies=[Depends(PreAuthRateLimit("30/minute")), Depends(require_admin)])
+@router.post("", dependencies=[Depends(PreAuthRateLimit("30/minute")), Depends(require_admin)])
 @limiter.limit("30/minute", key_func=get_admin_id)
 def create_banner(banner: BannerCreate, request: Request):
     supabase = get_supabase()

@@ -5,7 +5,7 @@ from app.core.limiter import limiter, PreAuthRateLimit
 
 router = APIRouter()
 
-@router.get("/", dependencies=[Depends(PreAuthRateLimit("120/minute"))])
+@router.get("", dependencies=[Depends(PreAuthRateLimit("120/minute"))])
 @limiter.limit("120/minute")
 def get_public_banners(request: Request):
     """Fetch active banners for the storefront."""
