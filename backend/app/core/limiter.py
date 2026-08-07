@@ -6,35 +6,27 @@ from limits import parse
 
 def get_trusted_ip(request: Request) -> str:
     """
-    Extracts the real client IP using trusted-hop-counting from the right
-    side of X-Forwarded-For.
+    Extracts the client IP from X-Forwarded-For by taking the leftmost IP (ips[0]).
 
     Architecture: Client -> Vercel Edge -> Render/Cloudflare -> FastAPI
-    Trusted proxy depth = 2 (Vercel + Render)
 
-    X-Forwarded-For arrives as: [SpoofedIPs..., ClientIP, VercelIP]
-    We grab [-2] (second from right) = the IP that Vercel saw connecting,
-    which is the real client IP.
+    Because Render adds an unpredictable number of internal hops to the
+    X-Forwarded-For header before the request reaches the FastAPI process,
+    we cannot reliably count hops from the right (e.g. [-2]).
 
-    If the header has fewer entries than expected (e.g., local dev with
-    no proxies, or direct Render access with 1 proxy), we fall back to
-    the leftmost IP — this is less secure but avoids IndexError crashes.
+    Therefore, we take ips[0] (the first IP added to the list, which is
+    what Vercel saw connecting).
 
-    KNOWN ACCEPTED RISK: If an attacker bypasses Vercel and hits Render
-    directly, proxy depth drops to 1 and [-2] could grab a spoofed IP.
-    This requires infrastructure-level mitigation (Cloudflare, Render
-    Scale plan IP allowlist, or stack migration to Next.js for Edge
-    Middleware support). Documented and deferred.
+    KNOWN ACCEPTED RISK: An attacker can spoof their IP by sending a fake
+    X-Forwarded-For header, which will become ips[0]. This means they can
+    bypass rate limiting.
+    This requires infrastructure-level mitigation (like putting Cloudflare
+    in front of Render to overwrite the header). Documented and deferred.
     """
     x_forwarded_for = request.headers.get("X-Forwarded-For")
     if x_forwarded_for:
         ips = [ip.strip() for ip in x_forwarded_for.split(",")]
-        TRUSTED_PROXY_DEPTH = 2  # Vercel + Render
-        if len(ips) >= TRUSTED_PROXY_DEPTH:
-            return ips[-TRUSTED_PROXY_DEPTH]
-        else:
-            # Fewer hops than expected (local dev or direct access)
-            return ips[0]
+        return ips[0]
 
     # No X-Forwarded-For at all (direct connection, no proxies)
     return get_remote_address(request)
