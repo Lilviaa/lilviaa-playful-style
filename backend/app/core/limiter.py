@@ -48,34 +48,39 @@ def get_admin_id(request: Request) -> str:
         return f"admin:{user['sub']}"
     return f"ip:{get_trusted_ip(request)}"
 
-# Single shared Limiter instance
+# Single shared Limiter instance used by @limiter.limit() decorators
 limiter = Limiter(key_func=get_trusted_ip)
 
 class PreAuthRateLimit:
     """
-    A FastAPI Dependency that forces a rate limit check BEFORE any other dependencies
-    (like authentication/DB checks) execute.
+    A FastAPI Dependency that enforces a rate limit BEFORE authentication or DB
+    dependencies run, so abusive traffic is rejected cheaply.
+
+    THREAD-SAFETY FIX: The previous implementation mutated the shared
+    `limiter._key_func` to switch key functions per-call. Under concurrent load
+    (e.g. 130 JMeter threads), Thread A's key would be overwritten by Thread B's
+    `finally` block mid-execution, causing rate counters to accumulate against
+    random/wrong keys — the limiter became a no-op under burst traffic.
+
+    Fix: Each PreAuthRateLimit instance owns its own private Limiter with its
+    own immutable key_func. No shared mutable state is ever touched. Multiple
+    concurrent calls to the same PreAuthRateLimit instance are safe because
+    Limiter._check_request_limit only reads _key_func, and ours never changes.
     """
     def __init__(self, limit: str, key_func=get_trusted_ip):
         self.limit = limit
-        self.key_func = key_func
+        # Each instance gets its own Limiter — no shared _key_func mutation
+        self._limiter = Limiter(key_func=key_func)
 
     def __call__(self, request: Request):
+        def preauth_dummy():
+            pass
+        preauth_dummy.__name__ = f"preauth_{self.limit.replace('/', '_')}"
+
+        parsed_limit = parse(self.limit)
         try:
-            # We temporarily override the limiter's key_func for this specific check
-            original_key_func = limiter._key_func
-            limiter._key_func = self.key_func
-            
-            def preauth_dummy():
-                pass
-            preauth_dummy.__name__ = f"preauth_{self.limit.replace('/', '_')}"
-            
-            # _check_request_limit expects: request, endpoint_name, limit_list
-            parsed_limit = parse(self.limit)
-            limiter._check_request_limit(request, preauth_dummy, [parsed_limit])
-            
+            self._limiter._check_request_limit(request, preauth_dummy, [parsed_limit])
         except RateLimitExceeded as exc:
-            # Re-raise so the global exception handler catches it
+            # Re-raise so the global exception handler returns 429
             raise RateLimitExceeded(exc)
-        finally:
-            limiter._key_func = original_key_func
+
