@@ -185,19 +185,21 @@ function AccountOrdersPage() {
               </div>
               
               <div className="mt-6 pt-5 border-t border-border flex flex-wrap gap-3">
-                <Dialog>
-                  <DialogTrigger asChild>
-                    <button className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-bold text-primary-foreground shadow-pop transition-transform hover:-translate-y-0.5">
-                      <Truck className="h-4 w-4" /> Track Package
-                    </button>
-                  </DialogTrigger>
-                  <DialogContent className="sm:max-w-md">
-                    <DialogHeader>
-                      <DialogTitle>Track Package: {order.tracking_number || `ORD-LV-${parseInt(order.id.replace(/-/g, '').substring(0, 6), 16).toString().padStart(6, '0')}`}</DialogTitle>
-                    </DialogHeader>
-                    <TrackingTimeline status={order.status} />
-                  </DialogContent>
-                </Dialog>
+                {order.status !== 'cancelled' && (
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <button className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-bold text-primary-foreground shadow-pop transition-transform hover:-translate-y-0.5">
+                        <Truck className="h-4 w-4" /> Track Package
+                      </button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-md">
+                      <DialogHeader>
+                        <DialogTitle>Track Package: {order.tracking_number || `ORD-LV-${parseInt(order.id.replace(/-/g, '').substring(0, 6), 16).toString().padStart(6, '0')}`}</DialogTitle>
+                      </DialogHeader>
+                      <TrackingTimeline status={order.status} />
+                    </DialogContent>
+                  </Dialog>
+                )}
 
                 <a
                   href={`/invoice/${order.id}`}
