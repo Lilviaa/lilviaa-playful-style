@@ -20,15 +20,27 @@ export const Route = createFileRoute("/about")({
 });
 
 function AboutPage() {
-  const { data: featured = [], isLoading } = useFeaturedProducts();
-  const { data: ourStory } = useCmsSection("our_story");
+  const { data: featured = [], isLoading: isFeaturedLoading } = useFeaturedProducts();
+  const { data: ourStory, isLoading: isStoryLoading } = useCmsSection("our_story");
 
-  const { data: ourPhilosophySection } = useCmsSection("our_philosophy");
-  const { data: philosophyCards = [] } = usePhilosophyCards();
+  const { data: ourPhilosophySection, isLoading: isPhilosophyLoading } = useCmsSection("our_philosophy");
+  const { data: philosophyCards = [], isLoading: isCardsLoading } = usePhilosophyCards();
+
+  const isLoadingCMS = isStoryLoading || isPhilosophyLoading || isCardsLoading || isFeaturedLoading;
 
   const ICONS: Record<string, React.ElementType> = {
     Heart, Sparkles, Leaf, Users, Star, Droplets, Sun, Moon, Shield, Smile
   };
+
+  if (isLoadingCMS) {
+    return (
+      <div className="min-h-screen animate-pulse bg-hero px-6 py-20 flex flex-col items-center">
+        <div className="h-4 w-24 bg-primary/20 rounded-full mb-8"></div>
+        <div className="h-16 w-3/4 max-w-2xl bg-cocoa/10 rounded-2xl mb-6"></div>
+        <div className="h-32 w-full max-w-3xl bg-cocoa/10 rounded-2xl"></div>
+      </div>
+    );
+  }
 
   return (
     <div>
