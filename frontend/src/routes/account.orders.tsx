@@ -1,10 +1,87 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useAuth } from "@/lib/auth";
-import { Package, Truck, FileText, Star, Download, MapPin, CheckCircle2, Loader2, PackageCheck } from "lucide-react";
+import { Package, Truck, FileText, Star, ArrowRight, MapPin, CheckCircle2, Loader2, PackageCheck, XCircle } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { formatINR } from "@/lib/cart";
 import { apiFetch } from "@/lib/api";
 import { useEffect, useState } from "react";
+
+function TrackingTimeline({ status }: { status: string }) {
+  const steps = [
+    { id: "placed", label: "Order Placed", desc: "We have received your order.", icon: CheckCircle2 },
+    { id: "shipped", label: "Shipped", desc: "Your package is on the way.", icon: Truck },
+    { id: "out_for_delivery", label: "Out for Delivery", desc: "Expected to arrive soon.", icon: MapPin },
+    { id: "delivered", label: "Delivered", desc: "Your package has been delivered.", icon: PackageCheck }
+  ];
+
+  let targetIndex = 0;
+  if (status === "cancelled") targetIndex = -1;
+  else if (status === "delivered") targetIndex = 3;
+  else if (status === "out_for_delivery") targetIndex = 2;
+  else if (status === "shipped") targetIndex = 1;
+  else targetIndex = 0;
+
+  const [activeStep, setActiveStep] = useState(-1);
+
+  useEffect(() => {
+    if (targetIndex === -1) {
+      setActiveStep(-1);
+      return;
+    }
+    setActiveStep(0);
+    let current = 0;
+    const interval = setInterval(() => {
+      if (current < targetIndex) {
+        current++;
+        setActiveStep(current);
+      } else {
+        clearInterval(interval);
+      }
+    }, 600);
+    return () => clearInterval(interval);
+  }, [targetIndex]);
+
+  if (status === "cancelled") {
+    return (
+      <div className="py-8 text-center space-y-4">
+        <XCircle className="mx-auto h-12 w-12 text-destructive" />
+        <p className="text-lg font-bold text-cocoa">Order Cancelled</p>
+        <p className="text-muted-foreground">This order has been cancelled.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-0 py-4">
+      {steps.map((step, idx) => {
+        const isCompleted = idx <= activeStep;
+        const isCurrent = idx === activeStep;
+        const isLast = idx === steps.length - 1;
+        const isLineCompleted = idx < activeStep;
+        const Icon = step.icon;
+
+        return (
+          <div key={step.id} className="flex gap-4">
+            <div className="flex flex-col items-center mt-1">
+              <div className={`flex items-center justify-center rounded-full bg-background transition-all duration-500 ease-in-out ${isCompleted ? "text-primary scale-110" : "text-muted-foreground scale-100 opacity-50"}`}>
+                <Icon className="h-5 w-5" />
+              </div>
+              {!isLast && (
+                <div className="relative w-0.5 h-14 my-1 bg-border rounded-full overflow-hidden">
+                  <div className="absolute top-0 left-0 w-full bg-primary transition-all duration-[600ms] ease-linear" style={{ height: isLineCompleted ? "100%" : (isCurrent && idx < targetIndex ? "100%" : "0%") }} />
+                </div>
+              )}
+            </div>
+            <div className={`pb-8 transition-all duration-500 ${isCompleted ? "opacity-100 translate-x-0" : "opacity-40 -translate-x-2"}`}>
+              <p className={`font-bold ${isCompleted ? "text-cocoa" : "text-muted-foreground"}`}>{step.label}</p>
+              <p className="text-sm text-muted-foreground">{step.desc}</p>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 
 export const Route = createFileRoute("/account/orders")({
   head: () => ({
@@ -14,7 +91,6 @@ export const Route = createFileRoute("/account/orders")({
   }),
   component: AccountOrdersPage,
 });
-
 
 function AccountOrdersPage() {
   const { user } = useAuth();
@@ -119,47 +195,7 @@ function AccountOrdersPage() {
                     <DialogHeader>
                       <DialogTitle>Track Package: {order.tracking_number || `ORD-LV-${parseInt(order.id.replace(/-/g, '').substring(0, 6), 16).toString().padStart(6, '0')}`}</DialogTitle>
                     </DialogHeader>
-                    <div className="space-y-6 py-4">
-                      <div className="flex gap-4">
-                        <div className="flex flex-col items-center mt-1">
-                          <CheckCircle2 className="h-5 w-5 text-primary" />
-                          <div className="w-0.5 h-12 bg-primary my-1" />
-                        </div>
-                        <div>
-                          <p className="font-bold text-cocoa">Order Placed</p>
-                          <p className="text-sm text-muted-foreground">We have received your order.</p>
-                        </div>
-                      </div>
-                      <div className="flex gap-4">
-                        <div className="flex flex-col items-center mt-1">
-                          <CheckCircle2 className="h-5 w-5 text-primary" />
-                          <div className="w-0.5 h-12 bg-border my-1" />
-                        </div>
-                        <div>
-                          <p className="font-bold text-cocoa">Shipped</p>
-                          <p className="text-sm text-muted-foreground">Your package is on the way.</p>
-                        </div>
-                      </div>
-                      <div className="flex gap-4">
-                        <div className="flex flex-col items-center mt-1">
-                          <MapPin className="h-5 w-5 text-muted-foreground" />
-                          <div className="w-0.5 h-12 bg-border my-1" />
-                        </div>
-                        <div>
-                          <p className="font-bold text-muted-foreground">Out for Delivery</p>
-                          <p className="text-sm text-muted-foreground">Expected by tomorrow, 9 PM.</p>
-                        </div>
-                      </div>
-                      <div className="flex gap-4">
-                        <div className="flex flex-col items-center mt-1">
-                          <PackageCheck className="h-5 w-5 text-muted-foreground" />
-                        </div>
-                        <div>
-                          <p className="font-bold text-muted-foreground">Delivered</p>
-                          <p className="text-sm text-muted-foreground">Your package will be delivered soon.</p>
-                        </div>
-                      </div>
-                    </div>
+                    <TrackingTimeline status={order.status} />
                   </DialogContent>
                 </Dialog>
 
