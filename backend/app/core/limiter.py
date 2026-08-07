@@ -5,14 +5,38 @@ from slowapi.errors import RateLimitExceeded
 from limits import parse
 
 def get_trusted_ip(request: Request) -> str:
-    """Securely extracts the real IP, prioritizing trusted proxies."""
-    # Render, Vercel, and Cloudflare typically use X-Forwarded-For or similar.
-    # Take the right-most IP if X-Forwarded-For is a list (standard practice for edge proxies).
+    """
+    Extracts the real client IP using trusted-hop-counting from the right
+    side of X-Forwarded-For.
+
+    Architecture: Client -> Vercel Edge -> Render/Cloudflare -> FastAPI
+    Trusted proxy depth = 2 (Vercel + Render)
+
+    X-Forwarded-For arrives as: [SpoofedIPs..., ClientIP, VercelIP]
+    We grab [-2] (second from right) = the IP that Vercel saw connecting,
+    which is the real client IP.
+
+    If the header has fewer entries than expected (e.g., local dev with
+    no proxies, or direct Render access with 1 proxy), we fall back to
+    the leftmost IP — this is less secure but avoids IndexError crashes.
+
+    KNOWN ACCEPTED RISK: If an attacker bypasses Vercel and hits Render
+    directly, proxy depth drops to 1 and [-2] could grab a spoofed IP.
+    This requires infrastructure-level mitigation (Cloudflare, Render
+    Scale plan IP allowlist, or stack migration to Next.js for Edge
+    Middleware support). Documented and deferred.
+    """
     x_forwarded_for = request.headers.get("X-Forwarded-For")
     if x_forwarded_for:
-        return x_forwarded_for.split(",")[-1].strip()
-    
-    # Fallback to default
+        ips = [ip.strip() for ip in x_forwarded_for.split(",")]
+        TRUSTED_PROXY_DEPTH = 2  # Vercel + Render
+        if len(ips) >= TRUSTED_PROXY_DEPTH:
+            return ips[-TRUSTED_PROXY_DEPTH]
+        else:
+            # Fewer hops than expected (local dev or direct access)
+            return ips[0]
+
+    # No X-Forwarded-For at all (direct connection, no proxies)
     return get_remote_address(request)
 
 def get_user_id(request: Request) -> str:
