@@ -6,29 +6,32 @@ from limits import parse
 
 def get_trusted_ip(request: Request) -> str:
     """
-    Extracts the client IP from X-Forwarded-For by taking the leftmost IP (ips[0]).
+    Extracts the client IP, prioritizing Vercel's proprietary header.
 
     Architecture: Client -> Vercel Edge -> Render/Cloudflare -> FastAPI
 
-    Because Render adds an unpredictable number of internal hops to the
-    X-Forwarded-For header before the request reaches the FastAPI process,
-    we cannot reliably count hops from the right (e.g. [-2]).
+    Vercel does not append to X-Forwarded-For on external rewrites. Instead,
+    it replaces it with its own rotating edge node IPs, and places the true
+    client IP in 'x-vercel-forwarded-for'.
 
-    Therefore, we take ips[0] (the first IP added to the list, which is
-    what Vercel saw connecting).
+    Therefore, we MUST read 'x-vercel-forwarded-for' first. If it's missing
+    (e.g., direct Render access or local dev), we fall back to X-Forwarded-For.
 
-    KNOWN ACCEPTED RISK: An attacker can spoof their IP by sending a fake
-    X-Forwarded-For header, which will become ips[0]. This means they can
-    bypass rate limiting.
-    This requires infrastructure-level mitigation (like putting Cloudflare
-    in front of Render to overwrite the header). Documented and deferred.
+    KNOWN ACCEPTED RISK: Direct Render access still allows spoofing by an
+    attacker sending fake X-Forwarded-For or x-vercel-forwarded-for headers.
+    Requires infrastructure-level mitigation (Cloudflare).
     """
+    # Primary: Vercel-specific header (real client IP when routed through Vercel)
+    vercel_ip = request.headers.get("x-vercel-forwarded-for")
+    if vercel_ip:
+        return vercel_ip.split(",")[0].strip()
+
+    # Fallback: standard XFF for direct Render access or local dev
     x_forwarded_for = request.headers.get("X-Forwarded-For")
     if x_forwarded_for:
-        ips = [ip.strip() for ip in x_forwarded_for.split(",")]
-        return ips[0]
+        return x_forwarded_for.split(",")[0].strip()
 
-    # No X-Forwarded-For at all (direct connection, no proxies)
+    # No proxy headers at all (direct connection, local dev)
     return get_remote_address(request)
 
 def get_user_id(request: Request) -> str:
