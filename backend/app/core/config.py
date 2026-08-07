@@ -19,6 +19,11 @@ class Settings(BaseSettings):
     RAZORPAY_WEBHOOK_SECRET: str = ""
 
     CORS_ORIGINS: str = "http://localhost:8080,http://localhost:5173"
+
+    # Shared secret injected by Vercel edge on every proxied request.
+    # When empty (local dev), the proxy secret check is bypassed entirely.
+    # Set this in Render environment variables to a strong random hex string.
+    PROXY_SECRET: str = ""
     
     SMTP_HOST: str = ""
     SMTP_PORT: int = 587

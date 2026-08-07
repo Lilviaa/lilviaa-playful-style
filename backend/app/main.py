@@ -1,4 +1,5 @@
 import os
+import hmac
 os.environ["HTTPX_NO_HTTP2"] = "1"
 
 from fastapi import FastAPI
@@ -36,6 +37,33 @@ from slowapi.middleware import SlowAPIMiddleware
 from fastapi.responses import JSONResponse
 from fastapi import Request
 from app.core.limiter import limiter
+
+# ---------------------------------------------------------------------------
+# Proxy Secret Enforcement Middleware
+# ---------------------------------------------------------------------------
+# Enforces that ALL traffic to the backend has passed through our Vercel edge
+# proxy. The Vercel Project-Level Routing Rule injects X-Proxy-Secret with a
+# shared secret. Any request missing or presenting a wrong value is rejected
+# with 403 before any other logic (rate limiting, auth, DB) runs.
+#
+# When PROXY_SECRET is empty (local dev), this check is bypassed entirely so
+# developers can hit the backend directly without configuring the header.
+# ---------------------------------------------------------------------------
+@app.middleware("http")
+async def enforce_proxy_secret(request: Request, call_next):
+    secret = settings.PROXY_SECRET
+    if not secret:
+        # PROXY_SECRET not configured — local dev passthrough
+        return await call_next(request)
+
+    incoming = request.headers.get("X-Proxy-Secret", "")
+    # hmac.compare_digest is timing-safe — prevents timing-oracle attacks that
+    # could allow an attacker to brute-force the secret character by character.
+    if not hmac.compare_digest(incoming, secret):
+        return JSONResponse({"detail": "Forbidden"}, status_code=403)
+
+    return await call_next(request)
+# ---------------------------------------------------------------------------
 
 def custom_rate_limit_handler(request: Request, exc: RateLimitExceeded):
     # Scrub headers (like X-RateLimit-Reset) to prevent timing attacks
