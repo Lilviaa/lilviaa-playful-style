@@ -19,9 +19,9 @@ BRAND_BLUSH = "#FF8FA3"
 def get_smtp_config():
     return {
         "host": os.environ.get("SMTP_HOST", "smtp.gmail.com"),
-        "port": int(os.environ.get("SMTP_PORT", 465)),
-        "user": os.environ.get("SMTP_USER"),
-        "pass": os.environ.get("SMTP_PASS"),
+        "port": int(os.environ.get("SMTP_PORT", 587)),
+        "user": os.environ.get("SMTP_USERNAME") or os.environ.get("SMTP_USER"),
+        "pass": os.environ.get("SMTP_PASSWORD") or os.environ.get("SMTP_PASS"),
         "owner_email": os.environ.get("OWNER_EMAIL", "Lilviaa.byutsav@gmail.com")
     }
 
@@ -46,7 +46,8 @@ def send_mail(to: str, subject: str, html_body: str, plain_body: str = None):
         msg.set_content(html_body, subtype='html')
 
     try:
-        with smtplib.SMTP_SSL(config["host"], config["port"]) as server:
+        with smtplib.SMTP(config["host"], config["port"]) as server:
+            server.starttls()
             server.login(config["user"], config["pass"])
             server.send_message(msg)
         logger.info(f"Email sent successfully to {to}")
