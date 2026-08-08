@@ -113,56 +113,56 @@ export function OrderTable({ data, isLoading }: OrderTableProps) {
       <div className="rounded-2xl border border-cocoa/10 bg-white shadow-sm overflow-hidden flex flex-col">
         <div className="hidden md:block">
           <Table>
-          <TableHeader className="bg-sand/50 border-b border-cocoa/10">
-            {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id} className="hover:bg-transparent border-0">
-                {headerGroup.headers.map((header) => (
-                  <TableHead key={header.id} className="text-cocoa font-bold">
-                    {header.isPlaceholder
-                      ? null
-                      : flexRender(header.column.columnDef.header, header.getContext())}
-                  </TableHead>
-                ))}
-              </TableRow>
-            ))}
-          </TableHeader>
-          <TableBody>
-            {isLoading ? (
-              Array.from({ length: 5 }).map((_, i) => (
-                <TableRow key={`skeleton-${i}`}>
-                  {columns.map((_, j) => (
-                    <TableCell key={`cell-${i}-${j}`} className="py-4">
-                      <Skeleton className="h-5 w-[80%] rounded-md" />
-                    </TableCell>
+            <TableHeader className="bg-sand/50 border-b border-cocoa/10">
+              {table.getHeaderGroups().map((headerGroup) => (
+                <TableRow key={headerGroup.id} className="hover:bg-transparent border-0">
+                  {headerGroup.headers.map((header) => (
+                    <TableHead key={header.id} className="text-cocoa font-bold">
+                      {header.isPlaceholder
+                        ? null
+                        : flexRender(header.column.columnDef.header, header.getContext())}
+                    </TableHead>
                   ))}
                 </TableRow>
-              ))
-            ) : table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map((row) => (
-                <TableRow
-                  key={row.id}
-                  onClick={() => handleRowClick(row.original)}
-                  className="border-b border-cocoa/5 hover:bg-primary/5 transition-colors duration-200 cursor-pointer"
-                >
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                    </TableCell>
-                  ))}
+              ))}
+            </TableHeader>
+            <TableBody>
+              {isLoading ? (
+                Array.from({ length: 5 }).map((_, i) => (
+                  <TableRow key={`skeleton-${i}`}>
+                    {columns.map((_, j) => (
+                      <TableCell key={`cell-${i}-${j}`} className="py-4">
+                        <Skeleton className="h-5 w-[80%] rounded-md" />
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))
+              ) : table.getRowModel().rows?.length ? (
+                table.getRowModel().rows.map((row) => (
+                  <TableRow
+                    key={row.id}
+                    onClick={() => handleRowClick(row.original)}
+                    className="border-b border-cocoa/5 hover:bg-primary/5 transition-colors duration-200 cursor-pointer"
+                  >
+                    {row.getVisibleCells().map((cell) => (
+                      <TableCell key={cell.id}>
+                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell
+                    colSpan={columns.length}
+                    className="h-24 text-center text-muted-foreground"
+                  >
+                    No orders found.
+                  </TableCell>
                 </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell
-                  colSpan={columns.length}
-                  className="h-24 text-center text-muted-foreground"
-                >
-                  No orders found.
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
+              )}
+            </TableBody>
+          </Table>
         </div>
 
         {/* Mobile Card Layout */}
@@ -170,17 +170,17 @@ export function OrderTable({ data, isLoading }: OrderTableProps) {
           {isLoading ? (
             Array.from({ length: 3 }).map((_, i) => (
               <div key={`mob-skeleton-${i}`} className="p-4 flex flex-col gap-3">
-                 <Skeleton className="h-5 w-1/3" />
-                 <Skeleton className="h-4 w-1/2" />
-                 <Skeleton className="h-12 w-full rounded-xl mt-2" />
+                <Skeleton className="h-5 w-1/3" />
+                <Skeleton className="h-4 w-1/2" />
+                <Skeleton className="h-12 w-full rounded-xl mt-2" />
               </div>
             ))
           ) : table.getRowModel().rows?.length ? (
             table.getRowModel().rows.map((row) => {
               const order = row.original;
               return (
-                <div 
-                  key={row.id} 
+                <div
+                  key={row.id}
                   onClick={() => handleRowClick(order)}
                   className="flex flex-col gap-2 p-4 bg-white hover:bg-primary/5 transition-colors cursor-pointer"
                 >
@@ -188,7 +188,7 @@ export function OrderTable({ data, isLoading }: OrderTableProps) {
                     <span className="font-semibold text-cocoa leading-tight">{formatOrderId(order.id)}</span>
                     <span className="text-xs text-muted-foreground">{new Date(order.created_at).toLocaleDateString()}</span>
                   </div>
-                  
+
                   <div className="flex flex-col">
                     <span className="font-medium text-cocoa text-sm">{order.shipping_address.fullName}</span>
                     <span className="text-xs text-muted-foreground">{order.items?.length || 0} item{order.items?.length === 1 ? '' : 's'}</span>

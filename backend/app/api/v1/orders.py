@@ -678,3 +678,62 @@ def validate_coupon(req: ValidateCouponRequest, request: Request):
                 })
                 
     return _validate_coupon_logic(req.code, req.cart_total, req.user_id, supabase, enriched_items)
+
+
+@router.post("/{order_id}/refresh-tracking", dependencies=[Depends(PreAuthRateLimit("30/minute"))])
+@limiter.limit("10/minute", key_func=get_user_id)
+async def refresh_tracking_status_customer(order_id: str, request: Request, user: dict = Depends(get_current_user_token)):
+    """Fetches latest tracking from Shiprocket for a customer's order based on TTL."""
+    from app.services.shiprocket import track_awb
+    from datetime import datetime, timezone, timedelta
+    
+    supabase = get_supabase()
+    user_id = user["sub"]
+    order_res = supabase.table("orders").select("user_id, awb_code, tracking_last_updated, tracking_status, tracking_history").eq("id", order_id).execute()
+    
+    if not order_res.data:
+        raise AppError("Order not found", 404)
+        
+    order = order_res.data[0]
+    
+    if order.get("user_id") != user_id:
+        raise AppError("Unauthorized", 403)
+        
+    awb = order.get("awb_code")
+    if not awb:
+        raise AppError("No tracking available for this order yet.", 400)
+        
+    # TTL Check: 1 hour
+    last_updated = order.get("tracking_last_updated")
+    if last_updated:
+        try:
+            last_dt = datetime.fromisoformat(last_updated.replace("Z", "+00:00"))
+            if datetime.now(timezone.utc) < last_dt + timedelta(hours=1):
+                return {
+                    "message": "Tracking returned from cache", 
+                    "status": order.get("tracking_status"), 
+                    "history": order.get("tracking_history")
+                }
+        except:
+            pass
+            
+    # Fetch Live
+    res_data = await track_awb(awb)
+    
+    # Process tracking response
+    tracking_data = res_data.get("tracking_data", {})
+    if not tracking_data:
+        tracking_data = res_data.get(awb, {}).get("tracking_data", {})
+        
+    status = tracking_data.get("shipment_status") or tracking_data.get("track_status", "UNKNOWN")
+    history = tracking_data.get("shipment_track_activities") or tracking_data.get("shipment_track") or []
+    
+    now = datetime.now(timezone.utc).isoformat()
+    
+    supabase.table("orders").update({
+        "tracking_status": status,
+        "tracking_history": history,
+        "tracking_last_updated": now
+    }).eq("id", order_id).execute()
+    
+    return {"message": "Tracking updated from Shiprocket", "status": status, "history": history}

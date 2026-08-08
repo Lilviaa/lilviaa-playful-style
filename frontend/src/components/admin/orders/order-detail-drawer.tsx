@@ -12,11 +12,14 @@ import { formatOrderId } from "@/lib/utils";
 import { OrderStatusBadge } from "./order-status-badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Printer, RefreshCcw, XCircle, RotateCcw, Loader2 } from "lucide-react";
+import { Printer, RefreshCcw, XCircle, RotateCcw, Loader2, Truck } from "lucide-react";
 import {
   useUpdateOrderStatus,
   useUpdateTracking,
   useUpdateCallConfirmed,
+  usePushToShiprocket,
+  useGenerateAwb,
+  useRefreshTracking,
 } from "@/lib/admin/orders-api";
 import { useCreateReturn, ReturnReason, RefundMethod } from "@/lib/admin/returns-api";
 import { useState } from "react";
@@ -52,6 +55,10 @@ export function OrderDetailDrawer({ order, isOpen, onClose, onPrint }: OrderDeta
   const { mutate: updateTracking } = useUpdateTracking();
   const { mutate: updateCallConfirmed } = useUpdateCallConfirmed();
   const { mutate: createReturn, isPending: creatingReturn } = useCreateReturn();
+  
+  const { mutate: pushToShiprocket, isPending: pushingShiprocket } = usePushToShiprocket();
+  const { mutate: generateAwb, isPending: generatingAwb } = useGenerateAwb();
+  const { mutate: refreshTracking, isPending: refreshingTracking } = useRefreshTracking();
 
   const [trackingNumber, setTrackingNumber] = useState(order?.tracking_number || "");
   const [showReturnModal, setShowReturnModal] = useState(false);
@@ -83,7 +90,7 @@ export function OrderDetailDrawer({ order, isOpen, onClose, onPrint }: OrderDeta
   return (
     <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <SheetContent className="w-full sm:max-w-xl bg-white overflow-y-auto p-6 z-50 shadow-2xl">
-        {updatingStatus && (
+        {(updatingStatus || pushingShiprocket || generatingAwb) && (
           <div className="absolute inset-0 z-50 flex items-center justify-center bg-white/50 backdrop-blur-sm">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
@@ -208,17 +215,97 @@ export function OrderDetailDrawer({ order, isOpen, onClose, onPrint }: OrderDeta
             </div>
 
             <div className="pt-6 border-t border-cocoa/10">
-              <h3 className="font-semibold text-cocoa mb-3">Tracking Information</h3>
-              <div className="flex gap-2">
-                <Input
-                  placeholder="Enter tracking number"
-                  defaultValue={order.tracking_number || ""}
-                  onChange={(e) => setTrackingNumber(e.target.value)}
-                  className="bg-sand/30 border-cocoa/20"
-                />
-                <Button onClick={handleSaveTracking} className="rounded-full shrink-0">
-                  Save
-                </Button>
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-semibold text-cocoa">Tracking & Shipping (Shiprocket)</h3>
+                {order.awb_code && (
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => refreshTracking(order.id)}
+                    disabled={refreshingTracking}
+                    className="h-8 gap-1.5"
+                  >
+                    <RefreshCcw className={`h-3.5 w-3.5 ${refreshingTracking ? 'animate-spin' : ''}`} />
+                    Refresh
+                  </Button>
+                )}
+              </div>
+              
+              <div className="space-y-4">
+                {!order.shiprocket_order_id ? (
+                  <div className="p-4 bg-slate-50 rounded-xl border border-slate-200">
+                    <p className="text-sm text-slate-600 mb-3">Order has not been pushed to Shiprocket yet.</p>
+                    <Button 
+                      onClick={() => pushToShiprocket(order.id)} 
+                      disabled={pushingShiprocket || (order.payment_method === 'razorpay' && order.payment_status !== 'paid')}
+                      className="w-full gap-2"
+                    >
+                      {pushingShiprocket ? <Loader2 className="h-4 w-4 animate-spin" /> : <Truck className="h-4 w-4" />}
+                      Push to Shiprocket
+                    </Button>
+                    {order.payment_method === 'razorpay' && order.payment_status !== 'paid' && (
+                      <p className="text-xs text-rose-600 mt-2 text-center">Cannot push unpaid Razorpay orders.</p>
+                    )}
+                  </div>
+                ) : !order.awb_code ? (
+                  <div className="p-4 bg-indigo-50 rounded-xl border border-indigo-200">
+                    <div className="flex justify-between items-center mb-3">
+                      <span className="text-sm font-medium text-indigo-900">Shiprocket Order ID</span>
+                      <span className="text-sm font-mono text-indigo-700">{order.shiprocket_order_id}</span>
+                    </div>
+                    <Button 
+                      onClick={() => generateAwb(order.id)} 
+                      disabled={generatingAwb}
+                      className="w-full bg-indigo-600 hover:bg-indigo-700 text-white gap-2"
+                    >
+                      {generatingAwb ? <Loader2 className="h-4 w-4 animate-spin" /> : <Printer className="h-4 w-4" />}
+                      Generate AWB (Assign Courier)
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <div className="p-3 bg-emerald-50 rounded-xl border border-emerald-200">
+                      <div className="flex justify-between items-center mb-1">
+                        <span className="text-xs font-medium text-emerald-800 uppercase tracking-wider">Courier</span>
+                        <span className="text-xs font-medium text-emerald-800 uppercase tracking-wider">AWB</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm font-semibold text-emerald-950">{order.courier_name}</span>
+                        <span className="text-sm font-mono font-bold text-emerald-950">{order.awb_code}</span>
+                      </div>
+                    </div>
+                    
+                    <div className="p-3 bg-white rounded-xl border border-cocoa/20">
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Status</span>
+                        <span className="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-800">
+                          {order.tracking_status || "AWB Generated"}
+                        </span>
+                      </div>
+                      {order.tracking_last_updated && (
+                         <p className="text-[10px] text-muted-foreground text-right mt-1">
+                           Last updated: {new Date(order.tracking_last_updated).toLocaleString()}
+                         </p>
+                      )}
+                    </div>
+                  </div>
+                )}
+                
+                {/* Fallback to manual tracking if needed */}
+                <div className="pt-4 border-t border-cocoa/10">
+                  <Label className="text-xs text-muted-foreground mb-1.5 block">Manual Tracking Override</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="Enter tracking number"
+                      defaultValue={order.tracking_number || ""}
+                      onChange={(e) => setTrackingNumber(e.target.value)}
+                      className="bg-sand/30 border-cocoa/20"
+                    />
+                    <Button onClick={handleSaveTracking} variant="secondary" className="rounded-full shrink-0">
+                      Save
+                    </Button>
+                  </div>
+                </div>
               </div>
             </div>
           </section>

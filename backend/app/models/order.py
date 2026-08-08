@@ -55,6 +55,15 @@ class OrderResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
     
+    # Shiprocket Tracking Fields
+    shiprocket_order_id: Optional[int] = None
+    shiprocket_shipment_id: Optional[int] = None
+    awb_code: Optional[str] = None
+    courier_name: Optional[str] = None
+    tracking_status: Optional[str] = None
+    tracking_history: Optional[list] = None
+    tracking_last_updated: Optional[datetime] = None
+    
     items: Optional[List[OrderItemResponse]] = []
     
     model_config = ConfigDict(from_attributes=True)

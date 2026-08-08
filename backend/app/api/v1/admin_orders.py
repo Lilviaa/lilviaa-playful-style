@@ -176,3 +176,209 @@ def update_call_confirmed(order_id: str, body: CallConfirmedUpdate, request: Req
 
     supabase.table("orders").update({"call_confirmed": body.call_confirmed}).eq("id", order_id).execute()
     return {"id": order_id, "call_confirmed": body.call_confirmed}
+
+
+# ---------------------------------------------------------------------------
+# Shiprocket Integration Endpoints
+# ---------------------------------------------------------------------------
+
+@router.post("/{order_id}/push-shiprocket", dependencies=[Depends(PreAuthRateLimit("20/minute")), Depends(require_admin)])
+@limiter.limit("20/minute", key_func=get_admin_id)
+async def push_order_to_shiprocket(order_id: str, request: Request):
+    """Manually push an order to Shiprocket to create a custom adhoc order."""
+    from app.services.shiprocket import create_custom_order
+    supabase = get_supabase()
+    
+    # 1. Fetch Order Details
+    order_res = supabase.table("orders").select(
+        "*, order_items(*, product_variants(sku, products(name)))", 
+        "addresses(*)"
+    ).eq("id", order_id).execute()
+    
+    if not order_res.data:
+        raise AppError("Order not found", 404)
+        
+    order = order_res.data[0]
+    
+    if order.get("shiprocket_order_id"):
+        raise AppError("Order has already been pushed to Shiprocket", 400)
+        
+    address = order.get("addresses")
+    if not address:
+        # Fallback to embedded shipping address (for guests)
+        address = order.get("shipping_address")
+        if not address:
+            raise AppError("Order is missing shipping address", 400)
+            
+    # 2. Build Shiprocket Payload
+    items = []
+    for item in order.get("order_items", []):
+        variant = item.get("product_variants", {})
+        product = variant.get("products", {})
+        items.append({
+            "name": product.get("name", "Product"),
+            "sku": variant.get("sku", f"SKU-{item['product_variant_id']}"),
+            "units": item["quantity"],
+            "selling_price": float(item["unit_price"]),
+            "discount": 0,
+            "tax": 0,
+            "hsn": ""
+        })
+        
+    # Split name into first/last name
+    full_name = address.get("full_name", "Customer")
+    name_parts = full_name.split(" ", 1)
+    first_name = name_parts[0] or "Customer"
+    last_name = name_parts[1] if len(name_parts) > 1 and name_parts[1].strip() else "Lilviaa"
+        
+    addr_text = address.get("address", "No Address")
+    city = address.get("city", "City")
+    pincode = address.get("zip", "000000")
+    state = address.get("state", "State")
+    phone = address.get("phone", "0000000000")
+    email = address.get("email") or "customer@lilviaa.com"
+        
+    payload = {
+        "order_id": order_id,
+        "order_date": order["created_at"],
+        "billing_customer_name": first_name,
+        "billing_last_name": last_name,
+        "billing_address": addr_text,
+        "billing_city": city,
+        "billing_pincode": pincode,
+        "billing_state": state,
+        "billing_country": "India",
+        "billing_email": email,
+        "billing_phone": phone,
+        "shipping_is_billing": True,
+        "shipping_customer_name": first_name,
+        "shipping_last_name": last_name,
+        "shipping_address": addr_text,
+        "shipping_city": city,
+        "shipping_pincode": pincode,
+        "shipping_state": state,
+        "shipping_country": "India",
+        "shipping_email": email,
+        "shipping_phone": phone,
+        "order_items": items,
+        "payment_method": "Prepaid" if order.get("payment_method") != "cod" else "COD",
+        "sub_total": float(order["total_amount"]),
+        "length": 10,  # Default box dimensions
+        "breadth": 10,
+        "height": 5,
+        "weight": 0.5  # Default 0.5 KG
+    }
+    
+    # 3. Call Shiprocket API
+    res_data = await create_custom_order(payload)
+    
+    # 4. Save Shiprocket IDs to Database
+    sr_order_id = res_data.get("order_id")
+    sr_shipment_id = res_data.get("shipment_id")
+    
+    if not sr_order_id or not sr_shipment_id:
+        raise AppError("Invalid response from Shiprocket. Missing order_id or shipment_id.", 500)
+        
+    supabase.table("orders").update({
+        "shiprocket_order_id": sr_order_id,
+        "shiprocket_shipment_id": sr_shipment_id,
+        "tracking_status": "NEW"
+    }).eq("id", order_id).execute()
+    
+    return {"message": "Order pushed successfully", "shiprocket_order_id": sr_order_id}
+
+
+@router.post("/{order_id}/generate-awb", dependencies=[Depends(PreAuthRateLimit("20/minute")), Depends(require_admin)])
+@limiter.limit("20/minute", key_func=get_admin_id)
+async def generate_order_awb(order_id: str, request: Request):
+    """Manually generate AWB/assign courier for an order pushed to Shiprocket."""
+    from app.services.shiprocket import generate_awb
+    supabase = get_supabase()
+    
+    order_res = supabase.table("orders").select("shiprocket_shipment_id, awb_code").eq("id", order_id).execute()
+    if not order_res.data:
+        raise AppError("Order not found", 404)
+        
+    order = order_res.data[0]
+    shipment_id = order.get("shiprocket_shipment_id")
+    
+    if not shipment_id:
+        raise AppError("Order has not been pushed to Shiprocket yet.", 400)
+    if order.get("awb_code"):
+        raise AppError("AWB already generated for this order.", 400)
+        
+    res_data = await generate_awb(shipment_id)
+    
+    response_payload = res_data.get("response", {})
+    data_payload = response_payload.get("data", {})
+    awb_code = data_payload.get("awb_code") or response_payload.get("awb_code") or res_data.get("awb_code")
+    courier_name = data_payload.get("courier_name") or response_payload.get("courier_name") or res_data.get("courier_name")
+    
+    if not awb_code:
+        raise AppError(f"Shiprocket did not return AWB. Full response: {res_data}", 500)
+        
+    # Update DB
+    supabase.table("orders").update({
+        "awb_code": awb_code,
+        "courier_name": courier_name,
+        "tracking_status": "AWB_GENERATED"
+    }).eq("id", order_id).execute()
+    
+    return {"message": "AWB generated successfully", "awb_code": awb_code, "courier": courier_name}
+
+
+@router.post("/{order_id}/refresh-tracking", dependencies=[Depends(PreAuthRateLimit("30/minute")), Depends(require_admin)])
+@limiter.limit("30/minute", key_func=get_admin_id)
+async def refresh_tracking_status(order_id: str, request: Request):
+    """Fetches latest tracking from Shiprocket based on TTL."""
+    from app.services.shiprocket import track_awb
+    from datetime import datetime, timezone, timedelta
+    
+    supabase = get_supabase()
+    order_res = supabase.table("orders").select("awb_code, tracking_last_updated, tracking_status, tracking_history").eq("id", order_id).execute()
+    
+    if not order_res.data:
+        raise AppError("Order not found", 404)
+        
+    order = order_res.data[0]
+    awb = order.get("awb_code")
+    
+    if not awb:
+        raise AppError("No AWB code generated for this order yet.", 400)
+        
+    # TTL Check: 1 hour
+    last_updated = order.get("tracking_last_updated")
+    if last_updated:
+        # Assuming last_updated is ISO format
+        try:
+            last_dt = datetime.fromisoformat(last_updated.replace("Z", "+00:00"))
+            if datetime.now(timezone.utc) < last_dt + timedelta(hours=1):
+                return {
+                    "message": "Tracking returned from cache", 
+                    "status": order.get("tracking_status"), 
+                    "history": order.get("tracking_history")
+                }
+        except:
+            pass
+            
+    # Fetch Live
+    res_data = await track_awb(awb)
+    
+    # Process tracking response
+    tracking_data = res_data.get("tracking_data", {})
+    if not tracking_data:
+        # Handle cases where Shiprocket returns tracking differently
+        tracking_data = res_data.get(awb, {}).get("tracking_data", {})
+        
+    status = tracking_data.get("shipment_status") or tracking_data.get("track_status", "UNKNOWN")
+    history = tracking_data.get("shipment_track_activities") or tracking_data.get("shipment_track") or []
+    
+    now = datetime.now(timezone.utc).isoformat()
+    
+    supabase.table("orders").update({
+        "tracking_status": status,
+        "tracking_history": history,
+        "tracking_last_updated": now
+    }).eq("id", order_id).execute()
+    
+    return {"message": "Tracking updated from Shiprocket", "status": status, "history": history}

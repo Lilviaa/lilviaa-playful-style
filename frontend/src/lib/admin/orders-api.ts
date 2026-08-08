@@ -44,6 +44,16 @@ export interface Order {
   tracking_number: string | null;
   call_confirmed: boolean;
   created_at: string;
+  
+  // Shiprocket Tracking Fields
+  shiprocket_order_id?: number | null;
+  shiprocket_shipment_id?: number | null;
+  awb_code?: string | null;
+  courier_name?: string | null;
+  tracking_status?: string | null;
+  tracking_history?: any[] | null;
+  tracking_last_updated?: string | null;
+  
   items?: OrderItem[];
 }
 
@@ -137,6 +147,77 @@ export function useUpdateCallConfirmed() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-orders"] });
       toast.success("Call confirmation updated");
+    }
+  });
+}
+
+export function usePushToShiprocket() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (orderId: string) => {
+      const res = await apiFetch(`/admin/orders/${orderId}/push-shiprocket`, {
+        method: "POST"
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.detail || "Failed to push order to Shiprocket");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-orders"] });
+      toast.success("Order pushed to Shiprocket successfully!");
+    },
+    onError: (error: any) => {
+      toast.error(error.message);
+    }
+  });
+}
+
+export function useGenerateAwb() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (orderId: string) => {
+      const res = await apiFetch(`/admin/orders/${orderId}/generate-awb`, {
+        method: "POST"
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.detail || "Failed to generate AWB");
+      }
+      return res.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["admin-orders"] });
+      toast.success(`AWB Generated: ${data.awb_code} (${data.courier})`);
+    },
+    onError: (error: any) => {
+      toast.error(error.message);
+    }
+  });
+}
+
+export function useRefreshTracking() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (orderId: string) => {
+      const res = await apiFetch(`/admin/orders/${orderId}/refresh-tracking`, {
+        method: "POST"
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.detail || "Failed to refresh tracking");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-orders"] });
+    },
+    onError: (error: any) => {
+      console.error("Failed to refresh tracking", error);
     }
   });
 }
