@@ -8,7 +8,7 @@ load_dotenv()
 # hello!
 from app.core.config import settings
 from app.core.exceptions import AppError, app_error_handler
-from app.api.v1 import addresses, categories, products, admin_products, orders, webhooks, cart, firebase_auth
+from app.api.v1 import addresses, categories, products, admin_products, orders, cart, firebase_auth
 from app.api.v1 import admin_dashboard, admin_orders, admin_customers, admin_coupons
 from app.core.firebase import init_firebase
 
@@ -52,8 +52,8 @@ app.add_middleware(SlowAPIMiddleware)
 app.add_exception_handler(AppError, app_error_handler)
 
 # Include Routers
-from app.api.v1 import addresses, categories, products, admin_products, orders, webhooks, cart, banners, reviews, cms
-from app.api.v1 import admin_dashboard, admin_orders, admin_customers, admin_coupons, admin_banners, admin_reviews, admin_cms
+from app.api.v1 import addresses, categories, products, admin_products, orders, cart, banners, reviews, cms
+from app.api.v1 import admin_dashboard, admin_orders, admin_customers, admin_coupons, admin_banners, admin_reviews, admin_cms, admin_emails
 
 # (I will just add them below the others)
 app.include_router(firebase_auth.router, prefix="/api/v1/firebase_auth", tags=["Firebase Auth"])
@@ -63,7 +63,6 @@ app.include_router(categories.router, prefix="/api/v1/categories", tags=["Catego
 app.include_router(products.router, prefix="/api/v1/products", tags=["Products"])
 app.include_router(admin_products.router, prefix="/api/v1/admin/products", tags=["Admin Products"])
 app.include_router(orders.router, prefix="/api/v1/orders", tags=["Orders"])
-app.include_router(webhooks.router, prefix="/api/v1/webhooks", tags=["Webhooks"])
 app.include_router(banners.router, prefix="/api/v1/banners", tags=["Banners"])
 app.include_router(reviews.router, prefix="/api/v1/reviews", tags=["Reviews"])
 app.include_router(cms.router, prefix="/api/v1/cms", tags=["CMS"])
@@ -74,6 +73,7 @@ app.include_router(admin_coupons.router, prefix="/api/v1/admin/coupons", tags=["
 app.include_router(admin_banners.router, prefix="/api/v1/admin/banners", tags=["Admin Banners"])
 app.include_router(admin_reviews.router, prefix="/api/v1/admin/reviews", tags=["Admin Reviews"])
 app.include_router(admin_cms.router, prefix="/api/v1/admin/cms", tags=["Admin CMS"])
+app.include_router(admin_emails.router, prefix="/api/v1/admin/emails", tags=["Admin Emails"])
 
 @app.get("/health")
 def health_check():

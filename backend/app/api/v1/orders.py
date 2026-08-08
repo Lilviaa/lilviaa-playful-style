@@ -4,8 +4,8 @@ from typing import List, Dict, Any
 from app.models.order import OrderCreate, OrderResponse
 from app.db.supabase import get_supabase, get_fresh_supabase
 from app.core.exceptions import AppError
-from app.core.email import send_order_confirmation_email
 from app.core.limiter import limiter, PreAuthRateLimit, get_user_id
+from app.services.mailer import send_customer_order_confirmation, send_owner_order_notification
 import uuid
 import os
 import razorpay
@@ -32,6 +32,10 @@ class VerifyPaymentRequest(BaseModel):
     razorpay_payment_id: str
     razorpay_order_id: str
     razorpay_signature: str
+
+def enqueue_emails(background_tasks, created_order):
+    background_tasks.add_task(send_customer_order_confirmation, created_order)
+    background_tasks.add_task(send_owner_order_notification, created_order)
 
 @router.post("", status_code=status.HTTP_201_CREATED, dependencies=[Depends(PreAuthRateLimit("10/minute"))])
 @limiter.limit("5/minute", key_func=get_user_id)
@@ -263,6 +267,9 @@ def create_order(order: OrderCreate, request: Request, background_tasks: Backgro
     except Exception as e:
         raise AppError(f"Order created but failed to fetch details: {str(e)}")
 
+    # For COD, order is considered confirmed immediately. Send emails in the background.
+    if order.payment_method == "cod":
+        enqueue_emails(background_tasks, created_order)
 
     # 6. Razorpay Flow
     rzp = get_razorpay_client()
@@ -373,19 +380,17 @@ def verify_payment(req: VerifyPaymentRequest, request: Request, background_tasks
                 "reserved_stock": max(0, current_reserved - qty)
             }).eq("id", var_id).execute()
 
-    # Get user email
-    user_email = None
-    order_res = supabase.table("orders").select("user_id, total_amount").eq("id", order_id).execute()
-    if order_res.data and order_res.data[0].get("user_id"):
-        u_id = order_res.data[0]["user_id"]
-        user_res = supabase.table("users").select("email").eq("id", u_id).execute()
-        if user_res.data:
-            user_email = user_res.data[0]["email"]
+    # Fetch full nested order details for the new email templates
+    full_order_res = supabase.table("orders").select("*, items:order_items(*, product_variants(*, products(*))), addresses(*)").eq("id", order_id).execute()
+    if full_order_res.data:
+        created_order = full_order_res.data[0]
+        # Ensure user_email is present for the mailer
+        if created_order.get("user_id"):
+            user_res = supabase.table("users").select("email").eq("id", created_order["user_id"]).execute()
+            if user_res.data and user_res.data[0].get("email"):
+                created_order["user_email"] = user_res.data[0]["email"]
         
-        # Send email
-        if user_email:
-            items_res2 = supabase.table("order_items").select("*").eq("order_id", order_id).execute()
-            background_tasks.add_task(send_order_confirmation_email, user_email, {"id": order_id, "total_amount": order_res.data[0]["total_amount"]}, items_res2.data)
+        enqueue_emails(background_tasks, created_order)
 
     return {"success": True}
 
