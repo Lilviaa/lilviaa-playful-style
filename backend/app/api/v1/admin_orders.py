@@ -32,7 +32,7 @@ def list_orders(
     supabase = get_supabase()
 
     query = supabase.table("orders") \
-        .select("*, order_items(*, product_variants(size, sku, products(name, slug, image_urls))), addresses(*), payment_transactions(status, razorpay_payment_id)", count="exact") \
+        .select("*, order_items(*, product_variants(size, sku, products(name, slug, product_images(url)))), addresses(*), payment_transactions(status, razorpay_payment_id)", count="exact") \
         .order("created_at", desc=True)
 
     if status and status != "all":
@@ -85,14 +85,16 @@ def list_orders(
         for oi in items_raw:
             variant = oi.get("product_variants") or {}
             product = variant.get("products") or {}
-            images = product.get("image_urls") or []
+            images = product.get("product_images") or []
+            image_url = images[0].get("url") if images and isinstance(images, list) and len(images) > 0 else ""
+            
             items.append({
                 "id": oi["id"],
                 "order_id": oi["order_id"],
                 "product_id": variant.get("product_id", ""),
                 "variant_id": oi["product_variant_id"],
                 "product_name_snapshot": product.get("name", "Unknown"),
-                "product_image_snapshot": images[0] if images else "",
+                "product_image_snapshot": image_url,
                 "size": variant.get("size", ""),
                 "sku": variant.get("sku", ""),
                 "quantity": oi["quantity"],
