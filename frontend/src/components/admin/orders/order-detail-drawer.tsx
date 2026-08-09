@@ -98,17 +98,6 @@ export function OrderDetailDrawer({ order, isOpen, onClose, onPrint }: OrderDeta
         <SheetHeader className="p-6 sm:p-0 pb-0">
           <div className="flex items-center justify-between">
             <SheetTitle className="font-display text-2xl text-cocoa">Order {formatOrderId(order.id)}</SheetTitle>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={onPrint}
-                className="gap-2 border-cocoa/20 text-cocoa hover:bg-cocoa/5 rounded-full"
-              >
-                <Printer className="h-4 w-4" />
-                Print
-              </Button>
-            </div>
           </div>
           <SheetDescription>
             Placed on {new Date(order.created_at).toLocaleString()}
