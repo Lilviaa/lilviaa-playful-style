@@ -46,7 +46,9 @@ def send_mail(to: str, subject: str, html_body: str, plain_body: str = None):
         msg.set_content(html_body, subtype='html')
 
     try:
-        with smtplib.SMTP(config["host"], config["port"]) as server:
+        # Pass source_address=('0.0.0.0', 0) to force IPv4. This fixes the common 
+        # "[Errno 101] Network is unreachable" on Windows when IPv6 is unrouted.
+        with smtplib.SMTP(config["host"], config["port"], source_address=('0.0.0.0', 0)) as server:
             server.starttls()
             server.login(config["user"], config["pass"])
             server.send_message(msg)
