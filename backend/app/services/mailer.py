@@ -311,7 +311,7 @@ def send_owner_order_notification(order: dict):
         
         # Link to admin dashboard
         frontend_url = os.environ.get("FRONTEND_URL", "https://lilviaa-playful-style.vercel.app")
-        admin_link = f"{frontend_url}/admin/orders/{order_id}"
+        admin_link = f"{frontend_url}/admin/orders"
 
         html = f"""
         <!DOCTYPE html>
