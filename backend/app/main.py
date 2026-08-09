@@ -54,6 +54,7 @@ app.add_exception_handler(AppError, app_error_handler)
 # Include Routers
 from app.api.v1 import addresses, categories, products, admin_products, orders, cart, banners, reviews, cms
 from app.api.v1 import admin_dashboard, admin_orders, admin_customers, admin_coupons, admin_banners, admin_reviews, admin_cms, admin_emails
+from app.api.v1 import whatsapp_webhook
 
 # (I will just add them below the others)
 app.include_router(firebase_auth.router, prefix="/api/v1/firebase_auth", tags=["Firebase Auth"])
@@ -74,6 +75,7 @@ app.include_router(admin_banners.router, prefix="/api/v1/admin/banners", tags=["
 app.include_router(admin_reviews.router, prefix="/api/v1/admin/reviews", tags=["Admin Reviews"])
 app.include_router(admin_cms.router, prefix="/api/v1/admin/cms", tags=["Admin CMS"])
 app.include_router(admin_emails.router, prefix="/api/v1/admin/emails", tags=["Admin Emails"])
+app.include_router(whatsapp_webhook.router, prefix="/api/v1/whatsapp", tags=["WhatsApp Webhook"])
 
 @app.get("/health")
 def health_check():

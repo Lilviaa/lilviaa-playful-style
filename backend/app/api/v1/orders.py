@@ -6,6 +6,10 @@ from app.db.supabase import get_supabase, get_fresh_supabase
 from app.core.exceptions import AppError
 from app.core.limiter import limiter, PreAuthRateLimit, get_user_id
 from app.services.mailer import send_customer_order_confirmation, send_owner_order_notification
+from app.services.whatsapp import (
+    send_customer_order_confirmation as wa_send_customer_confirmation,
+    send_owner_order_alert as wa_send_owner_alert,
+)
 import uuid
 import os
 import razorpay
@@ -33,9 +37,14 @@ class VerifyPaymentRequest(BaseModel):
     razorpay_order_id: str
     razorpay_signature: str
 
-def enqueue_emails(background_tasks, created_order):
+def enqueue_notifications(background_tasks, created_order):
+    """Send both email and WhatsApp notifications as background tasks."""
+    # Email notifications
     background_tasks.add_task(send_customer_order_confirmation, created_order)
     background_tasks.add_task(send_owner_order_notification, created_order)
+    # WhatsApp notifications
+    background_tasks.add_task(wa_send_customer_confirmation, created_order)
+    background_tasks.add_task(wa_send_owner_alert, created_order)
 
 @router.post("", status_code=status.HTTP_201_CREATED, dependencies=[Depends(PreAuthRateLimit("10/minute"))])
 @limiter.limit("5/minute", key_func=get_user_id)
@@ -269,7 +278,7 @@ def create_order(order: OrderCreate, request: Request, background_tasks: Backgro
 
     # For COD, order is considered confirmed immediately. Send emails in the background.
     if order.payment_method == "cod":
-        enqueue_emails(background_tasks, created_order)
+        enqueue_notifications(background_tasks, created_order)
 
     # 6. Razorpay Flow
     rzp = get_razorpay_client()
@@ -390,7 +399,7 @@ def verify_payment(req: VerifyPaymentRequest, request: Request, background_tasks
             if user_res.data and user_res.data[0].get("email"):
                 created_order["user_email"] = user_res.data[0]["email"]
         
-        enqueue_emails(background_tasks, created_order)
+        enqueue_notifications(background_tasks, created_order)
 
     return {"success": True}
 
