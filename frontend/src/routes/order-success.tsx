@@ -37,8 +37,12 @@ function OrderSuccessPage() {
     } else {
       setOrderNumber(`LVA-${Math.floor(10000 + Math.random() * 90000)}`);
     }
-    // Clear the cart
-    clear();
+    // Clear the cart if not Buy It Now
+    const wasBuyNow = sessionStorage.getItem("wasBuyNow");
+    if (!wasBuyNow) {
+      clear();
+    }
+    sessionStorage.removeItem("wasBuyNow");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search.order_id]);
 

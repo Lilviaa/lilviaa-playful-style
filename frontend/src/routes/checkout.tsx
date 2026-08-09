@@ -52,7 +52,31 @@ const STEPS = [
 ];
 
 function CheckoutPage() {
-  const { items, subtotal, clear, remove } = useCart();
+  const { items: cartItems, subtotal: cartSubtotal, clear, remove } = useCart();
+  const [buyNowItem, setBuyNowItem] = useState<any>(null);
+
+  useEffect(() => {
+    try {
+      const stored = sessionStorage.getItem("buyNowItem");
+      if (stored) {
+        setBuyNowItem(JSON.parse(stored));
+      }
+    } catch (e) {}
+  }, []);
+
+  const isBuyNow = !!buyNowItem;
+  const items = isBuyNow ? [buyNowItem] : cartItems;
+  const subtotal = isBuyNow ? (buyNowItem.price * buyNowItem.qty) : cartSubtotal;
+
+  const handleRemoveItem = (slug: string, size: string, variant_id: string) => {
+    if (isBuyNow) {
+      sessionStorage.removeItem("buyNowItem");
+      setBuyNowItem(null);
+    } else {
+      remove(slug, size, variant_id);
+    }
+  };
+
   const navigate = useNavigate();
   const { user } = useAuth();
   const { data: addresses } = useAddresses();
@@ -211,7 +235,8 @@ function CheckoutPage() {
       const orderData = await res.json();
       
       if (values.paymentMethod === "cod") {
-        clear();
+        if (!isBuyNow) clear();
+        if (isBuyNow) sessionStorage.setItem("wasBuyNow", "true");
         navigate({ to: "/order-success", replace: true, search: { orderId: orderData.id, amount: orderData.total_amount } });
         return;
       }
@@ -251,9 +276,10 @@ function CheckoutPage() {
             if (!verifyRes.ok) {
               throw new Error("Payment verification failed");
             }
-            clear();
+            if (!isBuyNow) clear();
+            if (isBuyNow) sessionStorage.setItem("wasBuyNow", "true");
             navigate({ 
-              to: "/order-success", 
+              to: "/order-success",  
               search: { 
                 order_id: orderData.id, 
                 amount: total 
@@ -766,7 +792,7 @@ function CheckoutPage() {
                         <h3 className="font-display text-base font-bold text-cocoa leading-tight pr-6">{it.name}</h3>
                         <button
                           type="button"
-                          onClick={() => remove(it.slug, it.size, it.variant_id)}
+                          onClick={() => handleRemoveItem(it.slug, it.size, it.variant_id)}
                           className="text-muted-foreground hover:text-red-500 transition-colors p-1"
                           aria-label="Remove item"
                         >

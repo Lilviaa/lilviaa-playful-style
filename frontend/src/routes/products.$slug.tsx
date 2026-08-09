@@ -186,9 +186,23 @@ function ProductPage() {
   };
 
   const handleBuyNow = () => {
-    if (handleAdd()) {
-      navigate({ to: "/checkout" });
+    if (!user) {
+      navigate({ to: "/login" });
+      return;
     }
+    if (displayStock === 0) return;
+    
+    sessionStorage.setItem("buyNowItem", JSON.stringify({
+      slug: product.slug,
+      name: product.name,
+      price: displayPrice,
+      image: product.image,
+      size,
+      qty,
+      max_qty: displayStock,
+      variant_id: activeVariant?.id || "",
+    }));
+    navigate({ to: "/checkout" });
   };
 
   return (
