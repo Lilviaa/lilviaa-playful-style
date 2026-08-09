@@ -251,8 +251,8 @@ def send_customer_order_confirmation(order: dict):
                                         Lilviaa.byutsav@gmail.com
                                     </p>
                                     <p style="margin: 0; font-size: 12px;">
-                                        <a href="https://lilviaaa.com/shipping-policy" style="color: {BRAND_BLUSH}; text-decoration: none; margin: 0 10px;">Shipping Policy</a> |
-                                        <a href="https://lilviaaa.com/return-policy" style="color: {BRAND_BLUSH}; text-decoration: none; margin: 0 10px;">Return Policy</a>
+                                        <a href="{os.environ.get('FRONTEND_URL', 'https://lilviaa-playful-style.vercel.app')}/shipping-policy" style="color: {BRAND_BLUSH}; text-decoration: none; margin: 0 10px;">Shipping Policy</a> |
+                                        <a href="{os.environ.get('FRONTEND_URL', 'https://lilviaa-playful-style.vercel.app')}/return-policy" style="color: {BRAND_BLUSH}; text-decoration: none; margin: 0 10px;">Return Policy</a>
                                     </p>
                                 </td>
                             </tr>
@@ -307,7 +307,8 @@ def send_owner_order_notification(order: dict):
         num_items = sum(int(item.get("quantity", item.get("qty", 1))) for item in items)
         
         # Link to admin dashboard
-        admin_link = f"https://lilviaaa.com/admin/orders/{order_id}"
+        frontend_url = os.environ.get("FRONTEND_URL", "https://lilviaa-playful-style.vercel.app")
+        admin_link = f"{frontend_url}/admin/orders/{order_id}"
 
         plain_text = f"""New Order Received!
         
