@@ -115,12 +115,12 @@ def send_customer_order_confirmation(order: dict):
             
             items_html += f"""
             <tr>
-                <td style="padding: 12px; border-bottom: 1px dashed {BRAND_COCOA}33; vertical-align: top;">
-                    <div style="font-weight: bold; color: {BRAND_COCOA};">{name}</div>
+                <td style="padding: 15px 12px; border-bottom: 1px solid #E5DFD5; vertical-align: top;">
+                    <div style="font-weight: 700; color: {BRAND_COCOA};">{name}</div>
                     {size_html}
                 </td>
-                <td style="padding: 12px; border-bottom: 1px dashed {BRAND_COCOA}33; text-align: center; color: {BRAND_COCOA};">{qty}</td>
-                <td style="padding: 12px; border-bottom: 1px dashed {BRAND_COCOA}33; text-align: right; font-weight: bold; color: {BRAND_COCOA};">{format_inr(total)}</td>
+                <td style="padding: 15px 12px; border-bottom: 1px solid #E5DFD5; text-align: center; color: {BRAND_COCOA};">{qty}</td>
+                <td style="padding: 15px 12px; border-bottom: 1px solid #E5DFD5; text-align: right; font-weight: 700; color: {BRAND_COCOA};">{format_inr(total)}</td>
             </tr>
             """
 
@@ -136,6 +136,12 @@ def send_customer_order_confirmation(order: dict):
             <meta charset="utf-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <title>Order Confirmed</title>
+            <link rel="preconnect" href="https://fonts.googleapis.com">
+            <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+            <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,100..900;1,9..144,100..900&family=Nunito:ital,wght@0,200..1000;1,200..1000&display=swap" rel="stylesheet">
+            <style>
+                @import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,100..900;1,9..144,100..900&family=Nunito:ital,wght@0,200..1000;1,200..1000&display=swap');
+            </style>
         </head>
         <body style="margin: 0; padding: 0; background-color: #f9f9f9; font-family: {BODY_FONT};">
             <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f9f9f9; padding: 20px;">
@@ -173,9 +179,9 @@ def send_customer_order_confirmation(order: dict):
                                     <table width="100%" cellpadding="0" cellspacing="0" style="background-color: {BRAND_SAND}; border-radius: 8px;">
                                         <thead>
                                             <tr>
-                                                <th style="padding: 15px 12px; text-align: left; color: #8C6D56; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid {BRAND_COCOA}33;">Product</th>
-                                                <th style="padding: 15px 12px; text-align: center; color: #8C6D56; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid {BRAND_COCOA}33;">Qty</th>
-                                                <th style="padding: 15px 12px; text-align: right; color: #8C6D56; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid {BRAND_COCOA}33;">Total</th>
+                                                <th style="padding: 15px 12px; text-align: left; color: #8C6D56; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid #E5DFD5;">Product</th>
+                                                <th style="padding: 15px 12px; text-align: center; color: #8C6D56; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid #E5DFD5;">Qty</th>
+                                                <th style="padding: 15px 12px; text-align: right; color: #8C6D56; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid #E5DFD5;">Total</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -206,7 +212,7 @@ def send_customer_order_confirmation(order: dict):
                                         </tr>
                                         <tr>
                                             <td style="padding-top: 15px; color: {BRAND_COCOA}; font-size: 18px; font-weight: 900; text-transform: uppercase;">Grand Total</td>
-                                            <td style="padding-top: 15px; text-align: right; color: {BRAND_BLUSH}; font-size: 20px; font-weight: 900;">{format_inr(grand_total)}</td>
+                                            <td style="padding-top: 15px; text-align: right; color: {BRAND_COCOA}; font-size: 20px; font-weight: 900;">{format_inr(grand_total)}</td>
                                         </tr>
                                     </table>
                                 </td>
