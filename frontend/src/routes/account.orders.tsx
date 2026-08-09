@@ -65,7 +65,7 @@ function TrackingTimeline({ status, trackingStatus, trackingHistory, loading, on
   }
 
   return (
-    <div className="space-y-4 py-4 max-h-[60vh] overflow-y-auto px-2">
+    <div className="space-y-4 py-4 px-2">
       <div className="flex justify-between items-center bg-sand/30 p-3 rounded-xl border border-cocoa/10">
         <div>
           <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">Courier Partner</p>
