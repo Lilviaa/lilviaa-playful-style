@@ -310,24 +310,92 @@ def send_owner_order_notification(order: dict):
         frontend_url = os.environ.get("FRONTEND_URL", "https://lilviaa-playful-style.vercel.app")
         admin_link = f"{frontend_url}/admin/orders/{order_id}"
 
-        plain_text = f"""New Order Received!
-        
-Order ID: {short_order_id}
-Customer Name: {customer_name}
-Customer Phone: {customer_phone}
-Payment Method: {payment_method}
-Total Amount: ₹{grand_total:,.2f}
-Number of Items: {num_items}
+        html = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>New Order Received</title>
+            <link rel="preconnect" href="https://fonts.googleapis.com">
+            <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+            <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,100..900;1,9..144,100..900&family=Nunito:ital,wght@0,200..1000;1,200..1000&display=swap" rel="stylesheet">
+            <style>
+                @import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,100..900;1,9..144,100..900&family=Nunito:ital,wght@0,200..1000;1,200..1000&display=swap');
+            </style>
+        </head>
+        <body style="margin: 0; padding: 0; background-color: #f9f9f9; font-family: {BODY_FONT};">
+            <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f9f9f9; padding: 20px;">
+                <tr>
+                    <td align="center">
+                        <table width="600" cellpadding="0" cellspacing="0" style="background-color: {BRAND_CREAM}; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin: 0 auto;">
+                            <!-- HEADER -->
+                            <tr>
+                                <td style="padding: 40px 30px; text-align: center; border-bottom: 2px solid {BRAND_SAND};">
+                                    <h1 style="margin: 0; font-family: {HEADER_FONT}; color: {BRAND_BLUSH}; font-size: 32px; letter-spacing: -0.5px;">Lil Viaa</h1>
+                                    <h2 style="margin: 15px 0 0 0; font-family: {HEADER_FONT}; color: {BRAND_COCOA}; font-size: 24px;">New Order Received!</h2>
+                                    <p style="margin: 10px 0 0 0; color: #8C6D56; font-size: 14px;">A customer has just placed a new order.</p>
+                                </td>
+                            </tr>
 
-View order in dashboard:
-{admin_link}
-"""
+                            <!-- ORDER META -->
+                            <tr>
+                                <td style="padding: 30px;">
+                                    <table width="100%" cellpadding="0" cellspacing="0">
+                                        <tr>
+                                            <td width="50%" style="color: #8C6D56; font-size: 12px; text-transform: uppercase; letter-spacing: 1px;">Order ID</td>
+                                            <td width="50%" style="text-align: right; color: #8C6D56; font-size: 12px; text-transform: uppercase; letter-spacing: 1px;">Customer</td>
+                                        </tr>
+                                        <tr>
+                                            <td style="font-weight: bold; color: {BRAND_COCOA}; font-size: 16px; padding-top: 5px;">#{short_order_id}</td>
+                                            <td style="text-align: right; font-weight: bold; color: {BRAND_COCOA}; font-size: 14px; padding-top: 5px;">{customer_name}</td>
+                                        </tr>
+                                    </table>
+                                </td>
+                            </tr>
+
+                            <!-- SUMMARY -->
+                            <tr>
+                                <td style="padding: 20px 30px; background-color: {BRAND_SAND};">
+                                    <table width="100%" cellpadding="0" cellspacing="0">
+                                        <tr>
+                                            <td style="padding: 5px 0; color: #8C6D56; font-size: 14px;">Total Items</td>
+                                            <td style="padding: 5px 0; text-align: right; color: {BRAND_COCOA}; font-size: 14px; font-weight: bold;">{num_items}</td>
+                                        </tr>
+                                        <tr>
+                                            <td style="padding: 5px 0; color: #8C6D56; font-size: 14px;">Payment Method</td>
+                                            <td style="padding: 5px 0; text-align: right; color: {BRAND_COCOA}; font-size: 14px; font-weight: bold;">{payment_method}</td>
+                                        </tr>
+                                        <tr>
+                                            <td colspan="2" style="padding-top: 15px; border-bottom: 1px solid #E5DFD5;"></td>
+                                        </tr>
+                                        <tr>
+                                            <td style="padding-top: 15px; color: {BRAND_COCOA}; font-size: 18px; font-weight: 900; text-transform: uppercase;">Revenue</td>
+                                            <td style="padding-top: 15px; text-align: right; color: {BRAND_COCOA}; font-size: 20px; font-weight: 900;">{format_inr(grand_total)}</td>
+                                        </tr>
+                                    </table>
+                                </td>
+                            </tr>
+
+                            <!-- ACTIONS -->
+                            <tr>
+                                <td style="padding: 30px; text-align: center;">
+                                    <a href="{admin_link}" style="display: inline-block; padding: 14px 28px; background-color: {BRAND_BLUSH}; color: white; text-decoration: none; font-weight: bold; border-radius: 8px; font-size: 14px; text-transform: uppercase; letter-spacing: 1px;">View Dashboard</a>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+            </table>
+        </body>
+        </html>
+        """
 
         send_mail(
             to=to_email,
             subject=f"New Order #{short_order_id} — ₹{grand_total:,.2f}",
             plain_body=plain_text,
-            html_body=None
+            html_body=html
         )
     except Exception as e:
         logger.error(f"Error in send_owner_order_notification for order {order.get('id')}: {str(e)}")
