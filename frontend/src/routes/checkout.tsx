@@ -80,6 +80,7 @@ function CheckoutPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { data: addresses } = useAddresses();
+  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
   const [couponCodeInput, setCouponCodeInput] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState<any>(null);
   const [isApplyingCoupon, setIsApplyingCoupon] = useState(false);
@@ -188,6 +189,9 @@ function CheckoutPage() {
   useEffect(() => {
     if (addresses && addresses.length > 0) {
       const defaultAddress = addresses.find(a => a.is_default) || addresses[0];
+      if (!selectedAddressId) {
+        setSelectedAddressId(defaultAddress.id);
+      }
       form.reset({
         ...form.getValues(),
         fullName: defaultAddress.full_name,
@@ -445,39 +449,50 @@ function CheckoutPage() {
                         <div className="mb-8">
                           <h3 className="text-sm font-bold text-cocoa uppercase tracking-wider mb-3">Saved Addresses</h3>
                           <div className="grid gap-3 sm:grid-cols-2">
-                            {addresses.map((addr) => (
-                              <button
-                                key={addr.id}
-                                type="button"
-                                onClick={() => form.reset({
-                                  ...form.getValues(),
-                                  fullName: addr.full_name,
-                                  phone: addr.phone,
-                                  address: addr.address,
-                                  city: addr.city,
-                                  state: addr.state,
-                                  zip: addr.zip,
-                                })}
-                                className={`text-left p-4 rounded-xl border-2 transition-all ${
-                                  form.watch("address") === addr.address
-                                    ? "border-primary bg-primary/5"
-                                    : "border-border bg-background hover:border-primary/50"
-                                }`}
-                              >
-                                <div className="flex justify-between items-start gap-2 mb-1">
-                                  <span className="font-bold text-cocoa line-clamp-1">{addr.full_name}</span>
-                                  {addr.is_default && <span className="bg-primary text-white text-[10px] uppercase font-bold px-2 py-0.5 rounded-full shrink-0">Default</span>}
-                                </div>
-                                <div className="text-xs text-muted-foreground space-y-0.5">
-                                  <p>{addr.phone}</p>
-                                  <p className="line-clamp-1">{addr.address}</p>
-                                  <p>{addr.city}, {addr.state} {addr.zip}</p>
-                                </div>
-                              </button>
-                            ))}
+                            {addresses.map((addr) => {
+                              const isSelected = selectedAddressId === addr.id;
+                              return (
+                                <button
+                                  key={addr.id}
+                                  type="button"
+                                  onClick={() => {
+                                    setSelectedAddressId(addr.id);
+                                    form.reset({
+                                      ...form.getValues(),
+                                      fullName: addr.full_name,
+                                      phone: addr.phone,
+                                      address: addr.address,
+                                      city: addr.city,
+                                      state: addr.state,
+                                      zip: addr.zip,
+                                    });
+                                  }}
+                                  className={`relative text-left p-4 rounded-xl border-2 transition-all ${
+                                    isSelected
+                                      ? "border-primary bg-primary/5 shadow-sm ring-1 ring-primary/20"
+                                      : "border-border bg-background hover:border-primary/50"
+                                  }`}
+                                >
+                                  {isSelected && (
+                                    <div className="absolute -top-2 -right-2 bg-primary text-white rounded-full p-0.5">
+                                      <CheckCircle2 className="h-4 w-4" />
+                                    </div>
+                                  )}
+                                  <div className="flex justify-between items-start gap-2 mb-1">
+                                    <span className={`font-bold line-clamp-1 ${isSelected ? 'text-primary' : 'text-cocoa'}`}>{addr.full_name}</span>
+                                    {addr.is_default && <span className="bg-primary text-white text-[10px] uppercase font-bold px-2 py-0.5 rounded-full shrink-0">Default</span>}
+                                  </div>
+                                  <div className="text-xs text-muted-foreground space-y-0.5">
+                                    <p>{addr.phone}</p>
+                                    <p className="line-clamp-1">{addr.address}</p>
+                                    <p>{addr.city}, {addr.state} {addr.zip}</p>
+                                  </div>
+                                </button>
+                              );
+                            })}
                           </div>
                           <div className="mt-6 flex items-center gap-4 before:h-px before:flex-1 before:bg-border after:h-px after:flex-1 after:bg-border">
-                            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Or Edit Below</span>
+                            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-widest text-center whitespace-nowrap">Review & Edit Details</span>
                           </div>
                         </div>
                       )}
