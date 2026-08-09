@@ -111,6 +111,19 @@ def update_current_user_profile(data: UpdateProfileRequest, request: Request, to
             update_data["user_id"] = user_id
             supabase.table("user_profiles").insert(update_data).execute()
             
+        # Also sync full_name and phone to existing addresses
+        address_update_data = {}
+        if data.full_name is not None:
+            address_update_data["full_name"] = data.full_name
+        if data.phone is not None:
+            address_update_data["phone"] = data.phone
+            
+        if address_update_data:
+            try:
+                supabase.table("addresses").update(address_update_data).eq("user_id", user_id).execute()
+            except Exception as e:
+                print("Failed to sync profile update to addresses:", e)
+            
     return {"status": "success", "message": "Profile updated"}
 
 @router.delete("/me", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(PreAuthRateLimit("20/minute"))])

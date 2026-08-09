@@ -440,6 +440,48 @@ function CheckoutPage() {
                   <div className="space-y-6">
                     <div className="rounded-3xl bg-card p-6 md:p-8 shadow-cute animate-in fade-in slide-in-from-right-4 duration-300">
                       <h2 className="font-display text-2xl text-cocoa mb-6">Delivery Address</h2>
+                      
+                      {addresses && addresses.length > 1 && (
+                        <div className="mb-8">
+                          <h3 className="text-sm font-bold text-cocoa uppercase tracking-wider mb-3">Saved Addresses</h3>
+                          <div className="grid gap-3 sm:grid-cols-2">
+                            {addresses.map((addr) => (
+                              <button
+                                key={addr.id}
+                                type="button"
+                                onClick={() => form.reset({
+                                  ...form.getValues(),
+                                  fullName: addr.full_name,
+                                  phone: addr.phone,
+                                  address: addr.address,
+                                  city: addr.city,
+                                  state: addr.state,
+                                  zip: addr.zip,
+                                })}
+                                className={`text-left p-4 rounded-xl border-2 transition-all ${
+                                  form.watch("address") === addr.address
+                                    ? "border-primary bg-primary/5"
+                                    : "border-border bg-background hover:border-primary/50"
+                                }`}
+                              >
+                                <div className="flex justify-between items-start gap-2 mb-1">
+                                  <span className="font-bold text-cocoa line-clamp-1">{addr.full_name}</span>
+                                  {addr.is_default && <span className="bg-primary text-white text-[10px] uppercase font-bold px-2 py-0.5 rounded-full shrink-0">Default</span>}
+                                </div>
+                                <div className="text-xs text-muted-foreground space-y-0.5">
+                                  <p>{addr.phone}</p>
+                                  <p className="line-clamp-1">{addr.address}</p>
+                                  <p>{addr.city}, {addr.state} {addr.zip}</p>
+                                </div>
+                              </button>
+                            ))}
+                          </div>
+                          <div className="mt-6 flex items-center gap-4 before:h-px before:flex-1 before:bg-border after:h-px after:flex-1 after:bg-border">
+                            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Or Edit Below</span>
+                          </div>
+                        </div>
+                      )}
+
                       <div className="grid gap-5 sm:grid-cols-2">
                         <FormField
                           control={form.control}
