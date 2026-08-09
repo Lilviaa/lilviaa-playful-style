@@ -9,7 +9,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { useEffect, useState } from "react";
-import { ArrowRight, CreditCard, Landmark, Banknote, SmartphoneNfc, Check, Lock, ChevronLeft, ShieldCheck, Truck, ShieldAlert, ChevronDown, ChevronUp, Loader2 } from "lucide-react";
+import { ArrowRight, CreditCard, Landmark, Banknote, SmartphoneNfc, Check, Lock, ChevronLeft, ShieldCheck, Truck, ShieldAlert, ChevronDown, ChevronUp, Loader2, Trash2 } from "lucide-react";
 import {
   Form,
   FormControl,
@@ -52,7 +52,7 @@ const STEPS = [
 ];
 
 function CheckoutPage() {
-  const { items, subtotal, clear } = useCart();
+  const { items, subtotal, clear, remove } = useCart();
   const navigate = useNavigate();
   const { user } = useAuth();
   const { data: addresses } = useAddresses();
@@ -759,10 +759,20 @@ function CheckoutPage() {
               
               <ul className="mt-4 mb-6 space-y-4 max-h-[40vh] overflow-y-auto pr-2">
                 {items.map((it) => (
-                  <li key={it.slug + it.size} className="flex gap-4">
+                  <li key={it.slug + it.size} className="flex gap-4 relative group">
                     <img src={it.image} alt={it.name} className="h-20 w-16 rounded-xl object-cover bg-muted" />
                     <div className="flex flex-1 flex-col justify-center">
-                      <h3 className="font-display text-base font-bold text-cocoa leading-tight">{it.name}</h3>
+                      <div className="flex justify-between items-start">
+                        <h3 className="font-display text-base font-bold text-cocoa leading-tight pr-6">{it.name}</h3>
+                        <button
+                          type="button"
+                          onClick={() => remove(it.slug, it.size, it.variant_id)}
+                          className="text-muted-foreground hover:text-red-500 transition-colors p-1"
+                          aria-label="Remove item"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
                       <div className="text-sm text-muted-foreground mt-1">
                         Size: {it.size} <br />
                         Qty: {it.qty}
