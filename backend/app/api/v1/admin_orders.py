@@ -51,6 +51,18 @@ def list_orders(
             
         if is_uuid:
             query = query.eq("id", search)
+        elif search.upper().startswith("ORD-LV-"):
+            numeric_str = search.upper().replace("ORD-LV-", "")
+            try:
+                hex_prefix = format(int(numeric_str), 'x').zfill(6)
+                all_ids_res = supabase.table("orders").select("id").execute()
+                matching_ids = [row["id"] for row in all_ids_res.data if row["id"].startswith(hex_prefix)]
+                if matching_ids:
+                    query = query.in_("id", matching_ids)
+                else:
+                    query = query.eq("id", "00000000-0000-0000-0000-000000000000")
+            except ValueError:
+                query = query.or_(f"shipping_address->>full_name.ilike.%{search}%,shipping_address->>phone.ilike.%{search}%")
         else:
             # Search by customer name or phone instead of ID
             query = query.or_(f"shipping_address->>full_name.ilike.%{search}%,shipping_address->>phone.ilike.%{search}%")

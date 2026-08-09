@@ -3,6 +3,7 @@ import { useAuth } from "@/lib/auth";
 import { Package, Truck, FileText, Star, ArrowRight, MapPin, CheckCircle2, Loader2, PackageCheck, XCircle, RefreshCcw } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { formatINR } from "@/lib/cart";
+import { formatOrderId } from "@/lib/utils";
 import { apiFetch } from "@/lib/api";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -212,7 +213,7 @@ function AccountOrdersPage() {
             <div key={order.id} className="rounded-2xl border border-border bg-background p-5">
               <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border pb-4">
                 <div>
-                  <p className="text-sm font-semibold text-cocoa">#{order.id.split('-')[0].toUpperCase()}</p>
+                  <p className="text-sm font-semibold text-cocoa">{formatOrderId(order.id)}</p>
                   <p className="text-xs text-muted-foreground">{new Date(order.created_at).toLocaleDateString()}</p>
                 </div>
                 <div className="text-right">
@@ -261,7 +262,7 @@ function AccountOrdersPage() {
                     </DialogTrigger>
                     <DialogContent className="sm:max-w-md">
                       <DialogHeader>
-                        <DialogTitle>Track Package: {order.awb_code || order.tracking_number || `ORD-LV-${parseInt(order.id.replace(/-/g, '').substring(0, 6), 16).toString().padStart(6, '0')}`}</DialogTitle>
+                        <DialogTitle>Track Package: {order.awb_code || order.tracking_number || formatOrderId(order.id)}</DialogTitle>
                       </DialogHeader>
                       <TrackingTimeline 
                         status={order.status} 
@@ -294,7 +295,7 @@ function AccountOrdersPage() {
                     </DialogTrigger>
                     <DialogContent>
                       <DialogHeader>
-                        <DialogTitle>Review Items from #{order.id.split('-')[0].toUpperCase()}</DialogTitle>
+                        <DialogTitle>Review Items from {formatOrderId(order.id)}</DialogTitle>
                       </DialogHeader>
                       <div className="space-y-4 py-4">
                         <p className="text-sm text-muted-foreground">Select an item to write a review on its product page:</p>
