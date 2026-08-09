@@ -144,6 +144,8 @@ function AccountIndexPage() {
                         type="tel"
                         name="phone"
                         required
+                        pattern="^(\+91\s)?[0-9]{10}$"
+                        title="Phone must be 10 digits, or +91 followed by 10 digits"
                         defaultValue={user.phone || ""}
                         className="w-full rounded-xl border-2 border-border bg-background px-4 py-2 text-sm text-cocoa focus:border-primary focus:outline-none"
                       />
@@ -261,7 +263,9 @@ function AccountIndexPage() {
                         <input
                           name="phone"
                           required
-                          type="text"
+                          type="tel"
+                          pattern="^(\+91\s)?[0-9]{10}$"
+                          title="Phone must be 10 digits, or +91 followed by 10 digits"
                           defaultValue={addressView === "edit" ? editingAddress?.phone : ""}
                           className="w-full rounded-xl border-2 border-border bg-background px-4 py-2 text-sm text-cocoa focus:border-primary focus:outline-none"
                         />

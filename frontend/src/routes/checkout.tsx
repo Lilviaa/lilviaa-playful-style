@@ -35,7 +35,7 @@ export const Route = createFileRoute("/checkout")({
 const formSchema = z.object({
   fullName: z.string().min(2, { message: "Name must be at least 2 characters." }),
   email: z.string().email({ message: "Please enter a valid email address." }),
-  phone: z.string().min(10, { message: "Please enter a valid phone number." }),
+  phone: z.string().regex(/^(\+91\s)?[0-9]{10}$/, { message: "Phone must be 10 digits, or +91 followed by 10 digits." }),
   address: z.string().min(5, { message: "Address is required." }),
   city: z.string().min(2, { message: "City is required." }),
   state: z.string().min(2, { message: "State is required." }),
@@ -152,12 +152,14 @@ function CheckoutPage() {
   // Form has been hoisted above the calculation logic to allow watch()
 
   useEffect(() => {
-    if (user) {
+    if (user && (!addresses || addresses.length === 0)) {
+      form.setValue("email", user.email || "");
+      form.setValue("fullName", user.full_name || "");
+      form.setValue("phone", user.phone || "");
+    } else if (user) {
       if (!form.getValues("email")) form.setValue("email", user.email);
-      if (!form.getValues("fullName")) form.setValue("fullName", user.full_name);
-      if (!form.getValues("phone") && user.phone) form.setValue("phone", user.phone);
     }
-  }, [user, form]);
+  }, [user, addresses, form]);
 
   useEffect(() => {
     if (addresses && addresses.length > 0) {
