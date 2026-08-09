@@ -46,9 +46,12 @@ def send_mail(to: str, subject: str, html_body: str, plain_body: str = None):
         msg.set_content(html_body, subtype='html')
 
     try:
-        # Pass source_address=('0.0.0.0', 0) to force IPv4. This fixes the common 
-        # "[Errno 101] Network is unreachable" on Windows when IPv6 is unrouted.
-        with smtplib.SMTP(config["host"], config["port"], source_address=('0.0.0.0', 0)) as server:
+        kwargs = {}
+        # Apply IPv4 force workaround only on Windows local development
+        if os.name == 'nt':
+            kwargs['source_address'] = ('0.0.0.0', 0)
+            
+        with smtplib.SMTP(config["host"], config["port"], **kwargs) as server:
             server.starttls()
             server.login(config["user"], config["pass"])
             server.send_message(msg)
@@ -394,7 +397,7 @@ def send_owner_order_notification(order: dict):
         send_mail(
             to=to_email,
             subject=f"New Order #{short_order_id} — ₹{grand_total:,.2f}",
-            plain_body=plain_text,
+            plain_body=None,
             html_body=html
         )
     except Exception as e:
