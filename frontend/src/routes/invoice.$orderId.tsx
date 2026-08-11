@@ -146,7 +146,10 @@ function InvoicePage() {
                   {companyDetails?.pincode ? ` - ${companyDetails.pincode}` : ''}
                 </div>
               )}
-              {companyDetails?.gst_number && (
+              {companyDetails?.phone_primary && <div className="mt-0.5">Phone: {companyDetails.phone_primary}</div>}
+              {companyDetails?.business_email && <div>Email: {companyDetails.business_email}</div>}
+              {companyDetails?.website && <div>{companyDetails.website}</div>}
+              {companyDetails?.enable_gst && companyDetails?.gst_number && (
                 <div className="mt-1 font-bold">GST: {companyDetails.gst_number}</div>
               )}
             </div>
