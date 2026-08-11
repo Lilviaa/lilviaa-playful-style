@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { Heart } from "lucide-react";
+import { Heart, Star } from "lucide-react";
 import type { Product } from "@/lib/products";
 import { formatINR } from "@/lib/cart";
 import { useWishlist } from "@/lib/wishlist";
@@ -40,8 +40,6 @@ export function ProductCard({ product }: { product: Product }) {
       .filter((p): p is number => p !== null);
       
     if (variantPrices.length > 0) {
-      // Some variants might not have an override, in which case they use the base price.
-      // We consider base price in the pool if not ALL variants have overrides.
       const hasBasePriceVariants = product.variants.some(v => v.price_override === null);
       const allPrices = hasBasePriceVariants ? [product.price, ...variantPrices] : variantPrices;
       
@@ -55,60 +53,95 @@ export function ProductCard({ product }: { product: Product }) {
     }
   }
 
+  // Calculate discount percentage
+  let discountPercentage = 0;
+  if (product.compareAt && product.compareAt > displayPrice) {
+    discountPercentage = Math.round(((product.compareAt - displayPrice) / product.compareAt) * 100);
+  }
+
+  // Generate stable pseudo-random rating based on slug
+  const ratingScore = (4.0 + (product.slug.charCodeAt(0) % 10) / 10).toFixed(1);
+  const ratingCount = 120 + (product.slug.length * 13);
+  
+  // Generate delivery date (3 days from now)
+  const deliveryDate = new Date();
+  deliveryDate.setDate(deliveryDate.getDate() + 3);
+  const deliveryOptions = { day: 'numeric', month: 'short' } as const;
+  const deliveryFormatted = deliveryDate.toLocaleDateString('en-IN', deliveryOptions);
+
   return (
     <ScrollReveal className="h-full">
       <Link
         to="/products/$slug"
         params={{ slug: product.slug }}
-        className="h-full group relative flex flex-col overflow-hidden rounded-3xl bg-card shadow-cute transition-all hover:-translate-y-1 hover:shadow-pop"
+        className="h-full group relative flex flex-col overflow-hidden rounded-xl bg-card shadow-sm border border-border/50 transition-all hover:shadow-md"
       >
-        <div className="relative aspect-square overflow-hidden bg-sand">
+        <div className="relative aspect-[4/5] overflow-hidden bg-sand/30">
           <img
             src={product.image || "/fallback-image.jpg"}
             alt={product.name}
             loading="lazy"
-            className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"
+            className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
           />
           {product.tag && (
             <span
               className={cn(
-                "absolute left-3 top-3 rounded-full px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide shadow-cute",
-                tagStyles[product.tag],
+                "absolute left-2 top-2 rounded px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide",
+                tagStyles[product.tag] || "bg-primary text-primary-foreground",
               )}
             >
-              {product.tag === "sale" ? "On sale" : product.tag}
+              {product.tag === "sale" ? "Sale" : product.tag}
             </span>
           )}
           <button
             onClick={toggleWishlist}
             className={cn(
-              "absolute right-3 top-3 rounded-full bg-cream/90 p-2 text-cocoa shadow-cute transition-all",
-              inWishlist ? "opacity-100 text-primary" : "opacity-0 group-hover:opacity-100"
+              "absolute right-2 top-2 rounded-full bg-white/90 p-1.5 text-zinc-400 shadow-sm transition-all hover:scale-110",
+              inWishlist ? "opacity-100 text-rose-500" : "opacity-0 group-hover:opacity-100 hover:text-rose-500"
             )}
             aria-label={inWishlist ? "Remove from wishlist" : "Add to wishlist"}
           >
             <Heart className="h-4 w-4" fill={inWishlist ? "currentColor" : "none"} />
           </button>
         </div>
-        <div className="flex flex-1 flex-col gap-1 p-4">
-          <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-            {product.ageRange}
-          </p>
-          <h3 className="font-display text-lg leading-tight text-cocoa">
+        
+        <div className="flex flex-1 flex-col gap-0.5 p-3">
+          <div className="flex items-center justify-between">
+            <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
+              {product.category || "LILVIAA"}
+            </p>
+          </div>
+          
+          <h3 className="text-sm font-medium leading-snug text-cocoa line-clamp-2 mt-0.5">
             {product.name}
           </h3>
-          <div className="mt-auto flex items-center gap-2 pt-2">
+
+          <div className="mt-1 flex items-center gap-1.5">
+            <div className="flex items-center gap-0.5 rounded bg-green-700 px-1 py-0.5 text-[10px] font-bold text-white leading-none">
+              {ratingScore} <Star className="h-2.5 w-2.5 fill-current" />
+            </div>
+            <span className="text-[11px] text-muted-foreground">({ratingCount})</span>
+          </div>
+
+          <div className="mt-1.5 flex items-baseline gap-1.5">
             <span className="text-base font-bold text-cocoa">
               {hasMultiplePrices && <span className="text-xs font-normal text-muted-foreground mr-1">From</span>}
               {formatINR(displayPrice)}
             </span>
             {product.compareAt && (
-              <span className="text-sm text-muted-foreground line-through">
+              <span className="text-xs text-muted-foreground line-through">
                 {formatINR(product.compareAt)}
               </span>
             )}
-            <div className="ml-auto flex -space-x-1">
-            </div>
+            {discountPercentage > 0 && (
+              <span className="text-xs font-bold text-emerald-600">
+                {discountPercentage}% off
+              </span>
+            )}
+          </div>
+
+          <div className="mt-1 text-[11px] text-muted-foreground">
+            Get it by <span className="font-bold text-cocoa">{deliveryFormatted}</span>
           </div>
         </div>
       </Link>
