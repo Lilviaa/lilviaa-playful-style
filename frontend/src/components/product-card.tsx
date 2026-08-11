@@ -83,11 +83,21 @@ export function ProductCard({ product }: { product: Product }) {
               {product.tag === "sale" ? "Sale" : product.tag}
             </span>
           )}
+          
+          <div className="absolute left-2 bottom-2">
+            <span className="inline-flex items-center gap-1 rounded bg-white/90 backdrop-blur-sm px-1.5 py-0.5 text-[10px] font-bold tracking-wide text-cocoa shadow-sm">
+              <span className="flex h-3 w-3 items-center justify-center rounded-full bg-primary text-white">
+                <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              </span>
+              Lilviaa Assured
+            </span>
+          </div>
+
           <button
             onClick={toggleWishlist}
             className={cn(
               "absolute right-2 top-2 rounded-full bg-white/90 p-1.5 text-zinc-400 shadow-sm transition-all hover:scale-110",
-              inWishlist ? "opacity-100 text-rose-500" : "opacity-0 group-hover:opacity-100 hover:text-rose-500"
+              inWishlist ? "opacity-100 text-primary" : "opacity-0 group-hover:opacity-100 hover:text-primary"
             )}
             aria-label={inWishlist ? "Remove from wishlist" : "Add to wishlist"}
           >
@@ -96,53 +106,45 @@ export function ProductCard({ product }: { product: Product }) {
         </div>
         
         <div className="flex flex-1 flex-col gap-0.5 p-3">
-          <div className="flex items-center justify-between">
-            <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
-              {product.category || "LILVIAA"}
-            </p>
-          </div>
+          <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground mt-1">
+            {product.category || "LILVIAA"}
+          </p>
           
-          <h3 className="text-sm font-medium leading-snug text-cocoa line-clamp-2 mt-0.5 min-h-[2.5rem]">
+          <h3 className="text-sm font-medium leading-snug text-cocoa line-clamp-2 mt-0.5">
             {product.name}
           </h3>
 
           {product.reviewCount && product.reviewCount > 0 ? (
-            <div className="mt-1 flex items-center gap-1.5">
-              <div className="flex items-center gap-0.5 rounded bg-green-700 px-1 py-0.5 text-[10px] font-bold text-white leading-none">
-                {product.rating} <Star className="h-2.5 w-2.5 fill-current" />
-              </div>
-              <span className="text-[11px] text-muted-foreground">({product.reviewCount})</span>
+            <div className="mt-1 flex items-center gap-1.5 text-[11px] font-medium text-cocoa/80">
+              <span className="flex items-center gap-0.5 text-yellow-500">
+                <Star className="h-3 w-3 fill-current" /> {product.rating}
+              </span>
+              <span>·</span>
+              <span>{product.reviewCount} {product.reviewCount === 1 ? 'review' : 'reviews'}</span>
             </div>
           ) : (
-            <div className="mt-1 flex items-center gap-1.5 h-[18px]">
-              {/* Placeholder to maintain height if no reviews */}
-            </div>
+            <div className="mt-1 h-[16px]"></div>
           )}
 
           <div className="mt-1.5 flex items-baseline gap-1.5">
             <span className="text-base font-bold text-cocoa">
-              {hasMultiplePrices && <span className="text-xs font-normal text-muted-foreground mr-1">From</span>}
+              {hasMultiplePrices && <span className="text-[10px] font-normal text-muted-foreground mr-1 uppercase">From</span>}
               {formatINR(displayPrice)}
             </span>
             {product.compareAt && (
-              <span className="text-xs text-muted-foreground line-through">
+              <span className="text-[11px] font-medium text-muted-foreground line-through decoration-muted-foreground/50">
                 {formatINR(product.compareAt)}
               </span>
             )}
             {discountPercentage > 0 && (
-              <span className="text-xs font-bold text-emerald-600">
-                {discountPercentage}% off
+              <span className="text-[11px] font-bold text-primary">
+                {discountPercentage}% OFF
               </span>
             )}
           </div>
-
-          <div className="mt-1.5 flex flex-wrap gap-1.5">
-            <span className="inline-flex items-center gap-1 rounded bg-slate-800 px-1.5 py-0.5 text-[10px] font-bold tracking-wide text-white shadow-sm">
-              <span className="flex h-3 w-3 items-center justify-center rounded-full bg-emerald-500 text-slate-900">
-                <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-              </span>
-              Lilviaa Assured
-            </span>
+          
+          <div className="mt-1 text-[10px] font-medium text-muted-foreground">
+            No Returns
           </div>
         </div>
       </Link>
