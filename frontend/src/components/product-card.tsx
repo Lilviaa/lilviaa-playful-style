@@ -106,6 +106,19 @@ export function ProductCard({ product }: { product: Product }) {
             {product.name}
           </h3>
 
+          {product.reviewCount && product.reviewCount > 0 ? (
+            <div className="mt-1 flex items-center gap-1.5">
+              <div className="flex items-center gap-0.5 rounded bg-green-700 px-1 py-0.5 text-[10px] font-bold text-white leading-none">
+                {product.rating} <Star className="h-2.5 w-2.5 fill-current" />
+              </div>
+              <span className="text-[11px] text-muted-foreground">({product.reviewCount})</span>
+            </div>
+          ) : (
+            <div className="mt-1 flex items-center gap-1.5 h-[18px]">
+              {/* Placeholder to maintain height if no reviews */}
+            </div>
+          )}
+
           <div className="mt-1.5 flex items-baseline gap-1.5">
             <span className="text-base font-bold text-cocoa">
               {hasMultiplePrices && <span className="text-xs font-normal text-muted-foreground mr-1">From</span>}

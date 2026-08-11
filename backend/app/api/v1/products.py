@@ -127,7 +127,32 @@ def get_products(
     query = query.range(offset, offset + limit - 1)
         
     result = query.execute()
-    products = [map_product(row) for row in result.data]
+    
+    # Fetch reviews for these products to calculate rating dynamically
+    product_ids = [row.get("id") for row in result.data if row.get("id")]
+    
+    ratings_dict = {}
+    if product_ids:
+        # Fetch all approved reviews for these products
+        reviews_res = supabase.table("reviews").select("product_id, rating").in_("product_id", product_ids).eq("status", "approved").execute()
+        for r in reviews_res.data:
+            pid = r.get("product_id")
+            if pid not in ratings_dict:
+                ratings_dict[pid] = {"sum": 0, "count": 0}
+            ratings_dict[pid]["sum"] += r.get("rating", 0)
+            ratings_dict[pid]["count"] += 1
+            
+    products = []
+    for row in result.data:
+        p = map_product(row)
+        pid = p["id"]
+        if pid in ratings_dict and ratings_dict[pid]["count"] > 0:
+            p["reviewCount"] = ratings_dict[pid]["count"]
+            p["rating"] = round(ratings_dict[pid]["sum"] / ratings_dict[pid]["count"], 1)
+        else:
+            p["reviewCount"] = 0
+            p["rating"] = 0.0
+        products.append(p)
     
     # Post-query sorting for price (since price is calculated in Python)
     if sort == "price_asc":

@@ -44,3 +44,5 @@ class PublicProductResponse(BaseModel):
     sku: Optional[str] = None
     stock: int
     variants: List[PublicProductVariant]
+    rating: Optional[float] = None
+    reviewCount: Optional[int] = None

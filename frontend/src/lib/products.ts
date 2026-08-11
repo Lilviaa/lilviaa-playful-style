@@ -23,5 +23,7 @@ export type Product = {
     stock: number;
     price_override: number | null;
   }[];
+  rating?: number;
+  reviewCount?: number;
 };
 
