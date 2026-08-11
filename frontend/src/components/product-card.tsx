@@ -124,11 +124,11 @@ export function ProductCard({ product }: { product: Product }) {
           </div>
 
           <div className="mt-1.5 flex flex-wrap gap-1.5">
-            <span className="inline-flex items-center rounded-sm bg-sand px-1.5 py-0.5 text-[10px] font-medium text-cocoa">
-              ✓ Premium Quality
-            </span>
-            <span className="inline-flex items-center rounded-sm bg-sand px-1.5 py-0.5 text-[10px] font-medium text-cocoa">
-              Fast Dispatch
+            <span className="inline-flex items-center gap-1 rounded bg-slate-800 px-1.5 py-0.5 text-[10px] font-bold tracking-wide text-white shadow-sm">
+              <span className="flex h-3 w-3 items-center justify-center rounded-full bg-emerald-500 text-slate-900">
+                <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              </span>
+              Lilviaa Assured
             </span>
           </div>
         </div>
