@@ -58,11 +58,14 @@ def get_google_sheets_client():
     """Initializes and returns the gspread client."""
     private_key = os.environ.get("GOOGLE_PRIVATE_KEY", "")
     if private_key:
-        # The key comes with literal \n strings if loaded from .env, need to replace them
-        private_key = private_key.replace("\\n", "\n")
-        # Remove surrounding quotes if they exist
+        # 1. Strip surrounding quotes first (Render dashboard may include them)
+        private_key = private_key.strip()
         if private_key.startswith('"') and private_key.endswith('"'):
             private_key = private_key[1:-1]
+        if private_key.startswith("'") and private_key.endswith("'"):
+            private_key = private_key[1:-1]
+        # 2. Replace literal \n strings with real newlines
+        private_key = private_key.replace("\\n", "\n")
 
     credentials_dict = {
         "type": "service_account",
