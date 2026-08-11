@@ -1,7 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Mail, MessageCircle, Instagram, MapPin, Facebook, Youtube, Phone } from "lucide-react";
+import { Mail, MessageCircle, Instagram, MapPin, Facebook, Youtube, Phone, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useCompanySettings } from "@/lib/admin/settings-api";
+import { Turnstile } from "@marsidev/react-turnstile";
+import { useState } from "react";
+import { apiFetch } from "@/lib/api";
 
 export const Route = createFileRoute("/contact")({
   head: () => ({
@@ -36,6 +39,65 @@ function ContactPage() {
     ? settings.phone_primary.replace(/[^0-9]/g, '') 
     : "919843153154";
   const whatsappUrl = `https://api.whatsapp.com/send?phone=${whatsappPhone}`;
+
+  const [formData, setFormData] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    phone: "",
+    subject: "",
+    message: "",
+  });
+  const [turnstileToken, setTurnstileToken] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!turnstileToken) {
+      toast.error("Please complete the captcha.");
+      return;
+    }
+
+    setIsSubmitting(true);
+    
+    try {
+      const response = await apiFetch("/contact", {
+        method: "POST",
+        body: JSON.stringify({
+          first_name: formData.firstName,
+          last_name: formData.lastName,
+          email: formData.email,
+          phone: formData.phone,
+          subject: formData.subject,
+          message: formData.message,
+          turnstile_token: turnstileToken,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.detail || "Failed to send message");
+      }
+
+      toast.success("Message sent!", { description: "We will respond promptly." });
+      setFormData({
+        firstName: "",
+        lastName: "",
+        email: "",
+        phone: "",
+        subject: "",
+        message: "",
+      });
+      // Force captcha reset by clearing the token state
+      setTurnstileToken("");
+    } catch (err: any) {
+      toast.error("Error", { description: err.message });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <div>
@@ -74,11 +136,7 @@ function ContactPage() {
         </div>
 
         <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            toast.success("Message sent!", { description: "We will respond promptly." });
-            (e.target as HTMLFormElement).reset();
-          }}
+          onSubmit={handleSubmit}
           className="rounded-[2rem] bg-card p-8 shadow-cute md:p-10 h-fit sticky top-24"
         >
           <div className="text-center mb-8">
@@ -89,50 +147,89 @@ function ContactPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <input
                 required
+                value={formData.firstName}
+                onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
                 placeholder="First Name"
                 className="w-full rounded-md border border-cocoa/10 bg-cream/50 px-4 py-3.5 text-sm text-cocoa placeholder:text-cocoa/50 focus:border-primary focus:bg-cream focus:outline-none"
+                disabled={isSubmitting}
               />
               <input
                 required
+                value={formData.lastName}
+                onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
                 placeholder="Last Name"
                 className="w-full rounded-md border border-cocoa/10 bg-cream/50 px-4 py-3.5 text-sm text-cocoa placeholder:text-cocoa/50 focus:border-primary focus:bg-cream focus:outline-none"
+                disabled={isSubmitting}
               />
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <input
                 required
                 type="email"
+                value={formData.email}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 placeholder="Email ID"
                 className="w-full rounded-md border border-cocoa/10 bg-cream/50 px-4 py-3.5 text-sm text-cocoa placeholder:text-cocoa/50 focus:border-primary focus:bg-cream focus:outline-none"
+                disabled={isSubmitting}
               />
               <input
                 required
                 type="tel"
+                value={formData.phone}
+                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                 placeholder="Phone Number"
                 className="w-full rounded-md border border-cocoa/10 bg-cream/50 px-4 py-3.5 text-sm text-cocoa placeholder:text-cocoa/50 focus:border-primary focus:bg-cream focus:outline-none"
+                disabled={isSubmitting}
               />
             </div>
             <div>
               <input
                 required
+                value={formData.subject}
+                onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
                 placeholder="Subject"
                 className="w-full rounded-md border border-cocoa/10 bg-cream/50 px-4 py-3.5 text-sm text-cocoa placeholder:text-cocoa/50 focus:border-primary focus:bg-cream focus:outline-none"
+                disabled={isSubmitting}
               />
             </div>
             <div>
               <textarea
                 required
                 rows={5}
+                value={formData.message}
+                onChange={(e) => setFormData({ ...formData, message: e.target.value })}
                 placeholder="Drop Us a Line"
                 className="w-full resize-none rounded-md border border-cocoa/10 bg-cream/50 px-4 py-3.5 text-sm text-cocoa placeholder:text-cocoa/50 focus:border-primary focus:bg-cream focus:outline-none"
+                disabled={isSubmitting}
               />
             </div>
-            <div className="mt-2 text-left">
+            
+            <div className="mt-2 flex justify-center w-full">
+              {/* Only render Turnstile if it's not currently submitting to prevent it from vanishing on fast interactions, but reset if token is empty */}
+              <Turnstile 
+                siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY || "1x00000000000000000000AA"} 
+                onSuccess={(token) => setTurnstileToken(token)}
+                onError={() => toast.error("Captcha failed to load. Please refresh.")}
+                options={{
+                  theme: 'light'
+                }}
+              />
+            </div>
+
+            <div className="mt-2 text-center md:text-left">
               <button
                 type="submit"
-                className="rounded-full border-2 border-cocoa bg-transparent px-8 py-2.5 text-sm font-bold tracking-wide text-cocoa transition-colors hover:bg-cocoa hover:text-cream"
+                disabled={isSubmitting}
+                className="inline-flex items-center gap-2 rounded-full border-2 border-cocoa bg-transparent px-8 py-2.5 text-sm font-bold tracking-wide text-cocoa transition-colors hover:bg-cocoa hover:text-cream disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                SEND MESSAGE
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    SENDING...
+                  </>
+                ) : (
+                  "SEND MESSAGE"
+                )}
               </button>
             </div>
           </div>
