@@ -59,16 +59,6 @@ export function ProductCard({ product }: { product: Product }) {
     discountPercentage = Math.round(((product.compareAt - displayPrice) / product.compareAt) * 100);
   }
 
-  // Generate stable pseudo-random rating based on slug
-  const ratingScore = (4.0 + (product.slug.charCodeAt(0) % 10) / 10).toFixed(1);
-  const ratingCount = 120 + (product.slug.length * 13);
-  
-  // Generate delivery date (3 days from now)
-  const deliveryDate = new Date();
-  deliveryDate.setDate(deliveryDate.getDate() + 3);
-  const deliveryOptions = { day: 'numeric', month: 'short' } as const;
-  const deliveryFormatted = deliveryDate.toLocaleDateString('en-IN', deliveryOptions);
-
   return (
     <ScrollReveal className="h-full">
       <Link
@@ -112,16 +102,9 @@ export function ProductCard({ product }: { product: Product }) {
             </p>
           </div>
           
-          <h3 className="text-sm font-medium leading-snug text-cocoa line-clamp-2 mt-0.5">
+          <h3 className="text-sm font-medium leading-snug text-cocoa line-clamp-2 mt-0.5 min-h-[2.5rem]">
             {product.name}
           </h3>
-
-          <div className="mt-1 flex items-center gap-1.5">
-            <div className="flex items-center gap-0.5 rounded bg-green-700 px-1 py-0.5 text-[10px] font-bold text-white leading-none">
-              {ratingScore} <Star className="h-2.5 w-2.5 fill-current" />
-            </div>
-            <span className="text-[11px] text-muted-foreground">({ratingCount})</span>
-          </div>
 
           <div className="mt-1.5 flex items-baseline gap-1.5">
             <span className="text-base font-bold text-cocoa">
@@ -140,8 +123,13 @@ export function ProductCard({ product }: { product: Product }) {
             )}
           </div>
 
-          <div className="mt-1 text-[11px] text-muted-foreground">
-            Get it by <span className="font-bold text-cocoa">{deliveryFormatted}</span>
+          <div className="mt-1.5 flex flex-wrap gap-1.5">
+            <span className="inline-flex items-center rounded-sm bg-sand px-1.5 py-0.5 text-[10px] font-medium text-cocoa">
+              ✓ Premium Quality
+            </span>
+            <span className="inline-flex items-center rounded-sm bg-sand px-1.5 py-0.5 text-[10px] font-medium text-cocoa">
+              Fast Dispatch
+            </span>
           </div>
         </div>
       </Link>
