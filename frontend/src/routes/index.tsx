@@ -131,6 +131,9 @@ function HomePage() {
                       src={src}
                       alt="Lilviaa clothing"
                       className="h-full w-full min-w-full flex-shrink-0 object-cover object-top"
+                      loading={index === 0 ? "eager" : "lazy"}
+                      fetchPriority={index === 0 ? "high" : "auto"}
+                      decoding={index === 0 ? "sync" : "async"}
                     />
                   ))}
                 </div>
