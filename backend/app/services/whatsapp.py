@@ -210,11 +210,15 @@ def send_owner_order_alert(order_data: dict):
     """
     Send the 'order_alert_owner' WhatsApp template to the store owner.
 
-    Template variables (body):
-      {{1}} = Order ID
-      {{2}} = Customer name
-      {{3}} = Total amount
-      {{4}} = Payment method
+    Template variables (body) — must match approved template exactly:
+      {{1}} = Order ID       (e.g. ORD-LV-810ACE)
+      {{2}} = Invoice ID     (e.g. INV-LV-810ACE, derived from order UUID)
+      {{3}} = Customer name
+      {{4}} = Order Value    (e.g. ₹2,247)
+      {{5}} = Payment Method (e.g. RAZORPAY)
+
+    Invoice IDs are not stored in the DB; they are computed deterministically
+    from the order UUID using the same formula as the frontend invoice page.
     """
     try:
         config = _get_config()
@@ -232,14 +236,21 @@ def send_owner_order_alert(order_data: dict):
         total = _format_inr(order_data.get("total_amount", order_data.get("grand_total", 0)))
         payment_method = str(order_data.get("payment_method", "unknown")).upper()
 
+        # Derive invoice ID from order UUID using the same deterministic formula
+        # as the frontend (/invoice/$orderId page): INV-LV-{first 6 hex chars as decimal}
+        raw_order_id = str(order_data.get("id", ""))
+        numeric_hash = str(int(raw_order_id.replace("-", "")[:6], 16)).zfill(6) if raw_order_id else "000000"
+        invoice_id = f"INV-LV-{numeric_hash}"
+
         components = [
             {
                 "type": "body",
                 "parameters": [
-                    {"type": "text", "text": short_id},
-                    {"type": "text", "text": str(customer_name)},
-                    {"type": "text", "text": total},
-                    {"type": "text", "text": payment_method},
+                    {"type": "text", "text": short_id},          # {{1}} Order ID
+                    {"type": "text", "text": invoice_id},         # {{2}} Invoice ID
+                    {"type": "text", "text": str(customer_name)}, # {{3}} Customer name
+                    {"type": "text", "text": total},              # {{4}} Order Value
+                    {"type": "text", "text": payment_method},     # {{5}} Payment Method
                 ],
             }
         ]
