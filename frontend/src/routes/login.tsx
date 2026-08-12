@@ -193,6 +193,13 @@ function LoginPage() {
                 await loginWithGoogle();
                 navigate({ to: search.redirect || "/account" });
               } catch (err: any) {
+                if (
+                  err.code === 'auth/cancelled-popup-request' || 
+                  err.code === 'auth/popup-closed-by-user' || 
+                  err.message?.includes('cancelled-popup-request')
+                ) {
+                  return; // User intentionally closed the popup
+                }
                 setErrorMsg(err.message || "Failed to log in with Google");
               }
             }}
