@@ -153,7 +153,7 @@ def get_customer(customer_id: str, request: Request):
 
     # Wishlist
     wishlist_res = supabase.table("wishlist_items") \
-        .select("id, product_id, created_at, products(id, name, slug, base_price, sale_price, images)") \
+        .select("id, product_id, created_at, products(id, name, slug, base_price, sale_price, product_images(url))") \
         .eq("user_id", customer_id) \
         .execute()
 
@@ -162,7 +162,7 @@ def get_customer(customer_id: str, request: Request):
         p = w.get("products")
         if not p:
             continue
-        images = p.get("images") or []
+        images = p.get("product_images") or []
         primary_image = images[0].get("url") if images else ""
         wishlist_items.append({
             "id": p["id"],

@@ -43,7 +43,26 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
         })
         .then((data) => {
           if (Array.isArray(data)) {
-            setItems(data);
+            setItems((prevLocalItems) => {
+              const dbSlugs = data.map((i: any) => i.slug);
+              const missingInDb = prevLocalItems.filter((i) => !dbSlugs.includes(i.slug));
+              
+              // Upload missing items to the DB so they aren't lost
+              missingInDb.forEach((item) => {
+                apiFetch("/wishlists/", {
+                  method: "POST",
+                  body: JSON.stringify({ slug: item.slug })
+                }).catch(console.error);
+              });
+
+              // Combine DB items with missing local items
+              const merged = [...data];
+              missingInDb.forEach((item) => {
+                if (!merged.find((m) => m.slug === item.slug)) merged.push(item);
+              });
+              
+              return merged;
+            });
           }
         })
         .catch(console.error);

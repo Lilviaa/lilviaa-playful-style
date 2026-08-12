@@ -16,7 +16,7 @@ def get_wishlist(user=Depends(get_current_user)):
     
     # We join with products to return full details
     res = sb.table("wishlist_items").select(
-        "id, product_id, products(id, name, slug, base_price, sale_price, images, status)"
+        "id, product_id, products(id, name, slug, base_price, sale_price, product_images(url), status)"
     ).eq("user_id", user["uid"]).execute()
     
     items = []
@@ -25,7 +25,7 @@ def get_wishlist(user=Depends(get_current_user)):
         if not p or p.get("status") == "draft":
             continue
             
-        images = p.get("images") or []
+        images = p.get("product_images") or []
         primary_image = images[0].get("url") if images else ""
         
         items.append({
