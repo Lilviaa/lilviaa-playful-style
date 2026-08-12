@@ -3,6 +3,7 @@ import { CheckCircle2, ShoppingBag, FileText } from "lucide-react";
 import { useEffect, useState } from "react";
 import { z } from "zod";
 import { useCart, formatINR } from "@/lib/cart";
+import { formatOrderId } from "@/lib/utils";
 
 const searchSchema = z.object({
   order_id: z.string().optional(),
@@ -33,9 +34,9 @@ function OrderSuccessPage() {
 
   useEffect(() => {
     if (search.order_id) {
-      setOrderNumber(search.order_id.split('-')[0].toUpperCase());
+      setOrderNumber(formatOrderId(search.order_id));
     } else {
-      setOrderNumber(`LVA-${Math.floor(10000 + Math.random() * 90000)}`);
+      setOrderNumber(`ORD-LV-${Math.floor(100000 + Math.random() * 900000)}`);
     }
     // Clear the cart if not Buy It Now
     const wasBuyNow = sessionStorage.getItem("wasBuyNow");
@@ -68,7 +69,7 @@ function OrderSuccessPage() {
         <div className="rounded-3xl bg-card border border-border p-6 shadow-cute mb-10 text-left space-y-4">
           <div className="flex justify-between items-center border-b border-border pb-4">
             <span className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Order ID</span>
-            <span className="font-bold text-cocoa text-lg">{orderNumber.startsWith('LVA-') ? orderNumber : `#LVA-${orderNumber.substring(0, 8).toUpperCase()}`}</span>
+            <span className="font-bold text-cocoa text-lg">{orderNumber}</span>
           </div>
           <div className="flex justify-between items-center border-b border-border pb-4">
             <span className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Amount Paid</span>
