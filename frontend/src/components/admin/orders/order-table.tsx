@@ -40,16 +40,25 @@ export function OrderTable({ data, isLoading }: OrderTableProps) {
     {
       accessorKey: "id",
       header: "Order ID",
-      cell: ({ row }) => <span className="font-medium text-cocoa">{formatOrderId(row.original.id)}</span>,
+      cell: ({ row }) => (
+        <div className="flex flex-col gap-1 items-start">
+          <span className="font-medium text-cocoa">{formatOrderId(row.original.id)}</span>
+          {row.original.order_source === 'offline' ? (
+            <span className="text-[9px] font-bold uppercase bg-gray-200 text-gray-700 px-1.5 py-0.5 rounded tracking-wider">Offline</span>
+          ) : (
+            <span className="text-[9px] font-bold uppercase bg-pink-100 text-pink-700 px-1.5 py-0.5 rounded tracking-wider">Online</span>
+          )}
+        </div>
+      ),
     },
     {
       id: "customer",
       header: "Customer",
       cell: ({ row }) => (
         <div className="flex flex-col">
-          <span className="font-medium text-cocoa">{row.original.shipping_address.fullName}</span>
+          <span className="font-medium text-cocoa">{row.original.shipping_address?.fullName || "Customer"}</span>
           <span className="text-xs text-muted-foreground">
-            {row.original.shipping_address.phone}
+            {row.original.shipping_address?.phone || ""}
           </span>
         </div>
       ),

@@ -43,6 +43,7 @@ export interface Order {
   shipping_address: ShippingAddress;
   tracking_number: string | null;
   call_confirmed: boolean;
+  order_source?: string;
   created_at: string;
   
   // Shiprocket Tracking Fields
@@ -62,6 +63,7 @@ export interface OrderFilters {
   paymentMethod?: string;
   dateRange?: { from: Date; to: Date } | null;
   search?: string;
+  source?: string;
 }
 
 export interface OrdersResponse {
@@ -78,6 +80,7 @@ export function useOrders(filters?: OrderFilters) {
       const params = new URLSearchParams();
       if (filters?.status && filters.status !== "all") params.set("status", filters.status);
       if (filters?.paymentMethod && filters.paymentMethod !== "all") params.set("paymentMethod", filters.paymentMethod);
+      if (filters?.source && filters.source !== "all") params.set("source", filters.source);
       if (filters?.search) params.set("search", filters.search);
 
       const qs = params.toString();

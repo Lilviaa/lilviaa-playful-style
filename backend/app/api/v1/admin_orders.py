@@ -25,6 +25,7 @@ def list_orders(
     request: Request,
     status: Optional[str] = Query(None),
     payment_method: Optional[str] = Query(None, alias="paymentMethod"),
+    source: Optional[str] = Query(None),
     search: Optional[str] = Query(None),
     page: int = Query(1, ge=1),
     limit: int = Query(20, ge=1, le=100)
@@ -39,6 +40,9 @@ def list_orders(
         query = query.eq("status", status)
     if payment_method and payment_method != "all":
         query = query.eq("payment_method", payment_method)
+    if source and source != "all":
+        query = query.eq("order_source", source)
+
         
     if search:
         import uuid
@@ -127,9 +131,9 @@ def list_orders(
             "shipping_fee": float(o.get("shipping_amount", 0)),
             "total": float(o["total_amount"]),
             "shipping_address": {
-                "fullName": addr_snap.get("full_name") or addr.get("full_name", ""),
+                "fullName": addr_snap.get("full_name") or addr.get("full_name") or o.get("offline_customer_name") or "Customer",
                 "email": addr_snap.get("email") or "",
-                "phone": addr_snap.get("phone") or addr.get("phone", ""),
+                "phone": addr_snap.get("phone") or addr.get("phone") or o.get("offline_customer_phone") or "",
                 "address": addr_snap.get("address") or addr.get("address", ""),
                 "city": addr_snap.get("city") or addr.get("city", ""),
                 "state": addr_snap.get("state") or addr.get("state", ""),
@@ -137,6 +141,7 @@ def list_orders(
             },
             "tracking_number": o.get("tracking_number"),
             "call_confirmed": o.get("call_confirmed", False),
+            "order_source": o.get("order_source", "online"),
             "created_at": o["created_at"],
             "items": items,
         }

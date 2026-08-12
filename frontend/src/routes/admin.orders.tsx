@@ -21,6 +21,7 @@ function OrdersPage() {
     status: status || "all",
     paymentMethod: "all",
     search: "",
+    source: "all",
   });
 
   // Sync URL search param with internal state if it changes

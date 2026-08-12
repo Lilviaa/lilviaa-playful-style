@@ -63,6 +63,17 @@ export function OrderFilters({ filters, onChange }: OrderFiltersProps) {
       </div>
 
       <div className="flex gap-2">
+        <Select value={filters.source || "all"} onValueChange={(val) => onChange({ ...filters, source: val })}>
+          <SelectTrigger className="w-[120px] rounded-full bg-white border-cocoa/20">
+            <SelectValue placeholder="Source" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Orders</SelectItem>
+            <SelectItem value="online">Online</SelectItem>
+            <SelectItem value="offline">Offline</SelectItem>
+          </SelectContent>
+        </Select>
+
         <Select value={filters.status || "all"} onValueChange={handleStatusChange}>
           <SelectTrigger className="w-[140px] rounded-full bg-white border-cocoa/20">
             <SelectValue placeholder="Status" />
