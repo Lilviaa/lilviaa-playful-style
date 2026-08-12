@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from app.api.dependencies import get_current_user
-from app.db.supabase import get_anon_supabase
+from app.db.supabase import get_supabase
 from typing import List
 
 router = APIRouter()
@@ -12,7 +12,7 @@ class WishlistAddRequest(BaseModel):
 @router.get("/")
 def get_wishlist(user=Depends(get_current_user)):
     """Get the current user's wishlist."""
-    sb = get_anon_supabase()
+    sb = get_supabase()
     
     # We join with products to return full details
     res = sb.table("wishlist_items").select(
@@ -41,7 +41,7 @@ def get_wishlist(user=Depends(get_current_user)):
 
 @router.post("/")
 def add_to_wishlist(req: WishlistAddRequest, user=Depends(get_current_user)):
-    sb = get_anon_supabase()
+    sb = get_supabase()
     
     # Resolve slug to product_id
     p_res = sb.table("products").select("id").eq("slug", req.slug).execute()
@@ -64,7 +64,7 @@ def add_to_wishlist(req: WishlistAddRequest, user=Depends(get_current_user)):
 
 @router.delete("/{slug}")
 def remove_from_wishlist(slug: str, user=Depends(get_current_user)):
-    sb = get_anon_supabase()
+    sb = get_supabase()
     
     # Resolve slug to product_id
     p_res = sb.table("products").select("id").eq("slug", slug).execute()
