@@ -116,10 +116,9 @@ export function ProductCard({ product }: { product: Product }) {
 
           {product.reviewCount && product.reviewCount > 0 ? (
             <div className="mt-1 flex items-center gap-1.5 text-[11px] font-medium text-cocoa/80">
-              <span className="flex items-center gap-0.5 text-yellow-500">
-                <Star className="h-3 w-3 fill-current" /> {product.rating}
+              <span className="flex items-center gap-0.5 bg-emerald-600 text-white px-1.5 py-0.5 rounded-[4px] font-bold">
+                {product.rating} <Star className="h-2.5 w-2.5 fill-current" />
               </span>
-              <span>·</span>
               <span>{product.reviewCount} {product.reviewCount === 1 ? 'review' : 'reviews'}</span>
             </div>
           ) : (
@@ -143,8 +142,8 @@ export function ProductCard({ product }: { product: Product }) {
             )}
           </div>
           
-          <div className="mt-1 text-[10px] font-medium text-muted-foreground">
-            No Returns
+          <div className="mt-1 text-[10px] font-medium text-emerald-600 flex items-center gap-1">
+            ✓ Quality Checked
           </div>
         </div>
       </Link>
