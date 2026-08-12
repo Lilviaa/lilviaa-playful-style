@@ -103,21 +103,56 @@ def send_template_message(
     if components:
         payload["template"]["components"] = components
 
+    # ── Log exactly what we're about to send ────────────────────────────────
+    import json as _json
+    logger.info(
+        f"[WA] Sending template='{template_name}' to={phone} | "
+        f"payload={_json.dumps(payload)}"
+    )
+
     try:
         with httpx.Client(timeout=15.0) as client:
             resp = client.post(url, json=payload, headers=headers)
 
+        # ── Log full Meta response regardless of status ──────────────────────
+        try:
+            resp_body = resp.json()
+        except Exception:
+            resp_body = resp.text
+
         if resp.status_code in (200, 201):
-            logger.info(f"WhatsApp template '{template_name}' sent to {phone}")
-            return resp.json()
+            # resp_body should contain {"messaging_product":"whatsapp","contacts":[...],"messages":[{"id":"wamid...","message_status":"accepted"}]}
+            logger.info(
+                f"[WA] SUCCESS template='{template_name}' to={phone} "
+                f"status={resp.status_code} | meta_response={_json.dumps(resp_body)}"
+            )
+            return resp_body
         else:
+            # Meta returned a non-2xx — this is an API-level rejection (bad token, bad template name, wrong param count, etc.)
             logger.error(
-                f"WhatsApp API error ({resp.status_code}) sending '{template_name}' to {phone}: "
-                f"{resp.text}"
+                f"[WA] API ERROR template='{template_name}' to={phone} "
+                f"status={resp.status_code} | meta_response={_json.dumps(resp_body)}"
             )
             return None
+
+    except httpx.TimeoutException as e:
+        # HTTP call timed out — never reached Meta (or Meta never replied in time)
+        logger.error(
+            f"[WA] TIMEOUT before Meta responded — template='{template_name}' to={phone}: {str(e)}"
+        )
+        return None
+    except httpx.RequestError as e:
+        # Network-level error (DNS, connection refused, etc.) — never reached Meta
+        logger.error(
+            f"[WA] NETWORK ERROR (never reached Meta) — template='{template_name}' to={phone}: {str(e)}"
+        )
+        return None
     except Exception as e:
-        logger.error(f"Failed to send WhatsApp message to {phone}: {str(e)}")
+        # Unexpected error
+        logger.error(
+            f"[WA] UNEXPECTED ERROR — template='{template_name}' to={phone}: {str(e)}",
+            exc_info=True,
+        )
         return None
 
 
