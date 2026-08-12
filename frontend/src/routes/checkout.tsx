@@ -947,7 +947,7 @@ function CheckoutPage() {
                 <div className="font-bold text-cocoa mb-1">Expected Delivery</div>
                 <div className="text-muted-foreground">{deliveryString}</div>
                 <div className="mt-3 font-bold text-cocoa mb-1">Shipping Partner</div>
-                <div className="text-muted-foreground">DTDC Courier</div>
+                <div className="text-muted-foreground">Shiprocket</div>
                 {shipping > 0 && settings?.enable_free_shipping && (
                   <div className="mt-3 text-primary font-bold text-xs">Free Shipping above {formatINR(settings.free_shipping_above || 0)}</div>
                 )}

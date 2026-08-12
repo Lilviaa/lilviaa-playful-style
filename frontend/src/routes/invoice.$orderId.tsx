@@ -81,7 +81,7 @@ function InvoicePage() {
     paymentMethodLabel = "Net Banking";
   }
   
-  const shippingMethod = "DTDC";
+  const shippingMethod = order.courier_name || "Shiprocket";
 
   const items = order.order_items || [];
   
