@@ -150,7 +150,7 @@ export function SiteHeader() {
           </button>
           <Link
             to="/wishlist"
-            className="hidden relative rounded-full p-2 text-cocoa hover:bg-sand sm:inline-flex"
+            className="relative inline-flex rounded-full p-2 text-cocoa hover:bg-sand"
             aria-label="Wishlist"
           >
             <Heart className="h-5 w-5" />
