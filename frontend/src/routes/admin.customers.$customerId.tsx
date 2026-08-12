@@ -25,13 +25,8 @@ function CustomerProfilePage() {
     return <div className="p-8 text-center text-muted-foreground">Customer not found.</div>;
   }
 
-  // Mock wishlist items using real products for the sake of the admin UI preview
-  const mockWishlistItems = (allProducts || []).slice(0, 2).map((p) => ({
-    slug: p.slug,
-    name: p.name,
-    price: p.base_price,
-    image: p.images?.[0]?.url || "/placeholder.jpg"
-  }));
+  // Use actual wishlist items fetched from backend
+  const wishlistItems = customer.wishlist || [];
 
   return (
     <div className="space-y-6 pb-24">
@@ -133,21 +128,25 @@ function CustomerProfilePage() {
               or personalized discounts.
             </p>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {mockWishlistItems.map((product) => (
-                <div key={product.slug} className="rounded-xl overflow-hidden border border-cocoa/10 shadow-sm">
-                  <div className="aspect-square bg-sand overflow-hidden">
-                    <img
-                      src={product.image}
-                      alt={product.name}
-                      className="w-full h-full object-cover"
-                    />
+              {wishlistItems.length > 0 ? (
+                wishlistItems.map((product: any) => (
+                  <div key={product.slug} className="rounded-xl overflow-hidden border border-cocoa/10 shadow-sm">
+                    <div className="aspect-square bg-sand overflow-hidden">
+                      <img
+                        src={product.image || "/placeholder.jpg"}
+                        alt={product.name}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <div className="p-2">
+                      <p className="text-xs font-semibold text-cocoa truncate">{product.name}</p>
+                      <p className="text-xs text-muted-foreground">{formatINR(product.price)}</p>
+                    </div>
                   </div>
-                  <div className="p-2">
-                    <p className="text-xs font-semibold text-cocoa truncate">{product.name}</p>
-                    <p className="text-xs text-muted-foreground">{formatINR(product.price)}</p>
-                  </div>
-                </div>
-              ))}
+                ))
+              ) : (
+                <p className="text-sm text-muted-foreground col-span-full">This customer hasn't added any items to their wishlist.</p>
+              )}
             </div>
           </div>
         </div>

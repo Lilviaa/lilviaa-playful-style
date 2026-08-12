@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from "
 import { useNavigate } from "@tanstack/react-router";
 import { useAuth } from "./auth";
 import { type CartItem } from "./cart";
+import { apiFetch } from "./api";
 
 export type WishlistItem = Omit<CartItem, "size" | "qty" | "max_qty">;
 
@@ -31,9 +32,22 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
   const { user, isLoading } = useAuth();
   const navigate = useNavigate();
 
+  // Fetch real-time wishlist from DB when user logs in
   useEffect(() => {
     if (isLoading) return;
-    if (!user) {
+    if (user) {
+      apiFetch("/wishlists/")
+        .then((res) => {
+          if (res.ok) return res.json();
+          throw new Error("Failed to fetch wishlist");
+        })
+        .then((data) => {
+          if (Array.isArray(data)) {
+            setItems(data);
+          }
+        })
+        .catch(console.error);
+    } else {
       setItems([]);
     }
   }, [user, isLoading]);
@@ -46,19 +60,42 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
     } catch {}
   }, [items, isLoading, user]);
 
-  const add: WishlistCtx["add"] = (item) => {
+  const add: WishlistCtx["add"] = async (item) => {
     if (!user) {
       navigate({ to: "/login" });
       return;
     }
+    
+    // Optimistic UI update
     setItems((prev) => {
       if (prev.some((p) => p.slug === item.slug)) return prev;
       return [...prev, item];
     });
+
+    try {
+      await apiFetch("/wishlists/", {
+        method: "POST",
+        body: JSON.stringify({ slug: item.slug })
+      });
+    } catch (err) {
+      console.error("Failed to save wishlist item to DB", err);
+    }
   };
 
-  const remove: WishlistCtx["remove"] = (slug) =>
+  const remove: WishlistCtx["remove"] = async (slug) => {
+    // Optimistic UI update
     setItems((prev) => prev.filter((p) => p.slug !== slug));
+
+    if (user) {
+      try {
+        await apiFetch(`/wishlists/${slug}`, {
+          method: "DELETE"
+        });
+      } catch (err) {
+        console.error("Failed to delete wishlist item from DB", err);
+      }
+    }
+  };
 
   const has = (slug: string) => items.some((p) => p.slug === slug);
 

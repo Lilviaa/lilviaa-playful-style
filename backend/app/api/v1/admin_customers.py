@@ -151,6 +151,28 @@ def get_customer(customer_id: str, request: Request):
     total_spend = sum(float(o["total_amount"]) for o in valid_orders)
     last_order_date = valid_orders[0]["created_at"] if valid_orders else None
 
+    # Wishlist
+    wishlist_res = supabase.table("wishlist_items") \
+        .select("id, product_id, created_at, products(id, name, slug, base_price, sale_price, images)") \
+        .eq("user_id", customer_id) \
+        .execute()
+
+    wishlist_items = []
+    for w in (wishlist_res.data or []):
+        p = w.get("products")
+        if not p:
+            continue
+        images = p.get("images") or []
+        primary_image = images[0].get("url") if images else ""
+        wishlist_items.append({
+            "id": p["id"],
+            "name": p["name"],
+            "slug": p["slug"],
+            "price": p.get("sale_price") if p.get("sale_price") is not None else p.get("base_price"),
+            "image": primary_image,
+            "added_at": w["created_at"]
+        })
+
     return {
         "customer": {
             "id": u["id"],
@@ -166,6 +188,7 @@ def get_customer(customer_id: str, request: Request):
         },
         "addresses": addresses,
         "orders": orders_res.data or [],
+        "wishlist": wishlist_items,
     }
 
 

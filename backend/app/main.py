@@ -54,12 +54,13 @@ app.add_exception_handler(AppError, app_error_handler)
 # Include Routers
 from app.api.v1 import addresses, categories, products, admin_products, orders, cart, banners, reviews, cms
 from app.api.v1 import admin_dashboard, admin_orders, admin_customers, admin_coupons, admin_banners, admin_reviews, admin_cms, admin_emails
-from app.api.v1 import whatsapp_webhook, contact
+from app.api.v1 import whatsapp_webhook, contact, wishlists
 
 # (I will just add them below the others)
 app.include_router(firebase_auth.router, prefix="/api/v1/firebase_auth", tags=["Firebase Auth"])
 app.include_router(addresses.router, prefix="/api/v1/addresses", tags=["Addresses"])
 app.include_router(cart.router, prefix="/api/v1/cart", tags=["Cart"])
+app.include_router(wishlists.router, prefix="/api/v1/wishlists", tags=["Wishlist"])
 app.include_router(categories.router, prefix="/api/v1/categories", tags=["Categories"])
 app.include_router(products.router, prefix="/api/v1/products", tags=["Products"])
 app.include_router(admin_products.router, prefix="/api/v1/admin/products", tags=["Admin Products"])
