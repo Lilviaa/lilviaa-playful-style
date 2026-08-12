@@ -29,12 +29,12 @@ function HomePage() {
   }, []);
 
   // CMS Hooks
-  const { data: banners = [] } = usePublicBanners();
+  const { data: banners = [], isLoading: isLoadingBanners } = usePublicBanners();
   const heroBanner = banners.length > 0 ? banners[0] : null; // use first banner as hero
   const promoStrip = null; // Removed since the DB schema replaces the mock promo strip
   const { data: cmsCategoryTiles = [] } = useCategoryTiles();
   const { data: cmsFeaturedProducts = [] } = useCmsFeaturedProducts();
-  const { data: heroSlides = [] } = useHeroSlides();
+  const { data: heroSlides = [], isLoading: isLoadingSlides } = useHeroSlides();
   const { data: featuredSection } = useCmsSection("featured_products_section");
 
   // Merge CMS featured with actual product data
@@ -58,9 +58,11 @@ function HomePage() {
     ? [heroBanner.image_url, ...defaultHeroImageUrls]
     : defaultHeroImageUrls;
 
-  // Fallback if no images
-  if (activeHeroImages.length === 0) {
-    activeHeroImages.push("/asset/Images/KVR00022-1-scaled-1-1-1.jpg");
+  const isLoadingHero = isLoadingBanners || isLoadingSlides;
+
+  // Fallback if no images and not loading
+  if (activeHeroImages.length === 0 && !isLoadingHero) {
+    activeHeroImages.push("/asset/Images/KVR00022-1-scaled-1-1-1.webp");
   }
 
   const nextHeroImage = () => {
@@ -125,17 +127,21 @@ function HomePage() {
                   className="flex h-full w-full transition-transform duration-1000 ease-in-out"
                   style={{ transform: `translateX(-${currentHeroImage * 100}%)` }}
                 >
-                  {activeHeroImages.map((src, index) => (
-                    <img
-                      key={src}
-                      src={src}
-                      alt="Lilviaa clothing"
-                      className="h-full w-full min-w-full flex-shrink-0 object-cover object-top"
-                      loading={index === 0 ? "eager" : "lazy"}
-                      fetchPriority={index === 0 ? "high" : "auto"}
-                      decoding={index === 0 ? "sync" : "async"}
-                    />
-                  ))}
+                  {isLoadingHero ? (
+                    <div className="h-full w-full min-w-full flex-shrink-0 bg-sand/60 animate-pulse rounded-b-[2.5rem] md:rounded-b-[4rem] md:rounded-tl-[10rem]"></div>
+                  ) : (
+                    activeHeroImages.map((src, index) => (
+                      <img
+                        key={src}
+                        src={src}
+                        alt="Lilviaa clothing"
+                        className="h-full w-full min-w-full flex-shrink-0 object-cover object-top bg-sand/20"
+                        loading={index === 0 ? "eager" : "lazy"}
+                        fetchPriority={index === 0 ? "high" : "auto"}
+                        decoding={index === 0 ? "sync" : "async"}
+                      />
+                    ))
+                  )}
                 </div>
 
                 {/* Navigation Overlay */}
