@@ -137,3 +137,33 @@ def require_role(allowed_roles: list[str]):
 
 require_admin = require_role(["admin", "owner"])
 require_owner = require_role(["owner"])
+
+# ── Dev/test-only: Bearer-auth without CSRF ───────────────────────────────────
+# Used exclusively for internal test endpoints called via curl/Postman.
+# CSRF is not relevant for stateless Bearer tokens; skipping it here does NOT
+# weaken security because admin role verification is still fully enforced.
+async def _get_admin_token_no_csrf(request: Request) -> dict:
+    """Validate a Firebase Bearer token and verify admin role.
+    Deliberately does NOT depend on verify_csrf_token.
+    Only use this for dev/test-only endpoints."""
+    auth_header = request.headers.get("Authorization")
+    if not auth_header or not auth_header.startswith("Bearer "):
+        raise UnauthorizedError("Bearer token required")
+    token = auth_header.split(" ")[1]
+    try:
+        decoded_token = firebase_auth.verify_id_token(token)
+        email = decoded_token.get("email", "")
+        admin = get_supabase()
+        user_data = admin.table("users").select("id, role").eq("email", email).execute()
+        if not user_data.data:
+            raise UnauthorizedError("User not found")
+        role = user_data.data[0].get("role", "customer")
+        if role not in ("admin", "owner"):
+            raise ForbiddenError("Not enough permissions")
+        return {"sub": user_data.data[0]["id"], "email": email, "role": role}
+    except (UnauthorizedError, ForbiddenError):
+        raise
+    except Exception as e:
+        raise UnauthorizedError(f"Invalid token: {e}")
+
+require_admin_no_csrf = _get_admin_token_no_csrf

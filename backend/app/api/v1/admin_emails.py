@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks, Request
-from app.api.dependencies import require_admin
+from app.api.dependencies import require_admin, require_admin_no_csrf
 from app.services.mailer import send_customer_order_confirmation, send_owner_order_notification
 from app.core.limiter import limiter, PreAuthRateLimit
 import uuid
@@ -7,7 +7,7 @@ from datetime import datetime
 
 router = APIRouter()
 
-@router.post("/test-email", dependencies=[Depends(PreAuthRateLimit("5/minute")), Depends(require_admin)])
+@router.post("/test-email", dependencies=[Depends(PreAuthRateLimit("5/minute")), Depends(require_admin_no_csrf)])
 @limiter.limit("5/minute")
 async def send_test_email(request: Request, background_tasks: BackgroundTasks, to_email: str = None):
     """
@@ -75,7 +75,7 @@ async def send_test_email(request: Request, background_tasks: BackgroundTasks, t
     return {"status": "success", "message": "Test emails have been queued. Please check your inbox shortly."}
 
 
-@router.post("/test-whatsapp", dependencies=[Depends(PreAuthRateLimit("5/minute")), Depends(require_admin)])
+@router.post("/test-whatsapp", dependencies=[Depends(PreAuthRateLimit("5/minute")), Depends(require_admin_no_csrf)])
 @limiter.limit("5/minute")
 async def send_test_whatsapp(request: Request, background_tasks: BackgroundTasks, phone: str = None):
     """
