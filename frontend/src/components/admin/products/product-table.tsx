@@ -595,7 +595,7 @@ export function ProductTable({
       </div>
 
       <Dialog open={!!quickViewProduct} onOpenChange={(open) => !open && setQuickViewProduct(null)}>
-        <DialogContent className="sm:max-w-md bg-sand border-cocoa/10">
+        <DialogContent className="sm:max-w-md bg-sand border-cocoa/10 max-h-[90vh] overflow-y-auto">
           {quickViewProduct && (
             <>
               <DialogHeader>
