@@ -197,6 +197,7 @@ def send_customer_order_confirmation(order_data: dict):
       {{3}} = Total amount
       {{4}} = Item summary
     """
+    logger.info(f"[WA-DIAG] send_customer_order_confirmation CALLED for order={order_data.get('id')}")
     try:
         # Extract customer phone from the order's address snapshot
         address = order_data.get("addresses") or order_data.get("shipping_address") or {}
@@ -255,6 +256,7 @@ def send_owner_order_alert(order_data: dict):
     Invoice IDs are not stored in the DB; they are computed deterministically
     from the order UUID using the same formula as the frontend invoice page.
     """
+    logger.info(f"[WA-DIAG] send_owner_order_alert CALLED for order={order_data.get('id')}")
     try:
         config = _get_config()
         owner_number = config.get("owner_number")
