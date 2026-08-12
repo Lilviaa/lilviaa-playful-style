@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
-from app.api.dependencies import get_current_user
+from app.api.dependencies import get_current_user_token
 from app.db.supabase import get_supabase
 from typing import List
 
@@ -10,14 +10,14 @@ class WishlistAddRequest(BaseModel):
     slug: str
 
 @router.get("/")
-def get_wishlist(user=Depends(get_current_user)):
+def get_wishlist(user=Depends(get_current_user_token)):
     """Get the current user's wishlist."""
     sb = get_supabase()
     
     # We join with products to return full details
     res = sb.table("wishlist_items").select(
         "id, product_id, products(id, name, slug, base_price, sale_price, product_images(url), status)"
-    ).eq("user_id", user["uid"]).execute()
+    ).eq("user_id", user["sub"]).execute()
     
     items = []
     for row in res.data or []:
@@ -40,7 +40,7 @@ def get_wishlist(user=Depends(get_current_user)):
     return items
 
 @router.post("/")
-def add_to_wishlist(req: WishlistAddRequest, user=Depends(get_current_user)):
+def add_to_wishlist(req: WishlistAddRequest, user=Depends(get_current_user_token)):
     sb = get_supabase()
     
     # Resolve slug to product_id
@@ -52,7 +52,7 @@ def add_to_wishlist(req: WishlistAddRequest, user=Depends(get_current_user)):
     
     try:
         sb.table("wishlist_items").insert({
-            "user_id": user["uid"],
+            "user_id": user["sub"],
             "product_id": product_id
         }).execute()
     except Exception as e:
@@ -63,7 +63,7 @@ def add_to_wishlist(req: WishlistAddRequest, user=Depends(get_current_user)):
     return {"status": "success"}
 
 @router.delete("/{slug}")
-def remove_from_wishlist(slug: str, user=Depends(get_current_user)):
+def remove_from_wishlist(slug: str, user=Depends(get_current_user_token)):
     sb = get_supabase()
     
     # Resolve slug to product_id
@@ -74,7 +74,7 @@ def remove_from_wishlist(slug: str, user=Depends(get_current_user)):
     product_id = p_res.data[0]["id"]
     
     sb.table("wishlist_items").delete().match({
-        "user_id": user["uid"],
+        "user_id": user["sub"],
         "product_id": product_id
     }).execute()
     
