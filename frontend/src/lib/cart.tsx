@@ -116,7 +116,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
           slug: product.slug,
           name: product.name,
           price,
-          image: product.image_urls[0] || "",
+          image: Array.isArray(product.image_urls) && product.image_urls.length > 0
+            ? product.image_urls[0]
+            : (product.image_url || ""),
           size: variant.size,
           qty: row.quantity,
           max_qty: variant.stock,
