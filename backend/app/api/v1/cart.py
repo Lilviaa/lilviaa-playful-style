@@ -28,7 +28,7 @@ def get_cart(request: Request, user: dict = Depends(get_current_user_token)):
     # We need to fetch cart items along with product variant and product details
     # Supabase allows joins if foreign keys are set up properly
     res = supabase.table("cart_items") \
-        .select("*, product_variants(*, products(*))") \
+        .select("*, product_variants(*, products(*, product_images(*)))") \
         .eq("user_id", user_id) \
         .execute()
         

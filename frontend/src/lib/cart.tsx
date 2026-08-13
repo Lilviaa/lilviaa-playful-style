@@ -112,13 +112,20 @@ export function CartProvider({ children }: { children: ReactNode }) {
             : variant.price_override;
         }
 
-        return {
-          slug: product.slug,
-          name: product.name,
-          price,
-          image: Array.isArray(product.image_urls) && product.image_urls.length > 0
-            ? product.image_urls[0]
-            : (product.image_url || ""),
+          let imageUrl = product.image_url || "";
+          if (Array.isArray(product.product_images) && product.product_images.length > 0) {
+            // Sort by sort_order if present, otherwise just take the first one
+            const sortedImages = [...product.product_images].sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+            imageUrl = sortedImages[0].url || "";
+          } else if (Array.isArray(product.image_urls) && product.image_urls.length > 0) {
+            imageUrl = product.image_urls[0];
+          }
+
+          return {
+            slug: product.slug,
+            name: product.name,
+            price,
+            image: imageUrl,
           size: variant.size,
           qty: row.quantity,
           max_qty: variant.stock,
