@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from "
 import { useNavigate } from "@tanstack/react-router";
 import { useAuth } from "./auth";
 import { apiFetch } from "./api";
+import { toast } from "sonner";
 
 export type CartItem = {
   slug: string;
@@ -127,7 +128,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         fetchBackendCart();
       } catch (e: any) {
         console.error(e);
-        alert(e.message || "Failed to add to cart");
+        toast.error(e.message || "Failed to add to cart");
         fetchBackendCart(); // Rollback
       }
   };
@@ -168,7 +169,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         }
       } catch (e: any) {
         console.error(e);
-        alert(e.message || "Failed to update quantity");
+        toast.error(e.message || "Failed to update quantity");
         fetchBackendCart(); // Rollback
       }
     }
