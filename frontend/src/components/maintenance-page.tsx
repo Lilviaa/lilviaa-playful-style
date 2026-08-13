@@ -36,38 +36,27 @@ export function MaintenancePage() {
   }, [targetDate]);
 
   return (
-    <div className="flex min-h-[100dvh] flex-col items-center justify-center bg-background px-4 py-4 text-center overflow-hidden">
-      <div className="mb-3 sm:mb-4 rounded-full bg-[#fcd34d]/20 p-3">
-        <Hammer className="h-7 w-7 sm:h-8 sm:w-8 text-[#f59e0b]" />
+    <div className="flex min-h-[100dvh] flex-col items-center justify-center bg-background px-4 py-6 text-center overflow-hidden">
+      <div className="mb-4 sm:mb-6 rounded-full bg-[#fcd34d]/20 p-3 sm:p-4">
+        <Hammer className="h-8 w-8 sm:h-10 sm:w-10 text-[#f59e0b]" />
       </div>
       
-      <h1 className="mb-3 sm:mb-4 text-3xl font-bold tracking-tight sm:text-4xl lg:text-5xl text-foreground font-display">
+      <h1 className="mb-4 sm:mb-5 text-3xl font-bold tracking-tight sm:text-4xl lg:text-5xl text-foreground font-display">
         We're Under Maintenance
       </h1>
       
-      <div className="mx-auto mb-5 sm:mb-6 max-w-[700px] text-[15px] leading-relaxed text-muted-foreground sm:text-base">
+      <div className="mx-auto mb-6 sm:mb-8 max-w-[700px] text-[15px] leading-relaxed text-muted-foreground sm:text-base">
         Dear Lilviaa Family, Our website is currently under maintenance as we work on some exciting updates to bring you an even better shopping experience. We'll be back online soon with something beautiful for you. Thank you for your patience, love, and continued support. We can't wait to welcome you back!
       </div>
 
-      <div className="mb-5 sm:mb-6 flex flex-nowrap justify-center gap-2 sm:gap-4 w-full max-w-sm sm:max-w-none px-2">
+      <div className="mb-8 flex flex-nowrap justify-center gap-2 sm:gap-4 w-full max-w-sm sm:max-w-none px-2">
         <TimeBox value={timeLeft.days} label="Days" />
         <TimeBox value={timeLeft.hours} label="Hours" />
         <TimeBox value={timeLeft.minutes} label="Mins" />
         <TimeBox value={timeLeft.seconds} label="Secs" />
       </div>
 
-      <div className="mx-auto mb-4 sm:mb-6 max-w-[500px] w-full rounded-xl bg-white p-4 shadow-sm border border-border/50">
-        <h3 className="mb-1 font-display text-lg font-semibold text-foreground">Need to place an order in the meantime?</h3>
-        <p className="mb-3 text-sm text-muted-foreground flex items-center justify-center gap-1.5">
-          DM us on Instagram and our team will be happy to assist you with your order.
-        </p>
-        <p className="text-sm font-medium text-foreground">
-          With love,<br />
-          Team Lilviaa
-        </p>
-      </div>
-
-      <div className="mt-auto pb-2">
+      <div className="mt-4 sm:mt-6">
         <Link to="/login" className="text-[11px] sm:text-xs text-muted-foreground hover:text-foreground underline underline-offset-4 transition-colors">
           Admin Login
         </Link>
