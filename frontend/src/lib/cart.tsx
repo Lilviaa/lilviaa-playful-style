@@ -3,6 +3,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { useAuth } from "./auth";
 import { apiFetch } from "./api";
 import { toast } from "sonner";
+import { auth } from "./firebase";
 
 export type CartItem = {
   slug: string;
@@ -46,7 +47,17 @@ export function CartProvider({ children }: { children: ReactNode }) {
   
   const fetchBackendCart = async () => {
     try {
-      const response = await apiFetch("/cart");
+      // Force-refresh the Firebase token before fetching cart.
+      // This fixes the race condition where the auth state change fires
+      // but the token is not yet available for apiFetch to use.
+      await auth.authStateReady();
+      if (!auth.currentUser) return;
+      const token = await auth.currentUser.getIdToken();
+
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL || "http://localhost:8000/api/v1"}/cart`,
+        { headers: { Authorization: `Bearer ${token}` }, credentials: "include" }
+      );
       if (!response.ok) throw new Error("Failed to fetch cart");
       const res = await response.json();
       
