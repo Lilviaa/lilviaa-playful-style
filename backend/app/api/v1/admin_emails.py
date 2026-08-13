@@ -83,6 +83,7 @@ async def send_test_whatsapp(request: Request, background_tasks: BackgroundTasks
     Sends both customer confirmation and owner alert templates with mock order data.
     Requires Admin authentication.
     """
+    print(f">>> test-whatsapp endpoint hit! phone={phone}")
     from app.services.whatsapp import (
         send_customer_order_confirmation as wa_customer,
         send_owner_order_alert as wa_owner,

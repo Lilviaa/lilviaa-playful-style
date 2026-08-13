@@ -110,6 +110,7 @@ def send_template_message(
         f"payload={_json.dumps(payload)}"
     )
 
+    print(f">>> ABOUT TO POST TO META: url={url}, payload={_json.dumps(payload)}")
     try:
         with httpx.Client(timeout=15.0) as client:
             resp = client.post(url, json=payload, headers=headers)
@@ -119,6 +120,8 @@ def send_template_message(
             resp_body = resp.json()
         except Exception:
             resp_body = resp.text
+
+        print(f">>> META RESPONDED: status={resp.status_code}, body={resp_body}")
 
         if resp.status_code in (200, 201):
             # resp_body should contain {"messaging_product":"whatsapp","contacts":[...],"messages":[{"id":"wamid...","message_status":"accepted"}]}
@@ -136,18 +139,24 @@ def send_template_message(
             return None
 
     except httpx.TimeoutException as e:
+        print(f">>> EXCEPTION IN send_template_message (TIMEOUT): {str(e)}")
+        import traceback; traceback.print_exc()
         # HTTP call timed out — never reached Meta (or Meta never replied in time)
         logger.error(
             f"[WA] TIMEOUT before Meta responded — template='{template_name}' to={phone}: {str(e)}"
         )
         return None
     except httpx.RequestError as e:
+        print(f">>> EXCEPTION IN send_template_message (NETWORK ERROR): {str(e)}")
+        import traceback; traceback.print_exc()
         # Network-level error (DNS, connection refused, etc.) — never reached Meta
         logger.error(
             f"[WA] NETWORK ERROR (never reached Meta) — template='{template_name}' to={phone}: {str(e)}"
         )
         return None
     except Exception as e:
+        print(f">>> EXCEPTION IN send_template_message (UNEXPECTED): {str(e)}")
+        import traceback; traceback.print_exc()
         # Unexpected error
         logger.error(
             f"[WA] UNEXPECTED ERROR — template='{template_name}' to={phone}: {str(e)}",
@@ -205,6 +214,7 @@ def send_customer_order_confirmation(order_data: dict):
             address = address[0] if address else {}
 
         customer_phone = address.get("phone") or order_data.get("phone")
+        print(f">>> send_customer_order_confirmation CALLED for order={order_data.get('id')}, phone={customer_phone}")
         if not customer_phone:
             logger.warning(
                 f"No customer phone for order {order_data.get('id')}. "
@@ -260,6 +270,7 @@ def send_owner_order_alert(order_data: dict):
     try:
         config = _get_config()
         owner_number = config.get("owner_number")
+        print(f">>> send_owner_order_alert CALLED for order={order_data.get('id')}, owner_number={owner_number}")
         if not owner_number:
             logger.warning("OWNER_WHATSAPP_NUMBER not configured. Skipping owner alert.")
             return
