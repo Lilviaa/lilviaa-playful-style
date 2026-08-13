@@ -15,6 +15,14 @@ export interface Customer {
   total_orders?: number;
   total_spend?: number;
   last_order_date?: string | null;
+  wishlist?: Array<{
+    id: string;
+    name: string;
+    slug: string;
+    price: number;
+    image: string;
+    added_at: string;
+  }>;
 }
 
 export interface CustomerAddress {
@@ -52,7 +60,8 @@ export function useCustomer(id: string) {
       const res = await apiFetch(`/admin/customers/${id}`);
       if (!res.ok) throw new Error("Customer not found");
       const data = await res.json();
-      return data.customer as Customer;
+      // Merge wishlist into the customer object so the profile page can access customer.wishlist
+      return { ...data.customer, wishlist: data.wishlist || [] } as Customer;
     }
   });
 }
