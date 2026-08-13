@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { Hammer, Heart, Sparkles, Instagram } from "lucide-react";
+import { Hammer } from "lucide-react";
 
 export function MaintenancePage() {
   // Use a fixed, global target date so all users and devices see the exact same countdown.
@@ -46,10 +46,7 @@ export function MaintenancePage() {
       </h1>
       
       <div className="mx-auto mb-5 sm:mb-6 max-w-[700px] text-[15px] leading-relaxed text-muted-foreground sm:text-base">
-        Dear Lilviaa Family <Heart className="inline-block h-4 w-4 text-pink-400 fill-pink-400 mb-1" />, 
-        Our website is currently under maintenance as we work on some exciting updates to bring you an even better shopping experience. 
-        We'll be back online soon with something beautiful for you <Sparkles className="inline-block h-4 w-4 text-pink-400 mb-1" />. 
-        Thank you for your patience, love, and continued support. We can't wait to welcome you back!
+        Dear Lilviaa Family, Our website is currently under maintenance as we work on some exciting updates to bring you an even better shopping experience. We'll be back online soon with something beautiful for you. Thank you for your patience, love, and continued support. We can't wait to welcome you back!
       </div>
 
       <div className="mb-5 sm:mb-6 flex flex-nowrap justify-center gap-2 sm:gap-4 w-full max-w-sm sm:max-w-none px-2">
@@ -62,11 +59,11 @@ export function MaintenancePage() {
       <div className="mx-auto mb-4 sm:mb-6 max-w-[500px] w-full rounded-xl bg-white p-4 shadow-sm border border-border/50">
         <h3 className="mb-1 font-display text-lg font-semibold text-foreground">Need to place an order in the meantime?</h3>
         <p className="mb-3 text-sm text-muted-foreground flex items-center justify-center gap-1.5">
-          <Instagram className="h-4 w-4 text-pink-500" /> DM us on Instagram and our team will be happy to assist you.
+          DM us on Instagram and our team will be happy to assist you with your order.
         </p>
         <p className="text-sm font-medium text-foreground">
           With love,<br />
-          Team Lilviaa <Heart className="inline-block h-3.5 w-3.5 text-pink-400 fill-pink-400 mb-0.5" />
+          Team Lilviaa
         </p>
       </div>
 
