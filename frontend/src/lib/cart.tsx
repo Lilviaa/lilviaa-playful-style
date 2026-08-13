@@ -147,6 +147,19 @@ export function CartProvider({ children }: { children: ReactNode }) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id, isLoading]);
 
+  // GUARANTEED trigger: listen for login event dispatched by auth.tsx
+  // This bypasses React state timing and ensures cart always loads after login
+  useEffect(() => {
+    const handleLogin = () => {
+      console.log("[Cart] Received lilviaa-logged-in event — fetching cart");
+      // 600ms gives Firebase auth.currentUser time to be set
+      setTimeout(fetchBackendCart, 600);
+    };
+    window.addEventListener("lilviaa-logged-in", handleLogin);
+    return () => window.removeEventListener("lilviaa-logged-in", handleLogin);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const add: CartCtx["add"] = async (item) => {
     if (!user) {
       navigate({ to: "/login" });

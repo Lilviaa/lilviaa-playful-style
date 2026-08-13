@@ -130,6 +130,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       const dbUser = await syncWithBackend(userCredential.user);
       
+      // Signal cart to refresh after login
+      window.dispatchEvent(new Event("lilviaa-logged-in"));
+
       // Attempt cart merge via our standard apiFetch which now handles the Authorization header
       try {
         const rawCart = localStorage.getItem("lilviaa-cart-v1-guest");
@@ -252,6 +255,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       const dbUser = await syncWithBackend(userCredential.user);
       
+      // Signal cart to refresh after Google login
+      window.dispatchEvent(new Event("lilviaa-logged-in"));
+
       try {
         const rawCart = localStorage.getItem("lilviaa-cart-v1-guest");
         if (rawCart) {
