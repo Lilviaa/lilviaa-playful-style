@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useAuth } from "./auth";
 import { apiFetch } from "./api";
@@ -29,25 +29,59 @@ type CartCtx = {
 
 const Ctx = createContext<CartCtx | null>(null);
 
+const LS_KEY = "lilviaa-cart-v2";
 const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:8000/api/v1";
 
+function readCache(): CartItem[] {
+  try {
+    const raw = localStorage.getItem(LS_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) return parsed;
+    }
+  } catch {}
+  return [];
+}
+
+function writeCache(items: CartItem[]) {
+  try {
+    localStorage.setItem(LS_KEY, JSON.stringify(items));
+  } catch {}
+}
+
+function clearCache() {
+  try {
+    localStorage.removeItem(LS_KEY);
+  } catch {}
+}
+
 export function CartProvider({ children }: { children: ReactNode }) {
-  // No localStorage — always fetch from backend so login/logout is reliable
-  const [items, setItems] = useState<CartItem[]>([]);
+  // Initialize from localStorage immediately so cart shows on reload
+  const [items, setItems] = useState<CartItem[]>(readCache);
   const { user, isLoading } = useAuth();
   const navigate = useNavigate();
+  // Track whether we're currently fetching to avoid double-fetches
+  const fetchingRef = useRef(false);
 
-  const fetchBackendCart = async (attempt = 1): Promise<void> => {
+  const setAndCache = (newItems: CartItem[]) => {
+    setItems(newItems);
+    writeCache(newItems);
+  };
+
+  const fetchBackendCart = async (): Promise<void> => {
+    if (fetchingRef.current) return;
+    fetchingRef.current = true;
     try {
+      // Wait for Firebase auth to fully initialize
       await auth.authStateReady();
 
       if (!auth.currentUser) {
-        console.warn("[Cart] No Firebase currentUser — skipping fetch");
+        console.warn("[Cart] No Firebase user — cannot fetch cart");
         return;
       }
 
-      // Force-refresh the token every time to avoid stale tokens
-      const token = await auth.currentUser.getIdToken(true);
+      // Get token WITHOUT force-refresh (force-refresh can fail on recently-issued tokens)
+      const token = await auth.currentUser.getIdToken();
 
       const response = await fetch(`${API_BASE}/cart`, {
         headers: {
@@ -59,16 +93,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
       if (!response.ok) {
         const errText = await response.text();
-        console.error("[Cart] Fetch failed:", response.status, errText);
-        if (attempt < 3) {
-          await new Promise((r) => setTimeout(r, attempt * 1000));
-          return fetchBackendCart(attempt + 1);
-        }
+        console.error("[Cart] GET /cart failed:", response.status, errText);
         return;
       }
 
       const res = await response.json();
-      console.log(`[Cart] Loaded ${res.length} items from DB`);
+      console.log(`[Cart] DB returned ${res.length} items`);
 
       const mappedItems: CartItem[] = res.map((row: any) => {
         const variant = row.product_variants;
@@ -94,25 +124,27 @@ export function CartProvider({ children }: { children: ReactNode }) {
         };
       });
 
-      setItems(mappedItems);
+      setAndCache(mappedItems);
     } catch (e) {
-      console.error("[Cart] Error fetching cart:", e);
-      if (attempt < 3) {
-        await new Promise((r) => setTimeout(r, attempt * 1000));
-        return fetchBackendCart(attempt + 1);
-      }
+      console.error("[Cart] fetchBackendCart error:", e);
+    } finally {
+      fetchingRef.current = false;
     }
   };
 
   useEffect(() => {
     if (isLoading) return;
+
     if (user) {
-      // 500ms delay ensures Firebase token is fully propagated after login
-      const timer = setTimeout(() => fetchBackendCart(), 500);
+      // Small delay (300ms) to let Firebase token fully propagate after login
+      const timer = setTimeout(fetchBackendCart, 300);
       return () => clearTimeout(timer);
     } else {
+      // On logout: clear both memory and cache
       setItems([]);
+      clearCache();
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id, isLoading]);
 
   const add: CartCtx["add"] = async (item) => {
@@ -121,15 +153,18 @@ export function CartProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    // Optimistic update
+    // Optimistic update immediately
     setItems((prev) => {
       const idx = prev.findIndex((p) => p.slug === item.slug && p.size === item.size);
+      let next: CartItem[];
       if (idx >= 0) {
-        const next = [...prev];
+        next = [...prev];
         next[idx] = { ...next[idx], qty: next[idx].qty + item.qty };
-        return next;
+      } else {
+        next = [...prev, item];
       }
-      return [...prev, item];
+      writeCache(next);
+      return next;
     });
 
     try {
@@ -141,34 +176,42 @@ export function CartProvider({ children }: { children: ReactNode }) {
         const errData = await response.json();
         throw new Error(errData.detail || "Failed to add to cart");
       }
-      fetchBackendCart();
+      // Sync with real DB values
+      await fetchBackendCart();
     } catch (e: any) {
       console.error(e);
       toast.error(e.message || "Failed to add to cart");
-      fetchBackendCart(); // Rollback
+      await fetchBackendCart(); // Rollback to real DB state
     }
   };
 
   const remove: CartCtx["remove"] = async (slug, size, variant_id) => {
-    setItems((prev) => prev.filter((p) => !(p.slug === slug && p.size === size)));
+    setItems((prev) => {
+      const next = prev.filter((p) => !(p.slug === slug && p.size === size));
+      writeCache(next);
+      return next;
+    });
+
     if (user && variant_id) {
       try {
         await apiFetch(`/cart/${variant_id}`, { method: "DELETE" });
       } catch (e) {
         console.error(e);
-        fetchBackendCart();
+        await fetchBackendCart();
       }
     }
   };
 
   const setQty: CartCtx["setQty"] = async (slug, size, qty, variant_id) => {
-    setItems((prev) =>
-      prev.map((p) =>
+    setItems((prev) => {
+      const next = prev.map((p) =>
         p.slug === slug && p.size === size
           ? { ...p, qty: Math.min(p.max_qty, Math.max(1, qty)) }
           : p,
-      ),
-    );
+      );
+      writeCache(next);
+      return next;
+    });
 
     if (user && variant_id) {
       try {
@@ -183,12 +226,15 @@ export function CartProvider({ children }: { children: ReactNode }) {
       } catch (e: any) {
         console.error(e);
         toast.error(e.message || "Failed to update quantity");
-        fetchBackendCart();
+        await fetchBackendCart();
       }
     }
   };
 
-  const clear = () => setItems([]);
+  const clear = () => {
+    setItems([]);
+    clearCache();
+  };
 
   const count = items.length;
   const subtotal = items.reduce((s, i) => s + i.qty * i.price, 0);
