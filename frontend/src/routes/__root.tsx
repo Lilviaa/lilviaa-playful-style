@@ -133,32 +133,49 @@ function RootShell({ children }: { children: ReactNode }) {
   );
 }
 
-import { AdminAuthProvider } from "@/lib/admin/admin-auth";
+import { AdminAuthProvider, useAdminAuth } from "@/lib/admin/admin-auth";
+import { MaintenancePage } from "@/components/maintenance-page";
 
-function RootComponent() {
-  const { queryClient } = Route.useRouteContext();
+const IS_MAINTENANCE_MODE = true;
+
+function AppContent() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const { isAdminUser, isLoading } = useAdminAuth();
+  
   const isAdmin = pathname.startsWith("/admin");
   const isAuthPage = pathname === "/login" || pathname === "/register" || pathname === "/forgot-password";
   const isCheckout = pathname === "/checkout";
   const isInvoice = pathname.startsWith("/invoice");
-  const hideHeader = isAdmin || isAuthPage || isInvoice;
-  const hideFooter = isAdmin || isAuthPage || isCheckout || isInvoice;
+  
+  // Show maintenance page if mode is active, user is NOT admin, and not trying to login
+  const showMaintenance = IS_MAINTENANCE_MODE && !isAdminUser && !isAuthPage && !isLoading;
+  
+  const hideHeader = isAdmin || isAuthPage || isInvoice || showMaintenance;
+  const hideFooter = isAdmin || isAuthPage || isCheckout || isInvoice || showMaintenance;
 
+  return (
+    <>
+      <div className="flex min-h-screen flex-col bg-background text-foreground">
+        {!hideHeader && <SiteHeader />}
+        <main className="flex-1 flex flex-col">
+          {showMaintenance ? <MaintenancePage /> : <Outlet />}
+        </main>
+        {!hideFooter && <SiteFooter />}
+      </div>
+      <Toaster richColors position="top-center" expand={true} />
+    </>
+  );
+}
+
+function RootComponent() {
+  const { queryClient } = Route.useRouteContext();
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <AdminAuthProvider>
           <CartProvider>
             <WishlistProvider>
-              <div className="flex min-h-screen flex-col bg-background text-foreground">
-                {!hideHeader && <SiteHeader />}
-                <main className="flex-1">
-                  <Outlet />
-                </main>
-                {!hideFooter && <SiteFooter />}
-              </div>
-              <Toaster richColors position="top-center" expand={true} />
+              <AppContent />
             </WishlistProvider>
           </CartProvider>
         </AdminAuthProvider>
