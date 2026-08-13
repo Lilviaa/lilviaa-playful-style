@@ -1,10 +1,11 @@
 import { Link } from "@tanstack/react-router";
-import { Heart, Star } from "lucide-react";
+import { Heart, Star, ShoppingCart } from "lucide-react";
 import type { Product } from "@/lib/products";
-import { formatINR } from "@/lib/cart";
+import { formatINR, useCart } from "@/lib/cart";
 import { useWishlist } from "@/lib/wishlist";
 import { cn } from "@/lib/utils";
 import { ScrollReveal } from "@/components/scroll-reveal";
+import { toast } from "sonner";
 
 const tagStyles: Record<string, string> = {
   new: "bg-mint text-cocoa",
@@ -13,15 +14,16 @@ const tagStyles: Record<string, string> = {
 };
 
 export function ProductCard({ product }: { product: Product }) {
-  const { add, remove, has } = useWishlist();
+  const { add: addToWishlist, remove: removeFromWishlist, has } = useWishlist();
+  const { add: addToCart } = useCart();
   const inWishlist = has(product.slug);
 
   const toggleWishlist = (e: React.MouseEvent) => {
     e.preventDefault();
     if (inWishlist) {
-      remove(product.slug);
+      removeFromWishlist(product.slug);
     } else {
-      add({
+      addToWishlist({
         slug: product.slug,
         name: product.name,
         price: product.price,
@@ -58,6 +60,30 @@ export function ProductCard({ product }: { product: Product }) {
   if (product.compareAt && product.compareAt > displayPrice) {
     discountPercentage = Math.round(((product.compareAt - displayPrice) / product.compareAt) * 100);
   }
+
+  const handleAddToCart = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    const defaultVariant = product.variants?.[0];
+    if (!defaultVariant) {
+      toast.error("Product unavailable");
+      return;
+    }
+    
+    addToCart({
+      slug: product.slug,
+      name: product.name,
+      price: displayPrice,
+      image: product.image || "",
+      size: defaultVariant.size || "Standard",
+      qty: 1,
+      max_qty: defaultVariant.stock || 10,
+      variant_id: defaultVariant.id,
+    });
+    
+    toast.success("Added to cart!");
+  };
 
   return (
     <ScrollReveal className="h-full">
@@ -142,8 +168,14 @@ export function ProductCard({ product }: { product: Product }) {
             )}
           </div>
           
-          <div className="mt-1 text-[10px] font-medium text-emerald-600 flex items-center gap-1">
-            ✓ Quality Checked
+          <div className="mt-3 mt-auto">
+            <button
+              onClick={handleAddToCart}
+              className="flex w-full items-center justify-center gap-1.5 rounded-md bg-[#fbbf24] px-3 py-2 text-xs font-bold text-cocoa shadow-sm hover:bg-[#f59e0b] transition-colors"
+            >
+              <ShoppingCart className="h-3.5 w-3.5" />
+              Add to Cart
+            </button>
           </div>
         </div>
       </Link>
