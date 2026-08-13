@@ -46,7 +46,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   
   const fetchBackendCart = async () => {
     try {
-      const response = await apiFetch("/cart/");
+      const response = await apiFetch("/cart");
       if (!response.ok) throw new Error("Failed to fetch cart");
       const res = await response.json();
       
@@ -117,7 +117,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     });
 
     try {
-        const response = await apiFetch("/cart/", {
+        const response = await apiFetch("/cart", {
           method: "POST",
           body: JSON.stringify({ product_variant_id: item.variant_id, quantity: item.qty })
         });
