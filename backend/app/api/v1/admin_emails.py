@@ -138,7 +138,9 @@ async def send_test_whatsapp(request: Request, background_tasks: BackgroundTasks
         "total_amount": 2247.0,
     }
 
+    print(f">>> ABOUT TO QUEUE wa_customer (func={wa_customer})")
     background_tasks.add_task(wa_customer, mock_order)
+    print(f">>> ABOUT TO QUEUE wa_owner (func={wa_owner})")
     background_tasks.add_task(wa_owner, mock_order)
 
     return {
