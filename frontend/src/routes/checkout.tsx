@@ -381,6 +381,46 @@ function CheckoutPage() {
     netbanking: "Net Banking",
   };
 
+  const renderCouponBox = (extraClass = "") => (
+    <div className={`flex gap-2 flex-col ${extraClass}`}>
+      <div className="flex gap-2">
+        <Input 
+          placeholder="Coupon code" 
+          className="rounded-xl border-border bg-background uppercase" 
+          value={couponCodeInput}
+          onChange={(e) => setCouponCodeInput(e.target.value.toUpperCase())}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && !isApplyingCoupon && !appliedCoupon?.valid && couponCodeInput.trim()) {
+              e.preventDefault();
+              handleApplyCoupon();
+            }
+          }}
+          disabled={isApplyingCoupon || appliedCoupon?.valid}
+        />
+        {appliedCoupon?.valid ? (
+          <button 
+            type="button"
+            onClick={handleRemoveCoupon}
+            className="rounded-xl bg-red-100 px-4 py-2 text-sm font-bold text-red-600 transition-colors hover:bg-red-200"
+          >
+            Remove
+          </button>
+        ) : (
+          <button 
+            type="button"
+            onClick={handleApplyCoupon}
+            disabled={isApplyingCoupon || !couponCodeInput.trim()}
+            className="rounded-xl bg-cocoa px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-cocoa/90 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
+          >
+            {isApplyingCoupon ? "..." : "Apply"}
+          </button>
+        )}
+      </div>
+      {couponError && <div className="text-xs text-red-500 font-medium px-1">{couponError}</div>}
+      {couponSuccess && <div className="text-xs text-green-600 font-medium px-1">{couponSuccess}</div>}
+    </div>
+  );
+
   return (
     <div className="min-h-screen bg-[#fcf9f2]">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 pb-24 pt-8">
@@ -394,6 +434,9 @@ function CheckoutPage() {
             <span className="flex items-center gap-2">Order Summary {isSummaryExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}</span>
             <span>{formatINR(total)}</span>
           </button>
+          
+          {/* Always visible mobile coupon box */}
+          {renderCouponBox("mt-4 p-4 rounded-2xl bg-card border border-border shadow-sm")}
         </div>
 
         <div className="flex flex-col-reverse gap-8 lg:grid lg:grid-cols-[1.6fr_1fr]">
@@ -872,43 +915,7 @@ function CheckoutPage() {
               </ul>
 
               {/* Coupon Field Enhancement */}
-              <div className="mb-6 flex gap-2 flex-col">
-                <div className="flex gap-2">
-                  <Input 
-                    placeholder="Coupon code" 
-                    className="rounded-xl border-border bg-background uppercase" 
-                    value={couponCodeInput}
-                    onChange={(e) => setCouponCodeInput(e.target.value.toUpperCase())}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" && !isApplyingCoupon && !appliedCoupon?.valid && couponCodeInput.trim()) {
-                        e.preventDefault();
-                        handleApplyCoupon();
-                      }
-                    }}
-                    disabled={isApplyingCoupon || appliedCoupon?.valid}
-                  />
-                  {appliedCoupon?.valid ? (
-                    <button 
-                      type="button"
-                      onClick={handleRemoveCoupon}
-                      className="rounded-xl bg-red-100 px-4 py-2 text-sm font-bold text-red-600 transition-colors hover:bg-red-200"
-                    >
-                      Remove
-                    </button>
-                  ) : (
-                    <button 
-                      type="button"
-                      onClick={handleApplyCoupon}
-                      disabled={isApplyingCoupon || !couponCodeInput.trim()}
-                      className="rounded-xl bg-cocoa px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-cocoa/90 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
-                    >
-                      {isApplyingCoupon ? "..." : "Apply"}
-                    </button>
-                  )}
-                </div>
-                {couponError && <div className="text-xs text-red-500 font-medium px-1">{couponError}</div>}
-                {couponSuccess && <div className="text-xs text-green-600 font-medium px-1">{couponSuccess}</div>}
-              </div>
+              {renderCouponBox("hidden lg:flex mb-6")}
 
               <dl className="mt-4 space-y-3 text-sm text-muted-foreground border-t border-border pt-4">
                 <div className="flex justify-between">

@@ -189,7 +189,7 @@ function AccountOrdersPage() {
   if (!user) return null;
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 max-w-5xl">
       <div className="rounded-3xl bg-card p-6 shadow-cute md:p-8">
         <h2 className="flex items-center gap-2 font-display text-2xl text-cocoa mb-6">
           <Package className="h-6 w-6 text-primary" /> Order History

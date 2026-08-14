@@ -57,7 +57,7 @@ function AccountLayout() {
   }
 
   return (
-    <div className={cn("mx-auto px-6 py-12", currentTab === "Overview" ? "max-w-7xl" : "max-w-5xl")}>
+    <div className="mx-auto max-w-7xl px-6 py-12">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-10">
         <div>
           <h1 className="font-display text-4xl text-cocoa md:text-5xl">{currentTab}</h1>
