@@ -9,7 +9,7 @@ import { useAuth } from "@/lib/auth";
 export const Route = createFileRoute("/verify-account")({
   head: () => ({
     meta: [
-      { title: "Verify Account â€” lilviaa" },
+      { title: "Verify Account — lilviaa" },
     ],
   }),
   validateSearch: (search: Record<string, unknown>): { email?: string } => ({

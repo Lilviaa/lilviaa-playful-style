@@ -24,7 +24,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 export const Route = createFileRoute("/checkout")({
   head: () => ({
     meta: [
-      { title: "Secure Checkout â€” lilviaa" },
+      { title: "Secure Checkout — lilviaa" },
       { name: "description", content: "Complete your purchase securely." },
       { name: "robots", content: "noindex" },
     ],
@@ -372,7 +372,7 @@ function CheckoutPage() {
 
   const deliveryStart = addBusinessDays(today, minDays);
   const deliveryEnd = addBusinessDays(today, maxDays);
-  const deliveryString = `${deliveryStart.getDate()} ${deliveryStart.toLocaleString('default', { month: 'short' })} â€“ ${deliveryEnd.getDate()} ${deliveryEnd.toLocaleString('default', { month: 'short' })}`;
+  const deliveryString = `${deliveryStart.getDate()} ${deliveryStart.toLocaleString('default', { month: 'short' })} – ${deliveryEnd.getDate()} ${deliveryEnd.toLocaleString('default', { month: 'short' })}`;
 
   const paymentMethodLabels: Record<string, string> = {
     upi: "UPI",

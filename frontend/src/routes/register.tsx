@@ -23,7 +23,7 @@ export const Route = createFileRoute("/register")({
   },
   head: () => ({
     meta: [
-      { title: "Sign Up â€” lilviaa" },
+      { title: "Sign Up — lilviaa" },
     ],
   }),
   component: RegisterPage,
@@ -161,7 +161,7 @@ function RegisterPage() {
                     <div className="relative">
                       <Input 
                         type={showPassword ? "text" : "password"} 
-                        placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢" 
+                        placeholder="••••••••" 
                         {...field} 
                         className="rounded-xl border-border bg-background pr-10" 
                       />

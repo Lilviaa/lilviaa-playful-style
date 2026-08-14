@@ -100,14 +100,14 @@ function HomePage() {
           <Link to={promoStrip.cta_link || "#"} className="animate-marquee flex w-max items-center hover:opacity-90">
             {Array(10).fill(promoStrip.headline).map((text, i) => (
               <div key={i} className="flex items-center px-8 whitespace-nowrap text-sm font-semibold tracking-wide">
-                {text.split(/\||â€¢/).map((part: string, idx: number, arr: string[]) => (
+                {text.split(/\||•/).map((part: string, idx: number, arr: string[]) => (
                   <span key={idx} className="flex items-center">
                     <span>{part.trim()}</span>
                     {promoStrip.cta_text && idx === arr.length - 1 && <span className="underline ml-2 mr-1">{promoStrip.cta_text}</span>}
-                    {idx < arr.length - 1 && <span className="mx-6 opacity-40">â€¢</span>}
+                    {idx < arr.length - 1 && <span className="mx-6 opacity-40">•</span>}
                   </span>
                 ))}
-                <span className="mx-6 opacity-40">â€¢</span>
+                <span className="mx-6 opacity-40">•</span>
               </div>
             ))}
           </Link>
@@ -337,7 +337,7 @@ function HomePage() {
             </h2>
           </div>
           <Link to="/shop" className="text-sm font-bold text-cocoa hover:text-primary">
-            View all â†’
+            View all →
           </Link>
         </div>
         <div className="mt-8 grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
@@ -360,7 +360,7 @@ function HomePage() {
               All-day comfort.<br />Timeless style.<br />Lasting quality.
             </h2>
             <p className="mt-5 max-w-md text-cream/80">
-              We don't promise perfectionâ€”we promise thoughtfulness. Every collection is designed to be versatile, long-lasting, and made to be worn and loved repeatedly.
+              We don't promise perfection—we promise thoughtfulness. Every collection is designed to be versatile, long-lasting, and made to be worn and loved repeatedly.
             </p>
             <div className="mt-8 grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-4 text-center">
               {[
@@ -413,9 +413,9 @@ function HomePage() {
           {[
             { icon: Heart, label: "Comfort First" },
             { icon: Gem, label: "Premium Fabric" },
-            { icon: Baby, label: "6Mâ€“6Y Boys" },
+            { icon: Baby, label: "6M–6Y Boys" },
             { icon: MapPin, label: "Made in India" },
-            { icon: Truck, label: "Free Shipping â‚¹3000" },
+            { icon: Truck, label: "Free Shipping ₹3000" },
           ].map(({ icon: Icon, label }) => (
             <div key={label} className="flex items-center gap-3 text-sm font-semibold text-cocoa">
               <span className="flex h-9 w-9 items-center justify-center rounded-full bg-sand text-primary">
@@ -446,7 +446,7 @@ function HomePage() {
                   <p className="mt-4 font-display text-lg leading-snug text-cocoa">
                     "{t.text}"
                   </p>
-                  <p className="mt-4 text-sm font-semibold text-cocoa/70">â€” {t.reviewer_name}</p>
+                  <p className="mt-4 text-sm font-semibold text-cocoa/70">— {t.reviewer_name}</p>
                 </div>
               );
             })

@@ -591,7 +591,7 @@ def _validate_coupon_logic(code: str, cart_total: float, user_id: str | None, su
     if cart_total < float(coupon["min_cart_value"]):
         return {
             "valid": False, "discountAmount": 0, "freeShipping": False,
-            "message": f"Minimum cart value of â‚¹{int(coupon['min_cart_value'])} required."
+            "message": f"Minimum cart value of ₹{int(coupon['min_cart_value'])} required."
         }
 
     # Check total usage limit
@@ -647,7 +647,7 @@ def _validate_coupon_logic(code: str, cart_total: float, user_id: str | None, su
 
     discount_amount = round(discount_amount)
 
-    msg = f"Coupon applied! You saved â‚¹{discount_amount}" if discount_amount > 0 else "Coupon applied!"
+    msg = f"Coupon applied! You saved ₹{discount_amount}" if discount_amount > 0 else "Coupon applied!"
     if free_shipping:
         msg += " + free shipping"
 
