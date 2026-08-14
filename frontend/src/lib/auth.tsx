@@ -46,6 +46,7 @@ export interface User {
   role: string;
   full_name: string;
   phone?: string;
+  requires_verification?: boolean;
 }
 
 interface AuthContextType {
@@ -316,3 +317,4 @@ export function useAuth() {
   }
   return context;
 }
+

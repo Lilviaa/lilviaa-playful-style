@@ -12,7 +12,7 @@ export const Route = createFileRoute("/verify-account")({
       { title: "Verify Account — lilviaa" },
     ],
   }),
-  validateSearch: (search: Record<string, unknown>) => ({
+  validateSearch: (search: Record<string, unknown>): { email?: string } => ({
     email: (search.email as string) || "",
   }),
   component: VerifyAccountPage,
@@ -146,3 +146,4 @@ function VerifyAccountPage() {
     </div>
   );
 }
+

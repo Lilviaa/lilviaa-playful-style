@@ -36,7 +36,6 @@ function CompanySettingsPage() {
     instagram_url: "",
     youtube_url: "",
     whatsapp_number: "",
-    whatsapp_number: "",
     enable_gst: false,
     gst_percentage: 0,
     home_state: "Tamil Nadu",
@@ -368,3 +367,4 @@ function CompanySettingsPage() {
     </div>
   );
 }
+

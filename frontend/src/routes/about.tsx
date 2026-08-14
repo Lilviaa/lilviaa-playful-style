@@ -105,7 +105,7 @@ function AboutPage() {
               title: "Built on Trust",
               description: "We don't promise perfection—we promise thoughtfulness. From selecting the right fabric to perfecting the fit, we create clothing children genuinely enjoy wearing.",
             },
-          ]).map((card, idx) => {
+          ]).map((card: any, idx: number) => {
             const Icon = ICONS[card.icon] || Heart;
             return (
               <div key={idx} className="group h-full rounded-3xl bg-card p-6 shadow-cute flex flex-col transition-all duration-300 hover:-translate-y-2 hover:shadow-pop cursor-default">
@@ -128,3 +128,4 @@ function AboutPage() {
     </div>
   );
 }
+

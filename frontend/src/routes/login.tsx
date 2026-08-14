@@ -16,7 +16,7 @@ import {
 import { Input } from "@/components/ui/input";
 
 export const Route = createFileRoute("/login")({
-  validateSearch: (search: Record<string, unknown>) => {
+  validateSearch: (search: Record<string, unknown>): { redirect?: string; email?: string } => {
     return {
       redirect: search.redirect as string | undefined,
       email: search.email as string | undefined,
@@ -230,3 +230,4 @@ function LoginPage() {
     </div>
   );
 }
+

@@ -40,7 +40,7 @@ const formSchema = z.object({
   city: z.string().min(2, { message: "City is required." }),
   state: z.string().min(2, { message: "State is required." }),
   zip: z.string().min(4, { message: "ZIP code is required." }),
-  paymentMethod: z.enum(["razorpay"], {
+  paymentMethod: z.enum(["razorpay", "cod", "upi", "card", "netbanking"], {
     required_error: "Please select a payment method.",
   }),
 });
@@ -241,7 +241,7 @@ function CheckoutPage() {
       if (values.paymentMethod === "cod") {
         if (!isBuyNow) clear();
         if (isBuyNow) sessionStorage.setItem("wasBuyNow", "true");
-        navigate({ to: "/order-success", replace: true, search: { orderId: orderData.id, amount: orderData.total_amount } });
+        navigate({ to: "/order-success", replace: true, search: { order_id: orderData.id, amount: orderData.total_amount } });
         return;
       }
 
@@ -992,3 +992,5 @@ function CheckoutPage() {
     </div>
   );
 }
+
+

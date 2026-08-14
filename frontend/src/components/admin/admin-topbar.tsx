@@ -9,11 +9,33 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/lib/auth";
 import { AdminSidebar } from "./admin-sidebar";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+
+function LiveClock() {
+  const [date, setDate] = useState(new Date());
+  
+  useEffect(() => {
+    const timer = setInterval(() => setDate(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  return (
+    <div className="text-sm font-medium text-cocoa/70 hidden sm:inline-block">
+      {date.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+      {' • '}
+      {date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+    </div>
+  );
+}
 
 export function AdminTopbar() {
   const { user, logout, isLoggingOut } = useAuth();
   const [open, setOpen] = useState(false);
+
+  // Fallbacks for display name and role
+  const displayName = (user as any)?.name || user?.full_name || (user as any)?.user_metadata?.full_name || user?.email?.split('@')[0] || "Admin";
+  const avatarLetter = displayName.charAt(0).toUpperCase();
+  const displayRole = user?.role || "Owner";
 
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b border-border bg-card px-4 md:px-6">
@@ -31,23 +53,29 @@ export function AdminTopbar() {
         </SheetContent>
       </Sheet>
 
-      <div className="flex-1">
+      <div className="flex-1 px-2">
+        <LiveClock />
       </div>
 
       <div className="flex items-center gap-4">
+        <div className="hidden sm:flex flex-col items-end mr-2">
+          <span className="text-sm font-bold text-cocoa">{displayName}</span>
+          <span className="text-xs text-cocoa/60 capitalize">{displayRole}</span>
+        </div>
+        
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button className="flex items-center gap-2 rounded-full focus:outline-none">
               <Avatar className="h-8 w-8 border border-border">
-                <AvatarFallback className="bg-primary/10 text-primary font-bold text-xs">
-                  {user?.name?.charAt(0) || "A"}
+                <AvatarFallback className="bg-primary text-white font-bold text-xs uppercase">
+                  {avatarLetter}
                 </AvatarFallback>
               </Avatar>
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-48 bg-card border-border">
             <div className="px-2 py-1.5 text-sm font-medium text-cocoa truncate">
-              {user?.name}
+              {displayName}
               <div className="text-xs font-normal text-muted-foreground truncate">{user?.email}</div>
             </div>
             <div className="h-px bg-border my-1" />
@@ -70,3 +98,4 @@ export function AdminTopbar() {
     </header>
   );
 }
+

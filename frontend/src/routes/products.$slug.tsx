@@ -19,7 +19,7 @@ import { CustomerReviews } from "@/components/customer-reviews";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export const Route = createFileRoute("/products/$slug")({
-  loader: async ({ params }): Promise<{ product: Product }> => {
+  loader: async ({ params }): Promise<{ product: Product, error?: string }> => {
     try {
       const product = await fetchProduct(params.slug);
       return { product };
@@ -617,3 +617,4 @@ function ProductSkeleton() {
     </div>
   );
 }
+

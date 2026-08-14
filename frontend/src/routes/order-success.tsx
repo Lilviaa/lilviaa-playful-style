@@ -11,7 +11,7 @@ const searchSchema = z.object({
 });
 
 export const Route = createFileRoute("/order-success")({
-  validateSearch: (search: Record<string, unknown>) => {
+  validateSearch: (search: Record<string, unknown>): { order_id?: string; amount?: number } => {
     return {
       order_id: search.order_id as string | undefined,
       amount: search.amount ? Number(search.amount) : undefined,
@@ -99,3 +99,4 @@ function OrderSuccessPage() {
     </div>
   );
 }
+

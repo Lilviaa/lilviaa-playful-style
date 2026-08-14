@@ -7,6 +7,7 @@ export interface Banner {
   image_url: string;
   title: string | null;
   subtitle: string | null;
+  description?: string | null;
   link_url: string | null;
   sort_order: number;
   active: boolean;
@@ -110,3 +111,4 @@ export function usePublicBanners() {
     }
   });
 }
+

@@ -6,6 +6,7 @@ import { useCategories } from "@/lib/categories-api";
 import { useCategoryTiles, useFeaturedProducts as useCmsFeaturedProducts, useCmsSection, useHeroSlides } from "@/lib/admin/cms-api";
 import { usePublicBanners } from "@/lib/admin/banners-api";
 import { ProductCard } from "@/components/product-card";
+import type { Product } from "@/lib/products";
 import { ScrollReveal } from "@/components/scroll-reveal";
 
 export const Route = createFileRoute("/")({
@@ -23,15 +24,15 @@ function HomePage() {
   const [topReviews, setTopReviews] = useState<any[]>([]);
   useEffect(() => {
     fetch(`${API_URL}/reviews/featured`)
-      .then(res => res.json())
-      .then(data => setTopReviews(data))
+      .then((res: any) => res.json())
+      .then((data: any) => setTopReviews(data))
       .catch(err => console.error("Failed to fetch featured reviews:", err));
   }, []);
 
   // CMS Hooks
   const { data: banners = [], isLoading: isLoadingBanners } = usePublicBanners();
   const heroBanner = banners.length > 0 ? banners[0] : null; // use first banner as hero
-  const promoStrip = null; // Removed since the DB schema replaces the mock promo strip
+  const promoStrip: any = null; // Removed since the DB schema replaces the mock promo strip
   const { data: cmsCategoryTiles = [] } = useCategoryTiles();
   const { data: cmsFeaturedProducts = [] } = useCmsFeaturedProducts();
   const { data: heroSlides = [], isLoading: isLoadingSlides } = useHeroSlides();
@@ -39,7 +40,7 @@ function HomePage() {
 
   // Merge CMS featured with actual product data
   const featured = cmsFeaturedProducts.length > 0
-    ? cmsFeaturedProducts.map(fp => allProducts.find(p => p.id === fp.product_id)).filter(Boolean) as Product[]
+    ? cmsFeaturedProducts.map((fp: any) => allProducts.find((p: any) => p.id === fp.product_id)).filter(Boolean) as Product[]
     : dbFeatured;
 
   // Check event poster dates
@@ -53,7 +54,7 @@ function HomePage() {
     return true;
   };
 
-  const defaultHeroImageUrls = heroSlides.map(s => s.image_url).filter(Boolean);
+  const defaultHeroImageUrls = heroSlides.map((s: any) => s.image_url).filter(Boolean);
   const activeHeroImages = isEventBannerActive() && heroBanner?.image_url
     ? [heroBanner.image_url, ...defaultHeroImageUrls]
     : defaultHeroImageUrls;
@@ -130,7 +131,7 @@ function HomePage() {
                   {isLoadingHero ? (
                     <div className="h-full w-full min-w-full flex-shrink-0 bg-sand/60 animate-pulse rounded-b-[2.5rem] md:rounded-b-[4rem] md:rounded-tl-[10rem]"></div>
                   ) : (
-                    activeHeroImages.map((src, index) => (
+                    activeHeroImages.map((src: string, index: number) => (
                       <img
                         key={src}
                         src={src}
@@ -164,7 +165,7 @@ function HomePage() {
 
                   {/* Dots Indicator */}
                   <div className="pointer-events-auto absolute bottom-6 sm:bottom-8 left-1/2 -translate-x-1/2 flex items-center gap-2">
-                    {activeHeroImages.map((_, idx) => (
+                    {activeHeroImages.map((_: any, idx: number) => (
                       <button
                         key={idx}
                         onClick={() => setCurrentHeroImage(idx)}
@@ -277,7 +278,7 @@ function HomePage() {
           </Link>
         </div>
         <div className="mt-10 grid grid-cols-2 gap-3 sm:gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          {(cmsCategoryTiles.length > 0 ? cmsCategoryTiles : dbCategories.slice(0, 4)).map((c, i) => {
+          {(cmsCategoryTiles.length > 0 ? cmsCategoryTiles : dbCategories.slice(0, 4)).map((c: any, i: number) => {
             const isCms = 'label' in c;
             const name = isCms ? c.label : c.name;
             const link = isCms ? c.link : `/shop?category=${c.slug}`;
@@ -457,3 +458,6 @@ function HomePage() {
     </main>
   );
 }
+
+
+
