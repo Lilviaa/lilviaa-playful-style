@@ -1,4 +1,4 @@
-﻿from fastapi import APIRouter, Depends, HTTPException, status, Request, BackgroundTasks, Response
+from fastapi import APIRouter, Depends, HTTPException, status, Request, BackgroundTasks, Response
 from app.api.dependencies import get_current_user_token
 from typing import List, Dict, Any
 from app.models.order import OrderCreate, OrderResponse
@@ -342,25 +342,8 @@ def verify_payment(req: VerifyPaymentRequest, request: Request, background_tasks
     except Exception as e:
         raise AppError("Payment verification failed", status_code=400)
 
-    # 2. Get Transaction
-    tx_res = supabase.table("payment_transactions").select("*").eq("razorpay_order_id", req.razorpay_order_id).execute()
-    if not tx_res.data:
-        raise AppError("Transaction not found", status_code=404)
-    tx = tx_res.data[0]
-
-    if tx["status"] == "successful":
-        return {"success": True, "message": "Already verified"}
-
-    # 3. Update Transaction
-    supabase.table("payment_transactions").update({
-        "status": "successful",
-        "razorpay_payment_id": req.razorpay_payment_id
-    }).eq("id", tx["id"]).execute()
-
-    # 4. Update Order
-    order_id = tx["order_id"]
-    
-    # Fetch actual payment method from Razorpay (important for localhost testing where webhooks don't arrive)
+    # 2. Fetch actual payment method from Razorpay BEFORE the RPC
+    # (important for localhost testing where webhooks don't arrive)
     captured_method = None
     try:
         payment = rzp.payment.fetch(req.razorpay_payment_id)
@@ -368,38 +351,48 @@ def verify_payment(req: VerifyPaymentRequest, request: Request, background_tasks
     except Exception:
         pass
 
-    order_update_data = {"status": "processing"}
+    # 3. Atomically confirm the payment via a single DB transaction (RPC).
+    #    This handles: row-locking (race condition prevention), idempotency
+    #    guard, transaction status update, order status update, and stock
+    #    deduction — all in one atomic Postgres transaction.
+    #    On failure it writes to payment_audit_log and re-raises.
+    try:
+        rpc_res = supabase.rpc("confirm_razorpay_payment", {
+            "p_razorpay_order_id": req.razorpay_order_id,
+            "p_razorpay_payment_id": req.razorpay_payment_id,
+        }).execute()
+    except Exception as e:
+        raise AppError(f"Payment confirmation failed: {str(e)}", status_code=500)
+
+    rpc_data = rpc_res.data
+    if not rpc_data or not rpc_data.get("success"):
+        raise AppError("Payment confirmation returned unexpected result", status_code=500)
+
+    # Idempotent hit — already confirmed, no emails/fulfillment needed again
+    if rpc_data.get("idempotent"):
+        return {"success": True, "message": "Already verified"}
+
+    order_id = rpc_data["order_id"]
+
+    # 4. Update the payment_method on the order if we fetched it from Razorpay
+    #    (the RPC only sets status, not payment_method, since that requires the
+    #    live Razorpay API call that happens in Python)
     if captured_method:
-        order_update_data["payment_method"] = captured_method
-        
-    supabase.table("orders").update(order_update_data).eq("id", order_id).execute()
+        supabase.table("orders").update({
+            "payment_method": captured_method
+        }).eq("id", order_id).execute()
 
-    # 5. Convert reserved stock to deducted stock
-    items_res = supabase.table("order_items").select("*").eq("order_id", order_id).execute()
-    for item in items_res.data:
-        var_id = item["product_variant_id"]
-        qty = item["quantity"]
-        
-        v_res = supabase.table("product_variants").select("stock, reserved_stock").eq("id", var_id).execute()
-        if v_res.data:
-            current_stock = v_res.data[0]["stock"]
-            current_reserved = v_res.data[0].get("reserved_stock", 0)
-            
-            supabase.table("product_variants").update({
-                "stock": max(0, current_stock - qty),
-                "reserved_stock": max(0, current_reserved - qty)
-            }).eq("id", var_id).execute()
-
-    # Fetch full nested order details for the new email templates
-    full_order_res = supabase.table("orders").select("*, items:order_items(*, product_variants(*, products(*))), addresses(*)").eq("id", order_id).execute()
+    # 5. Fire post-confirmation side effects (emails + Shiprocket)
+    full_order_res = supabase.table("orders").select(
+        "*, items:order_items(*, product_variants(*, products(*))), addresses(*)"
+    ).eq("id", order_id).execute()
     if full_order_res.data:
         created_order = full_order_res.data[0]
-        # Ensure user_email is present for the mailer
         if created_order.get("user_id"):
             user_res = supabase.table("users").select("email").eq("id", created_order["user_id"]).execute()
             if user_res.data and user_res.data[0].get("email"):
                 created_order["user_email"] = user_res.data[0]["email"]
-        
+
         enqueue_notifications(background_tasks, created_order)
 
     from app.services.shiprocket import automate_shiprocket_fulfillment
