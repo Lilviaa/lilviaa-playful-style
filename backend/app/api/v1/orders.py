@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Request, BackgroundTasks, Response
+﻿from fastapi import APIRouter, Depends, HTTPException, status, Request, BackgroundTasks, Response
 from app.api.dependencies import get_current_user_token
 from typing import List, Dict, Any
 from app.models.order import OrderCreate, OrderResponse
@@ -591,7 +591,7 @@ def _validate_coupon_logic(code: str, cart_total: float, user_id: str | None, su
     if cart_total < float(coupon["min_cart_value"]):
         return {
             "valid": False, "discountAmount": 0, "freeShipping": False,
-            "message": f"Minimum cart value of ₹{int(coupon['min_cart_value'])} required."
+            "message": f"Minimum cart value of â‚¹{int(coupon['min_cart_value'])} required."
         }
 
     # Check total usage limit
@@ -647,7 +647,7 @@ def _validate_coupon_logic(code: str, cart_total: float, user_id: str | None, su
 
     discount_amount = round(discount_amount)
 
-    msg = f"Coupon applied! You saved ₹{discount_amount}" if discount_amount > 0 else "Coupon applied!"
+    msg = f"Coupon applied! You saved â‚¹{discount_amount}" if discount_amount > 0 else "Coupon applied!"
     if free_shipping:
         msg += " + free shipping"
 
@@ -667,26 +667,64 @@ def validate_coupon(req: ValidateCouponRequest, request: Request):
     supabase = get_supabase()
     
     enriched_items = []
+    calculated_subtotal = 0.0
+    now = datetime.now(timezone.utc)
+
     if req.items:
         variant_ids = [it.get("product_variant_id") for it in req.items if it.get("product_variant_id")]
         if variant_ids:
-            variants_res = supabase.table("product_variants").select("id, products(id, category_id)").in_("id", variant_ids).execute()
+            variants_res = supabase.table("product_variants").select("*, products(*)").in_("id", variant_ids).execute()
             variant_map = {v["id"]: v for v in variants_res.data}
             
             for it in req.items:
                 vid = it.get("product_variant_id")
                 qty = float(it.get("quantity") or 1)
-                unit_price = float(it.get("unit_price") or 0)
-                v_data = variant_map.get(vid, {})
-                prod = v_data.get("products") or {}
+                
+                v_data = variant_map.get(vid)
+                if not v_data:
+                    continue
+                
+                prod = v_data.get("products", {})
+                base_price = float(prod.get("base_price") or 0)
+                sale_price = prod.get("sale_price")
+                
+                is_sale_active = False
+                if sale_price is not None and float(sale_price) > 0:
+                    is_sale_active = True
+                    sale_start_str = prod.get("sale_start")
+                    sale_end_str = prod.get("sale_end")
+                    if sale_start_str:
+                        sale_start = datetime.fromisoformat(sale_start_str.replace("Z", "+00:00"))
+                        if now < sale_start:
+                            is_sale_active = False
+                    if sale_end_str:
+                        sale_end = datetime.fromisoformat(sale_end_str.replace("Z", "+00:00"))
+                        if now > sale_end:
+                            is_sale_active = False
+                
+                price_override = v_data.get("price_override")
+                
+                if price_override is not None:
+                    if is_sale_active and base_price > 0:
+                        discount_multiplier = float(sale_price) / base_price
+                        true_unit_price = int(float(price_override) * discount_multiplier)
+                    else:
+                        true_unit_price = float(price_override)
+                else:
+                    true_unit_price = float(sale_price) if is_sale_active else base_price
+
+                item_total = true_unit_price * qty
+                calculated_subtotal += item_total
                 
                 enriched_items.append({
                     "product_id": prod.get("id"),
                     "category_id": prod.get("category_id"),
-                    "total_price": qty * unit_price
+                    "total_price": item_total
                 })
                 
-    return _validate_coupon_logic(req.code, req.cart_total, req.user_id, supabase, enriched_items)
+    # Use calculated_subtotal if we parsed items, else fallback to req.cart_total
+    final_cart_total = calculated_subtotal if req.items else req.cart_total
+    return _validate_coupon_logic(req.code, final_cart_total, req.user_id, supabase, enriched_items)
 
 
 @router.post("/{order_id}/refresh-tracking", dependencies=[Depends(PreAuthRateLimit("30/minute"))])
