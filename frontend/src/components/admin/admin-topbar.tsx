@@ -1,4 +1,5 @@
-﻿import { Search, Menu, LogOut, Loader2 } from "lucide-react";
+import { Search, Menu, LogOut, Loader2, Home } from "lucide-react";
+import { useNavigate } from "@tanstack/react-router";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
@@ -31,6 +32,7 @@ function LiveClock() {
 export function AdminTopbar() {
   const { user, logout, isLoggingOut } = useAuth();
   const [open, setOpen] = useState(false);
+  const navigate = useNavigate();
 
   // Fallbacks for display name and role
   const displayName = (user as any)?.name || user?.full_name || (user as any)?.user_metadata?.full_name || user?.email?.split('@')[0] || "Admin";
@@ -78,6 +80,14 @@ export function AdminTopbar() {
               {displayName}
               <div className="text-xs font-normal text-muted-foreground truncate">{user?.email}</div>
             </div>
+            <div className="h-px bg-border my-1" />
+            <DropdownMenuItem 
+              onClick={() => navigate({ to: "/" })}
+              className="cursor-pointer text-cocoa focus:bg-sand focus:text-cocoa"
+            >
+              <Home className="mr-2 h-4 w-4" />
+              Go to Storefront
+            </DropdownMenuItem>
             <div className="h-px bg-border my-1" />
             <DropdownMenuItem 
               onClick={(e) => {
