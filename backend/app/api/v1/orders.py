@@ -224,7 +224,8 @@ def create_order(order: OrderCreate, request: Request, background_tasks: Backgro
         gst_amount = 0.0
         gst_percentage = 0.0
         
-    calculated_total = taxable_amount + shipping_amount + gst_amount
+    # Round to nearest integer to match UI display (which drops decimals) and prevent paise-level floating point drift
+    calculated_total = round(taxable_amount + shipping_amount + gst_amount)
 
     shipping_snapshot = {
         "full_name": order.full_name or "",
@@ -400,6 +401,9 @@ def verify_payment(req: VerifyPaymentRequest, request: Request, background_tasks
                 created_order["user_email"] = user_res.data[0]["email"]
         
         enqueue_notifications(background_tasks, created_order)
+
+    from app.services.shiprocket import automate_shiprocket_fulfillment
+    background_tasks.add_task(automate_shiprocket_fulfillment, order_id)
 
     return {"success": True}
 

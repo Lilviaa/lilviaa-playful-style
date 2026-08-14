@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Query, Request
+from fastapi import APIRouter, Depends, Query, Request, BackgroundTasks
 from pydantic import BaseModel
 from typing import Optional, List
 from app.api.dependencies import require_admin
@@ -206,108 +206,28 @@ def update_call_confirmed(order_id: str, body: CallConfirmedUpdate, request: Req
 
 @router.post("/{order_id}/push-shiprocket", dependencies=[Depends(PreAuthRateLimit("20/minute")), Depends(require_admin)])
 @limiter.limit("20/minute", key_func=get_admin_id)
-async def push_order_to_shiprocket(order_id: str, request: Request):
-    """Manually push an order to Shiprocket to create a custom adhoc order."""
-    from app.services.shiprocket import create_custom_order
+async def push_order_to_shiprocket(order_id: str, request: Request, background_tasks: BackgroundTasks):
+    """Manually push/retry an order to Shiprocket."""
+    from app.services.shiprocket import automate_shiprocket_fulfillment
     supabase = get_supabase()
     
     # 1. Fetch Order Details
-    order_res = supabase.table("orders").select(
-        "*, order_items(*, product_variants(sku, products(name)))", 
-        "addresses(*)"
-    ).eq("id", order_id).execute()
+    order_res = supabase.table("orders").select("*").eq("id", order_id).execute()
     
     if not order_res.data:
         raise AppError("Order not found", 404)
         
     order = order_res.data[0]
     
-    if order.get("shiprocket_order_id"):
-        raise AppError("Order has already been pushed to Shiprocket", 400)
-        
-    address = order.get("addresses")
-    if not address:
-        # Fallback to embedded shipping address (for guests)
-        address = order.get("shipping_address")
-        if not address:
-            raise AppError("Order is missing shipping address", 400)
-            
-    # 2. Build Shiprocket Payload
-    items = []
-    for item in order.get("order_items", []):
-        variant = item.get("product_variants", {})
-        product = variant.get("products", {})
-        items.append({
-            "name": product.get("name", "Product"),
-            "sku": variant.get("sku", f"SKU-{item['product_variant_id']}"),
-            "units": item["quantity"],
-            "selling_price": float(item["unit_price"]),
-            "discount": 0,
-            "tax": 0,
-            "hsn": ""
-        })
-        
-    # Split name into first/last name
-    full_name = address.get("full_name", "Customer")
-    name_parts = full_name.split(" ", 1)
-    first_name = name_parts[0] or "Customer"
-    last_name = name_parts[1] if len(name_parts) > 1 and name_parts[1].strip() else "Lilviaa"
-        
-    addr_text = address.get("address", "No Address")
-    city = address.get("city", "City")
-    pincode = address.get("zip", "000000")
-    state = address.get("state", "State")
-    phone = address.get("phone", "0000000000")
-    email = address.get("email") or "customer@lilviaa.com"
-        
-    payload = {
-        "order_id": order_id,
-        "order_date": order["created_at"],
-        "billing_customer_name": first_name,
-        "billing_last_name": last_name,
-        "billing_address": addr_text,
-        "billing_city": city,
-        "billing_pincode": pincode,
-        "billing_state": state,
-        "billing_country": "India",
-        "billing_email": email,
-        "billing_phone": phone,
-        "shipping_is_billing": True,
-        "shipping_customer_name": first_name,
-        "shipping_last_name": last_name,
-        "shipping_address": addr_text,
-        "shipping_city": city,
-        "shipping_pincode": pincode,
-        "shipping_state": state,
-        "shipping_country": "India",
-        "shipping_email": email,
-        "shipping_phone": phone,
-        "order_items": items,
-        "payment_method": "Prepaid" if order.get("payment_method") != "cod" else "COD",
-        "sub_total": float(order["total_amount"]),
-        "length": 10,  # Default box dimensions
-        "breadth": 10,
-        "height": 5,
-        "weight": 0.5  # Default 0.5 KG
-    }
-    
-    # 3. Call Shiprocket API
-    res_data = await create_custom_order(payload)
-    
-    # 4. Save Shiprocket IDs to Database
-    sr_order_id = res_data.get("order_id")
-    sr_shipment_id = res_data.get("shipment_id")
-    
-    if not sr_order_id or not sr_shipment_id:
-        raise AppError("Invalid response from Shiprocket. Missing order_id or shipment_id.", 500)
-        
+    # 2. Reset error state if any, and trigger task
     supabase.table("orders").update({
-        "shiprocket_order_id": sr_order_id,
-        "shiprocket_shipment_id": sr_shipment_id,
-        "tracking_status": "NEW"
+        "tracking_status": "PROCESSING",
+        "shiprocket_error": None
     }).eq("id", order_id).execute()
     
-    return {"message": "Order pushed successfully", "shiprocket_order_id": sr_order_id}
+    background_tasks.add_task(automate_shiprocket_fulfillment, order_id)
+    
+    return {"message": "Shiprocket automated fulfillment triggered.", "shiprocket_order_id": order.get("shiprocket_order_id")}
 
 
 @router.post("/{order_id}/generate-awb", dependencies=[Depends(PreAuthRateLimit("20/minute")), Depends(require_admin)])

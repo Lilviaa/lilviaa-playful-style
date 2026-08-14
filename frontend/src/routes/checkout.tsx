@@ -86,7 +86,7 @@ function CheckoutPage() {
   const [isApplyingCoupon, setIsApplyingCoupon] = useState(false);
   const [couponError, setCouponError] = useState("");
   const [couponSuccess, setCouponSuccess] = useState("");
-  const { data: settings } = useCompanySettings();
+  const { data: settings, isLoading: isSettingsLoading } = useCompanySettings();
 
   const [activeStep, setActiveStep] = useState("step-1");
   const [completedSteps, setCompletedSteps] = useState<string[]>([]);
@@ -129,8 +129,9 @@ function CheckoutPage() {
     shipping = freeShipping ? 0 : (subtotal >= 3000 ? 0 : 79);
   }
 
+  // Use the exact same tax formula as the backend
   const gstAmount = settings?.enable_gst ? (taxableAmount * (settings.gst_percentage || 0)) / 100 : 0;
-  const total = taxableAmount + shipping + gstAmount;
+  const total = Math.round(taxableAmount + shipping + gstAmount);
 
   async function handleApplyCoupon() {
     if (!couponCodeInput.trim()) return;
@@ -779,7 +780,11 @@ function CheckoutPage() {
                               )}
                               <div className="flex justify-between font-bold text-cocoa pt-2 border-t border-border text-base">
                                 <span>Total</span>
-                                <span>{formatINR(total)}</span>
+                                {isSettingsLoading ? (
+                                  <span className="flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin text-muted-foreground" /></span>
+                                ) : (
+                                  <span>{formatINR(total)}</span>
+                                )}
                               </div>
                            </div>
                            
@@ -794,7 +799,7 @@ function CheckoutPage() {
                            <div className="space-y-4">
                              <button
                                 type="submit" 
-                                disabled={isPlacingOrder || isVerifyingPayment}
+                                disabled={isPlacingOrder || isVerifyingPayment || isSettingsLoading}
                                 className="w-full rounded-2xl bg-[#9C6644] px-8 py-4 font-bold text-white transition-all hover:bg-[#8A5A3C] disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_4px_14px_0_rgba(156,102,68,0.39)] hover:shadow-[0_6px_20px_rgba(156,102,68,0.23)] hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center space-x-2 relative overflow-hidden"
                              >
                                {isPlacingOrder ? (

@@ -222,10 +222,18 @@ export function OrderDetailDrawer({ order, isOpen, onClose, onPrint }: OrderDeta
                   )}
                 </div>
                 
-                <div className="space-y-4">
+                <div className="bg-[#fcfaf7] rounded-xl border border-border p-4 mb-6">
                   {!order.shiprocket_order_id ? (
-                    <div className="p-4 bg-slate-50 rounded-xl border border-slate-200">
-                      <p className="text-sm text-slate-600 mb-3">Order has not been pushed to Shiprocket yet.</p>
+                    <div className="flex flex-col gap-3 items-start">
+                      <p className="text-sm text-slate-600 mb-2">Order has not been pushed to Shiprocket yet.</p>
+                      
+                      {(order.tracking_status === 'PUSH_FAILED' || order.tracking_status === 'AWB_FAILED') && (
+                        <div className="w-full bg-red-50 text-red-600 p-3 rounded-lg border border-red-200 text-sm mb-3 break-words whitespace-pre-wrap">
+                          <span className="font-semibold block mb-1">Automation Failed</span>
+                          {order.shiprocket_error || "Check Shiprocket wallet balance or configuration."}
+                        </div>
+                      )}
+                      
                       <Button 
                         onClick={() => pushToShiprocket(order.id)} 
                         disabled={pushingShiprocket || (order.payment_method === 'razorpay' && order.payment_status !== 'paid')}
@@ -235,15 +243,23 @@ export function OrderDetailDrawer({ order, isOpen, onClose, onPrint }: OrderDeta
                         Push to Shiprocket
                       </Button>
                       {order.payment_method === 'razorpay' && order.payment_status !== 'paid' && (
-                        <p className="text-xs text-rose-600 mt-2 text-center">Cannot push unpaid Razorpay orders.</p>
+                        <p className="text-xs text-rose-600 mt-2 text-center w-full">Cannot push unpaid Razorpay orders.</p>
                       )}
                     </div>
                   ) : !order.awb_code ? (
-                    <div className="p-4 bg-indigo-50 rounded-xl border border-indigo-200">
-                      <div className="flex justify-between items-center mb-3">
-                        <span className="text-sm font-medium text-indigo-900">Shiprocket Order ID</span>
-                        <span className="text-sm font-mono text-indigo-700">{order.shiprocket_order_id}</span>
+                    <div className="w-full">
+                      <div className="flex justify-between items-center mb-3 text-sm">
+                        <span className="font-medium text-indigo-900">Shiprocket Order ID</span>
+                        <span className="font-mono text-indigo-700">{order.shiprocket_order_id}</span>
                       </div>
+                      
+                      {(order.tracking_status === 'AWB_FAILED') && (
+                        <div className="w-full bg-red-50 text-red-600 p-3 rounded-lg border border-red-200 text-sm mb-3 break-words whitespace-pre-wrap">
+                          <span className="font-semibold block mb-1">AWB Generation Failed</span>
+                          {order.shiprocket_error || "Check Shiprocket wallet balance."}
+                        </div>
+                      )}
+                      
                       <Button 
                         onClick={() => generateAwb(order.id)} 
                         disabled={generatingAwb}
@@ -255,17 +271,14 @@ export function OrderDetailDrawer({ order, isOpen, onClose, onPrint }: OrderDeta
                     </div>
                   ) : (
                     <div className="space-y-3">
-                      <div className="p-3 bg-emerald-50 rounded-xl border border-emerald-200">
-                        <div className="flex justify-between items-center mb-1">
-                          <span className="text-xs font-medium text-emerald-800 uppercase tracking-wider">Courier</span>
-                          <span className="text-xs font-medium text-emerald-800 uppercase tracking-wider">AWB</span>
-                        </div>
-                        <div className="flex justify-between items-center">
-                          <span className="text-sm font-semibold text-emerald-950">{order.courier_name}</span>
-                          <span className="text-sm font-mono font-bold text-emerald-950">{order.awb_code}</span>
-                        </div>
+                      <div className="flex justify-between items-center bg-white p-3 rounded-lg border border-border">
+                        <span className="text-sm text-muted-foreground">AWB Code</span>
+                        <span className="font-mono text-sm font-semibold">{order.awb_code}</span>
                       </div>
-                      
+                      <div className="flex justify-between items-center bg-white p-3 rounded-lg border border-border">
+                        <span className="text-sm text-muted-foreground">Courier</span>
+                        <span className="text-sm font-medium">{order.courier_name || 'Assigned'}</span>
+                      </div>
                       <div className="p-3 bg-white rounded-xl border border-cocoa/20">
                         <div className="flex justify-between items-center mb-2">
                           <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Status</span>
@@ -281,21 +294,21 @@ export function OrderDetailDrawer({ order, isOpen, onClose, onPrint }: OrderDeta
                       </div>
                     </div>
                   )}
-                  
-                  {/* Fallback to manual tracking if needed */}
-                  <div className="pt-4 border-t border-cocoa/10">
-                    <Label className="text-xs text-muted-foreground mb-1.5 block">Manual Tracking Override</Label>
-                    <div className="flex gap-2">
-                      <Input
-                        placeholder="Enter tracking number"
-                        defaultValue={order.tracking_number || ""}
-                        onChange={(e) => setTrackingNumber(e.target.value)}
-                        className="bg-sand/30 border-cocoa/20"
-                      />
-                      <Button onClick={handleSaveTracking} variant="secondary" className="rounded-full shrink-0">
-                        Save
-                      </Button>
-                    </div>
+                </div>
+                
+                {/* Fallback to manual tracking if needed */}
+                <div className="pt-4 border-t border-cocoa/10">
+                  <Label className="text-xs text-muted-foreground mb-1.5 block">Manual Tracking Override</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="Enter tracking number"
+                      defaultValue={order.tracking_number || ""}
+                      onChange={(e) => setTrackingNumber(e.target.value)}
+                      className="bg-sand/30 border-cocoa/20"
+                    />
+                    <Button onClick={handleSaveTracking} variant="secondary" className="rounded-full shrink-0">
+                      Save
+                    </Button>
                   </div>
                 </div>
               </div>

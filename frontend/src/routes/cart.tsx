@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Minus, Plus, ShoppingBag, Trash2, ArrowRight, Truck } from "lucide-react";
 import { toast } from "sonner";
 import { formatINR, useCart } from "@/lib/cart";
+import { useCompanySettings } from "@/lib/admin/settings-api";
 
 export const Route = createFileRoute("/cart")({
   head: () => ({
@@ -16,8 +17,24 @@ export const Route = createFileRoute("/cart")({
 
 function CartPage() {
   const { items, setQty, remove, subtotal, clear } = useCart();
-  const shipping = subtotal === 0 ? 0 : subtotal >= 3000 ? 0 : 79;
-  const total = subtotal + shipping;
+  const { data: settings, isLoading: isSettingsLoading } = useCompanySettings();
+
+  const taxableAmount = subtotal; // Discount not applied on cart page yet
+  
+  let shipping = 0;
+  if (settings) {
+    if (settings.enable_free_shipping && subtotal >= (settings.free_shipping_above || 0)) {
+      shipping = 0;
+    } else {
+      // Default to other state shipping since we don't have address yet
+      shipping = settings.shipping_charge_other || 0;
+    }
+  } else {
+    shipping = subtotal === 0 ? 0 : subtotal >= 3000 ? 0 : 79;
+  }
+
+  const gstAmount = settings?.enable_gst ? (taxableAmount * (settings.gst_percentage || 0)) / 100 : 0;
+  const total = subtotal === 0 ? 0 : Math.round(taxableAmount + shipping + gstAmount);
 
   if (items.length === 0) {
     return (
@@ -131,19 +148,27 @@ function CartPage() {
             <div className="flex justify-between">
               <dt className="text-muted-foreground">Shipping</dt>
               <dd className="font-semibold text-cocoa">
-                {shipping === 0 ? "Free" : formatINR(shipping)}
+                {isSettingsLoading ? "..." : (shipping === 0 ? "Free" : formatINR(shipping))}
               </dd>
             </div>
+            {settings?.enable_gst && (
+              <div className="flex justify-between">
+                <dt className="text-muted-foreground">Tax (GST)</dt>
+                <dd className="font-semibold text-cocoa">
+                  {isSettingsLoading ? "..." : formatINR(gstAmount)}
+                </dd>
+              </div>
+            )}
           </dl>
-          {subtotal >= 2500 && subtotal < 3000 && (
+          {settings?.enable_free_shipping && subtotal >= (settings.free_shipping_above || 3000) * 0.8 && subtotal < (settings.free_shipping_above || 3000) && (
             <p className="mt-3 rounded-xl bg-butter px-3 py-2 text-xs font-semibold text-cocoa flex items-center justify-between">
-              <span>Add {formatINR(3000 - subtotal)} more for free shipping</span>
+              <span>Add {formatINR((settings.free_shipping_above || 3000) - subtotal)} more for free shipping</span>
               <Truck className="h-4 w-4" />
             </p>
           )}
           <div className="mt-4 border-t border-border pt-4 flex justify-between text-lg font-bold text-cocoa">
             <span>Total</span>
-            <span>{formatINR(total)}</span>
+            <span>{isSettingsLoading ? "..." : formatINR(total)}</span>
           </div>
           <Link
             to="/checkout"

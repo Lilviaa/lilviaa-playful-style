@@ -34,6 +34,7 @@ export function ProductCard({ product }: { product: Product }) {
   };
 
   let displayPrice = product.price;
+  let displayCompareAt = product.compareAt;
   let hasMultiplePrices = false;
   
   if (product.variants && product.variants.length > 0) {
@@ -42,8 +43,11 @@ export function ProductCard({ product }: { product: Product }) {
       .filter((p): p is number => p !== null);
       
     if (variantPrices.length > 0) {
+      // The base value before any sale is compareAt (if on sale) or price (if not)
+      const baseValue = product.compareAt && product.compareAt > 0 ? product.compareAt : product.price;
+      
       const hasBasePriceVariants = product.variants.some(v => v.price_override === null);
-      const allPrices = hasBasePriceVariants ? [product.price, ...variantPrices] : variantPrices;
+      const allPrices = hasBasePriceVariants ? [baseValue, ...variantPrices] : variantPrices;
       
       const minPrice = Math.min(...allPrices);
       const maxPrice = Math.max(...allPrices);
@@ -51,7 +55,15 @@ export function ProductCard({ product }: { product: Product }) {
       if (minPrice !== maxPrice) {
         hasMultiplePrices = true;
       }
-      displayPrice = minPrice;
+      
+      if (product.compareAt && product.compareAt > 0) {
+        const discountMultiplier = product.price / product.compareAt;
+        displayCompareAt = minPrice; // The pre-sale price of the cheapest variant
+        displayPrice = Math.floor(minPrice * discountMultiplier);
+      } else {
+        displayPrice = minPrice;
+        displayCompareAt = undefined;
+      }
     }
   }
 
@@ -156,9 +168,9 @@ export function ProductCard({ product }: { product: Product }) {
               {hasMultiplePrices && <span className="text-[10px] font-normal text-muted-foreground mr-1 uppercase">From</span>}
               {formatINR(displayPrice)}
             </span>
-            {product.compareAt && (
+            {displayCompareAt && (
               <span className="text-[11px] font-medium text-muted-foreground line-through decoration-muted-foreground/50">
-                {formatINR(product.compareAt)}
+                {formatINR(displayCompareAt)}
               </span>
             )}
             {discountPercentage > 0 && (

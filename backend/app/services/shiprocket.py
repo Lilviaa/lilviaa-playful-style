@@ -100,3 +100,51 @@ async def track_awb(awb_code: str) -> Dict[str, Any]:
     Tracks a shipment by its AWB code.
     """
     return await _request("GET", f"/courier/track/awb/{awb_code}")
+
+async def get_serviceability(pickup_pincode: str, delivery_pincode: str, weight: float, cod: int = 0) -> Dict[str, Any]:
+    """
+    Get available couriers for a given route and weight.
+    """
+    token = await _get_token()
+    headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
+    
+    async with httpx.AsyncClient() as client:
+        try:
+            response = await client.get(
+                f"{SHIPROCKET_API_BASE}/courier/serviceability/",
+                headers=headers,
+                params={
+                    "pickup_postcode": pickup_pincode,
+                    "delivery_postcode": delivery_pincode,
+                    "weight": weight,
+                    "cod": cod
+                }
+            )
+            response.raise_for_status()
+            return response.json()
+        except httpx.HTTPStatusError as e:
+            raise AppError(f"Shiprocket Serviceability Error: {e.response.text}", 400)
+        except Exception as e:
+            raise AppError(f"Shiprocket Connection Error: {str(e)}", 500)
+
+def get_best_courier(serviceability_data: dict) -> Optional[int]:
+    """
+    Implements Option C (Best Value): 
+    - Rating >= 3.0
+    - Lowest rate. If tied, fastest delivery.
+    """
+    couriers = serviceability_data.get("data", {}).get("available_courier_companies", [])
+    if not couriers:
+        return None
+        
+    valid_couriers = [c for c in couriers if float(c.get("rating", 0)) >= 3.0]
+    
+    # Fallback to all if none are >= 3.0
+    if not valid_couriers:
+        valid_couriers = couriers
+        
+    # Sort by rate (primary), then by estimated_delivery_days (secondary)
+    # Shiprocket estimated_delivery_days is an integer (days) or a string date. 
+    # They usually provide `etd` or `estimated_delivery_days`. Let's use `rate`.
+    best_courier = sorted(valid_couriers, key=lambda x: (float(x.get("rate", 9999)), int(x.get("estimated_delivery_days", 99))))[0]
+    return best_courier.get("courier_company_id")
