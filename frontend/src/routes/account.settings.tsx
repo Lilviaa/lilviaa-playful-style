@@ -342,7 +342,6 @@ function AccountSettingsPage() {
               </div>
             )}
           </div>
-        </div>
 
         {/* SECURITY */}
         <div className="rounded-3xl bg-card p-6 shadow-cute md:p-8">
@@ -456,6 +455,5 @@ function AccountSettingsPage() {
           </div>
         </div>
       </div>
-    </div>
   );
 }
