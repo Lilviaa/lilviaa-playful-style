@@ -8,8 +8,9 @@ import { useCompanySettings } from "@/lib/admin/settings-api";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { useEffect, useState } from "react";
-import { ArrowRight, CreditCard, Landmark, Banknote, SmartphoneNfc, Check, Lock, ChevronLeft, ShieldCheck, Truck, ShieldAlert, ChevronDown, ChevronUp, Loader2, Trash2, CheckCircle2 } from "lucide-react";
+import { useEffect, useState, useRef } from "react";
+import { ArrowRight, CreditCard, Landmark, Banknote, SmartphoneNfc, Check, Lock, ChevronLeft, ShieldCheck, Truck, ShieldAlert, ChevronDown, ChevronUp, Loader2, Trash2, CheckCircle2, MapPin, XCircle } from "lucide-react";
+import { usePincode } from "@/hooks/usePincode";
 import {
   Form,
   FormControl,
@@ -94,6 +95,10 @@ function CheckoutPage() {
   const [isVerifyingPayment, setIsVerifyingPayment] = useState(false);
   const [paymentError, setPaymentError] = useState<string | null>(null);
   const [isSummaryExpanded, setIsSummaryExpanded] = useState(false);
+
+  // Pincode serviceability
+  const { pincode: checkedPin, result: pincodeResult, isChecking: isPincodeChecking, checkPincode } = usePincode();
+  const zipDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -627,9 +632,41 @@ function CheckoutPage() {
                             <FormItem>
                               <FormLabel className="text-cocoa">ZIP / Postal Code</FormLabel>
                               <FormControl>
-                                <Input placeholder="400001" {...field} className="rounded-xl border-border bg-background focus-visible:ring-primary" />
+                                <Input
+                                  placeholder="400001"
+                                  {...field}
+                                  className="rounded-xl border-border bg-background focus-visible:ring-primary"
+                                  onChange={(e) => {
+                                    field.onChange(e);
+                                    const val = e.target.value.replace(/\D/g, "");
+                                    if (val.length === 6) {
+                                      if (zipDebounceRef.current) clearTimeout(zipDebounceRef.current);
+                                      zipDebounceRef.current = setTimeout(() => checkPincode(val), 500);
+                                    }
+                                  }}
+                                />
                               </FormControl>
                               <FormMessage />
+                              {/* Inline serviceability feedback */}
+                              {isPincodeChecking && (
+                                <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
+                                  <Loader2 className="h-3 w-3 animate-spin" /> Checking delivery...
+                                </p>
+                              )}
+                              {!isPincodeChecking && pincodeResult && checkedPin === form.getValues("zip") && (
+                                pincodeResult.is_serviceable ? (
+                                  <p className="text-xs text-green-700 flex items-center gap-1 mt-1 font-medium">
+                                    <MapPin className="h-3 w-3" />
+                                    ✅ Delivery available
+                                    {pincodeResult.estimated_delivery_days != null && ` · Est. ${pincodeResult.estimated_delivery_days} days`}
+                                  </p>
+                                ) : (
+                                  <p className="text-xs text-red-600 flex items-center gap-1 mt-1 font-medium">
+                                    <XCircle className="h-3 w-3" />
+                                    ❌ We don't deliver to this pincode.
+                                  </p>
+                                )
+                              )}
                             </FormItem>
                           )}
                         />
@@ -764,11 +801,19 @@ function CheckoutPage() {
                             setActiveStep("step-3");
                             window.scrollTo({ top: 0, behavior: 'smooth' });
                           }}
-                          disabled={items.some(it => it.qty === 0)}
+                          disabled={
+                            items.some(it => it.qty === 0) ||
+                            (pincodeResult !== null && checkedPin === form.getValues("zip") && !pincodeResult.is_serviceable)
+                          }
                           className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-primary px-8 py-4 text-lg font-bold text-primary-foreground shadow-pop transition-transform hover:-translate-y-0.5 active:scale-95 disabled:opacity-50 disabled:pointer-events-none disabled:hover:scale-100"
                         >
                           Proceed to Payment <ArrowRight className="h-5 w-5" />
                         </button>
+                        {pincodeResult !== null && checkedPin === form.getValues("zip") && !pincodeResult.is_serviceable && (
+                          <p className="text-xs text-center text-red-600 font-medium mt-2">
+                            ❌ Delivery not available to this pincode. Please update your address.
+                          </p>
+                        )}
                       </div>
                     </div>
                   </div>

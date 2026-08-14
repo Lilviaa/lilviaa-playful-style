@@ -67,7 +67,7 @@ export function useProducts() {
         ...p,
         category: p.category?.name || "Uncategorized",
         category_slug: p.category?.slug || "",
-        total_stock: p.variants?.reduce((sum: number, v: any) => sum + (v.stock || 0), 0) || 0
+        total_stock: p.variants?.reduce((sum: number, v: any) => sum + Math.max(0, (v.stock || 0) - (v.reserved_stock || 0)), 0) || 0
       }));
     },
   });
@@ -86,7 +86,7 @@ export function useProduct(id: string) {
       p.category_name = p.category?.name || "Uncategorized"; // map correctly
       p.category_slug = p.category?.slug || "";
       p.category = p.category?.name || "Uncategorized"; 
-      p.total_stock = p.variants?.reduce((sum: number, v: any) => sum + (v.stock || 0), 0) || 0;
+      p.total_stock = p.variants?.reduce((sum: number, v: any) => sum + Math.max(0, (v.stock || 0) - (v.reserved_stock || 0)), 0) || 0;
       return p;
     },
     enabled: !!id && id !== "new",

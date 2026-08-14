@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/accordion";
 import { CustomerReviews } from "@/components/customer-reviews";
 import { Skeleton } from "@/components/ui/skeleton";
+import { PincodeChecker } from "@/components/pincode-checker";
 
 export const Route = createFileRoute("/products/$slug")({
   loader: async ({ params }): Promise<{ product: Product, error?: string }> => {
@@ -391,6 +392,10 @@ function ProductPage() {
             >
               Buy it Now
             </button>
+
+            {/* Pincode Serviceability Checker */}
+            <PincodeChecker />
+
           </div>
 
           {/* 3 Info Cards (New UI style) */}
