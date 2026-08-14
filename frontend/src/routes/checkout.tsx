@@ -1,4 +1,4 @@
-﻿import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { formatINR, useCart } from "@/lib/cart";
 import { useAuth } from "@/lib/auth";
 import { useAddresses } from "@/lib/addresses-api";
@@ -973,7 +973,7 @@ function CheckoutPage() {
                   Damage Protection
                 </div>
                 <div className="flex flex-col items-center justify-center p-3 rounded-xl bg-background border border-border">
-                  <span className="text-lg mb-1">ðŸ‡®ðŸ‡³</span>
+                  <span className="text-lg mb-1">🇮🇳</span>
                   Made in India
                 </div>
               </div>
