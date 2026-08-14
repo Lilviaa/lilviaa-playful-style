@@ -93,7 +93,7 @@ export function SiteFooter() {
             <h4 className="font-display text-xl tracking-wide text-cream">Shop</h4>
             <ul className="mt-5 space-y-4 text-base text-cream/80">
               <li><Link to="/shop" className="transition-colors hover:text-cream">All Products</Link></li>
-              <li><Link to="/shop" search={{ tag: "new" }} className="transition-colors hover:text-cream">New Arrivals</Link></li>
+              <li><Link to="/new-arrivals" className="transition-colors hover:text-cream">New Arrivals</Link></li>
               <li><Link to="/shop" search={{ tag: "bestseller" }} className="transition-colors hover:text-cream">Bestsellers</Link></li>
               <li><Link to="/shop" search={{ tag: "sale" }} className="transition-colors hover:text-cream">Sale</Link></li>
             </ul>

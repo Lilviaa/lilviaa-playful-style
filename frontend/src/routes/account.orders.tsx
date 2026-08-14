@@ -190,28 +190,29 @@ function AccountOrdersPage() {
 
   return (
     <div className="space-y-8 w-full">
-      <div className="rounded-3xl bg-card p-6 shadow-cute md:p-8">
-        <h2 className="flex items-center gap-2 font-display text-2xl text-cocoa mb-6">
+      <div className="flex items-center justify-between mb-2 px-2">
+        <h2 className="flex items-center gap-2 font-display text-2xl text-cocoa">
           <Package className="h-6 w-6 text-primary" /> Order History
         </h2>
+      </div>
 
-        {loading ? (
-          <div className="flex justify-center py-12">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          </div>
-        ) : orders.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-muted-foreground">You haven't placed any orders yet.</p>
-          </div>
-        ) : (
-          <div className="space-y-6">
-            {orders.map((order) => {
-              const statusFormatted = (order.tracking_status || order.status || "Pending").replace(/_/g, " ");
-              const isDelivered = (order.tracking_status || order.status)?.toLowerCase().includes('deliver');
-              
-              return (
-            <div key={order.id} className="rounded-2xl border border-border bg-background p-5">
-              <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border pb-4">
+      {loading ? (
+        <div className="rounded-3xl bg-card p-6 shadow-cute md:p-8 flex justify-center py-12">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      ) : orders.length === 0 ? (
+        <div className="rounded-3xl bg-card p-6 shadow-cute md:p-8 text-center py-12">
+          <p className="text-muted-foreground">You haven't placed any orders yet.</p>
+        </div>
+      ) : (
+        <div className="space-y-8">
+          {orders.map((order) => {
+            const statusFormatted = (order.tracking_status || order.status || "Pending").replace(/_/g, " ");
+            const isDelivered = (order.tracking_status || order.status)?.toLowerCase().includes('deliver');
+            
+            return (
+              <div key={order.id} className="rounded-3xl bg-card p-6 shadow-cute md:p-8">
+                <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border pb-4">
                 <div>
                   <p className="text-sm font-semibold text-cocoa">{formatOrderId(order.id)}</p>
                   <p className="text-xs text-muted-foreground">{new Date(order.created_at).toLocaleDateString()}</p>
@@ -325,17 +326,18 @@ function AccountOrdersPage() {
                   </Dialog>
                 )}
               </div>
-            </div>
+              </div>
             )})}
-          </div>
-        )}
+        </div>
+      )}
 
-        <div className="mt-8 text-center border-t border-border pt-8">
+      {orders.length > 0 && (
+        <div className="mt-8 text-center pt-4">
           <Link to="/shop" className="inline-flex items-center justify-center rounded-full bg-butter px-6 py-3 text-sm font-bold text-cocoa shadow-sm hover:bg-sand transition-colors">
             Continue Shopping
           </Link>
         </div>
-      </div>
+      )}
     </div>
   );
 }

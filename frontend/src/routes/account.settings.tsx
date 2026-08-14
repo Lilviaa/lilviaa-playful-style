@@ -101,17 +101,16 @@ function AccountSettingsPage() {
 
   return (
     <div className="space-y-8 w-full">
-      <div className="rounded-3xl bg-card p-6 shadow-cute md:p-8">
-        <h2 className="flex items-center gap-2 font-display text-2xl text-cocoa mb-6">
-          <Settings className="h-6 w-6 text-primary" /> Account Settings
-        </h2>
+      <div className="flex items-center gap-2 font-display text-2xl text-cocoa mb-2 px-2">
+        <Settings className="h-6 w-6 text-primary" /> Account Settings
+      </div>
 
-        <div className="space-y-10">
-          
-          {/* PERSONAL INFORMATION */}
-          <div>
-            <div className="flex items-center justify-between border-b border-border pb-2 mb-4">
-              <h3 className="font-display text-lg text-cocoa flex items-center gap-2">
+      <div className="space-y-8">
+        
+        {/* PERSONAL INFORMATION */}
+        <div className="rounded-3xl bg-card p-6 shadow-cute md:p-8">
+          <div className="flex items-center justify-between border-b border-border pb-2 mb-4">
+            <h3 className="font-display text-lg text-cocoa flex items-center gap-2">
                 <User className="h-4 w-4" /> Personal Information
               </h3>
               <Dialog open={isProfileOpen} onOpenChange={setIsProfileOpen}>
@@ -166,13 +165,13 @@ function AccountSettingsPage() {
                 <p className="text-muted-foreground text-xs uppercase tracking-wider">Phone Number</p>
                 <p className="font-medium text-cocoa mt-1">{user.phone || "Not provided"}</p>
               </div>
-            </div>
           </div>
+        </div>
 
-          {/* ADDRESSES */}
-          <div>
-            <div className="flex items-center justify-between border-b border-border pb-2 mb-4">
-              <h3 className="font-display text-lg text-cocoa flex items-center gap-2">
+        {/* ADDRESSES */}
+        <div className="rounded-3xl bg-card p-6 shadow-cute md:p-8">
+          <div className="flex items-center justify-between border-b border-border pb-2 mb-4">
+            <h3 className="font-display text-lg text-cocoa flex items-center gap-2">
                 <MapPin className="h-4 w-4" /> Addresses ({addresses.length}/5)
               </h3>
               {addresses.length < 5 && (
@@ -343,12 +342,13 @@ function AccountSettingsPage() {
               </div>
             )}
           </div>
+        </div>
 
-          {/* SECURITY */}
-          <div>
-            <h3 className="font-display text-lg text-cocoa border-b border-border pb-2 mb-2 flex items-center gap-2">
-              <Shield className="h-4 w-4" /> Security
-            </h3>
+        {/* SECURITY */}
+        <div className="rounded-3xl bg-card p-6 shadow-cute md:p-8">
+          <h3 className="font-display text-lg text-cocoa border-b border-border pb-2 mb-2 flex items-center gap-2">
+            <Shield className="h-4 w-4" /> Security
+          </h3>
             
             <div className="divide-y divide-border/50">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between py-4 gap-4">
@@ -454,7 +454,6 @@ function AccountSettingsPage() {
               </div>
             </div>
           </div>
-
         </div>
       </div>
     </div>
