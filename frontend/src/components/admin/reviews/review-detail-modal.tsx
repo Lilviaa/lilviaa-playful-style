@@ -1,8 +1,9 @@
 import {
-  Review,
+  type Review,
   useUpdateReviewStatus,
   useToggleFeature,
   useEditReviewText,
+  useDeleteReview,
 } from "@/lib/admin/reviews-api";
 import {
   Dialog,
@@ -48,6 +49,7 @@ export function ReviewDetailModal({ review, isOpen, onClose }: ReviewDetailModal
   const { mutate: updateStatus, isPending: updatingStatus } = useUpdateReviewStatus();
   const { mutate: toggleFeature, isPending: togglingFeature } = useToggleFeature();
   const { mutate: editText, isPending: editingText } = useEditReviewText();
+  const { mutate: deleteReview, isPending: deletingReview } = useDeleteReview();
 
   const [isEditing, setIsEditing] = useState(false);
   const [editedText, setEditedText] = useState(review.text);
@@ -69,6 +71,13 @@ export function ReviewDetailModal({ review, isOpen, onClose }: ReviewDetailModal
   const handleReject = () => {
     updateStatus({ id: review.id, status: "rejected" });
     onClose();
+  };
+
+  const handleDelete = () => {
+    if (confirm("Are you sure you want to permanently delete this review?")) {
+      deleteReview(review.id);
+      onClose();
+    }
   };
 
   return (
@@ -184,10 +193,10 @@ export function ReviewDetailModal({ review, isOpen, onClose }: ReviewDetailModal
                 <Pin className="h-4 w-4" />
                 <div className="text-left">
                   <p className="text-sm font-semibold">
-                    {review.is_featured ? "Featured (Pinned to top)" : "Feature this review"}
+                    {review.is_featured ? "Featured on Homepage" : "Feature on Homepage"}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    Featured reviews appear at the top of the product page.
+                    Featured reviews appear at the top of the product page and run on the homepage.
                   </p>
                 </div>
               </div>
@@ -224,6 +233,15 @@ export function ReviewDetailModal({ review, isOpen, onClose }: ReviewDetailModal
             )}
             <Button variant="ghost" className="rounded-full" onClick={onClose}>
               Close
+            </Button>
+            <div className="flex-1"></div>
+            <Button
+              variant="ghost"
+              className="rounded-full text-red-500 hover:text-red-700 hover:bg-red-50 ml-auto"
+              onClick={handleDelete}
+              disabled={deletingReview}
+            >
+              <Trash2 className="h-4 w-4" />
             </Button>
           </div>
         </div>

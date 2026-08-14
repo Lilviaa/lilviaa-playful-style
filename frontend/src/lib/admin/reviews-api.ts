@@ -126,3 +126,24 @@ export function useEditReviewText() {
     onError: (err: Error) => toast.error(err.message),
   });
 }
+export function useDeleteReview() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const res = await apiFetch(`/admin/reviews/${id}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        throw new Error(d.detail || "Failed to delete review");
+      }
+      return id;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-reviews"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-reviews-pending-count"] });
+      toast.success("Review permanently deleted.");
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+}

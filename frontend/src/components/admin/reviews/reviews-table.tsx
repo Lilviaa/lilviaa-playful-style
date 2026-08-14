@@ -4,11 +4,12 @@ import {
   useReviews,
   useUpdateReviewStatus,
   useToggleFeature,
+  useDeleteReview,
 } from "@/lib/admin/reviews-api";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Star, ShieldCheck, Pin, Check, X, Eye } from "lucide-react";
+import { Star, ShieldCheck, Pin, Check, X, Eye, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { ReviewDetailModal } from "./review-detail-modal";
 
@@ -45,6 +46,7 @@ export function ReviewsTable() {
   const { data: reviews = [], isLoading } = useReviews(activeTab);
   const { mutate: updateStatus, isPending: updatingStatus } = useUpdateReviewStatus();
   const { mutate: toggleFeature } = useToggleFeature();
+  const { mutate: deleteReview, isPending: deletingReview } = useDeleteReview();
 
   return (
     <div className="space-y-4">
@@ -194,6 +196,20 @@ export function ReviewsTable() {
                           <Pin className="h-3.5 w-3.5" />
                         </Button>
                       )}
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-7 w-7 text-red-400 hover:text-red-600 hover:bg-red-50"
+                        title="Delete Permanently"
+                        disabled={deletingReview}
+                        onClick={() => {
+                          if (confirm("Permanently delete this review?")) {
+                            deleteReview(review.id);
+                          }
+                        }}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
                     </div>
                   </td>
                 </tr>

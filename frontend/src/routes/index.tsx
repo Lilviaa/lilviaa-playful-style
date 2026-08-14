@@ -1,4 +1,4 @@
-﻿import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import { ArrowRight, Sparkles, Truck, ShieldCheck, Ruler, Star, AlertCircle, Heart, Gem, Baby, MapPin, Store, Globe, ChevronLeft, ChevronRight } from "lucide-react";
 import { useFeaturedProducts as useDbFeaturedProducts, useProducts } from "@/lib/products-api";
@@ -432,32 +432,55 @@ function HomePage() {
         <h2 className="text-center font-display text-3xl text-cocoa md:text-4xl">
           Kind words from tiny critics (and their grown-ups)
         </h2>
-        <div className="mt-10 grid gap-5 md:grid-cols-3">
-          {topReviews.length > 0 ? (
-            topReviews.map((t, i) => {
-              const bg = ["bg-blush", "bg-mint", "bg-butter"][i % 3];
-              return (
-                <div key={t.id} className={`rounded-3xl ${bg} p-6 shadow-cute`}>
-                  <div className="flex gap-0.5 text-cocoa">
-                    {[...Array(5)].map((_, j) => (
-                      <Star key={j} className={`h-4 w-4 ${j < t.rating ? "fill-cocoa" : "text-cocoa/30"}`} />
-                    ))}
+        {topReviews.length > 3 ? (
+          <div className="mt-10 overflow-hidden whitespace-nowrap mask-edges">
+            <div className="flex gap-5 w-max animate-marquee pb-4">
+              {[...topReviews, ...topReviews].map((t, i) => {
+                const bg = ["bg-blush", "bg-mint", "bg-butter"][i % 3];
+                return (
+                  <div key={`${t.id}-${i}`} className={`w-80 whitespace-normal rounded-3xl ${bg} p-6 shadow-cute shrink-0`}>
+                    <div className="flex gap-0.5 text-cocoa">
+                      {[...Array(5)].map((_, j) => (
+                        <Star key={j} className={`h-4 w-4 ${j < t.rating ? "fill-cocoa" : "text-cocoa/30"}`} />
+                      ))}
+                    </div>
+                    <p className="mt-4 font-display text-lg leading-snug text-cocoa">
+                      "{t.text}"
+                    </p>
+                    <p className="mt-4 text-sm font-semibold text-cocoa/70">- {t.reviewer_name}</p>
                   </div>
-                  <p className="mt-4 font-display text-lg leading-snug text-cocoa">
-                    "{t.text}"
-                  </p>
-                  <p className="mt-4 text-sm font-semibold text-cocoa/70">— {t.reviewer_name}</p>
-                </div>
-              );
-            })
-          ) : (
-            <p className="col-span-full text-center text-cocoa/70">Check back soon for reviews!</p>
-          )}
-        </div>
+                );
+              })}
+            </div>
+          </div>
+        ) : (
+          <div className="mt-10 grid gap-5 md:grid-cols-3">
+            {topReviews.length > 0 ? (
+              topReviews.map((t, i) => {
+                const bg = ["bg-blush", "bg-mint", "bg-butter"][i % 3];
+                return (
+                  <div key={t.id} className={`rounded-3xl ${bg} p-6 shadow-cute`}>
+                    <div className="flex gap-0.5 text-cocoa">
+                      {[...Array(5)].map((_, j) => (
+                        <Star key={j} className={`h-4 w-4 ${j < t.rating ? "fill-cocoa" : "text-cocoa/30"}`} />
+                      ))}
+                    </div>
+                    <p className="mt-4 font-display text-lg leading-snug text-cocoa">
+                      "{t.text}"
+                    </p>
+                    <p className="mt-4 text-sm font-semibold text-cocoa/70">- {t.reviewer_name}</p>
+                  </div>
+                );
+              })
+            ) : (
+              <p className="col-span-full text-center text-cocoa/70">Check back soon for reviews!</p>
+            )}
+          </div>
+        )}
       </ScrollReveal>
     </main>
   );
+
+
 }
-
-
 
