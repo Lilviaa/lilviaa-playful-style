@@ -330,13 +330,16 @@ function HomePage() {
         <div className="flex items-end justify-between">
           <div>
             <p className="text-xs font-bold uppercase tracking-widest text-primary">
-              {featuredSection?.body || "Loved by little ones"}
+              {featuredSection?.body ? featuredSection.body.split('|')[0] : "Loved by little ones"}
             </p>
             <h2 className="mt-2 font-display text-3xl text-cocoa md:text-4xl">
               {featuredSection?.title || "Bestsellers this week"}
             </h2>
           </div>
-          <Link to="/shop" className="text-sm font-bold text-cocoa hover:text-primary">
+          <Link 
+            to={featuredSection?.body?.includes('|') ? featuredSection.body.split('|')[1] : "/shop"} 
+            className="text-sm font-bold text-cocoa hover:text-primary"
+          >
             View all →
           </Link>
         </div>

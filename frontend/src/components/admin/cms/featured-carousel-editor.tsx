@@ -161,7 +161,7 @@ export function FeaturedCarouselEditor() {
       id: `CMS-${Date.now()}`,
       key: "featured_products_section",
       title: "Bestsellers this week",
-      body: "Loved by little ones",
+      body: "Loved by little ones|/shop",
       image_url: null,
       secondary_image_url: null
     });
@@ -177,7 +177,7 @@ export function FeaturedCarouselEditor() {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4 pb-4 border-b border-cocoa/10">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pb-4 border-b border-cocoa/10">
         <div className="space-y-1.5">
           <Label className="text-xs uppercase tracking-wider text-muted-foreground">Section Title</Label>
           <Input 
@@ -190,9 +190,24 @@ export function FeaturedCarouselEditor() {
         <div className="space-y-1.5">
           <Label className="text-xs uppercase tracking-wider text-muted-foreground">Section Subtitle</Label>
           <Input 
-            value={section.body} 
-            onChange={(e) => setSection({ ...section, body: e.target.value })} 
+            value={section.body.split('|')[0] || ''} 
+            onChange={(e) => {
+              const currentLink = section.body.includes('|') ? section.body.split('|')[1] : '/shop';
+              setSection({ ...section, body: `${e.target.value}|${currentLink}` });
+            }} 
             placeholder="e.g. Loved by little ones" 
+            className="h-10 text-sm bg-card"
+          />
+        </div>
+        <div className="space-y-1.5">
+          <Label className="text-xs uppercase tracking-wider text-muted-foreground">Link Destination</Label>
+          <Input 
+            value={section.body.includes('|') ? section.body.split('|')[1] : '/shop'} 
+            onChange={(e) => {
+              const currentSubtitle = section.body.split('|')[0] || '';
+              setSection({ ...section, body: `${currentSubtitle}|${e.target.value}` });
+            }} 
+            placeholder="e.g. /shop?category=kids" 
             className="h-10 text-sm bg-card"
           />
         </div>
