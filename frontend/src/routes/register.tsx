@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+﻿import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -23,7 +23,7 @@ export const Route = createFileRoute("/register")({
   },
   head: () => ({
     meta: [
-      { title: "Sign Up — lilviaa" },
+      { title: "Sign Up â€” lilviaa" },
     ],
   }),
   component: RegisterPage,
@@ -161,7 +161,7 @@ function RegisterPage() {
                     <div className="relative">
                       <Input 
                         type={showPassword ? "text" : "password"} 
-                        placeholder="••••••••" 
+                        placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢" 
                         {...field} 
                         className="rounded-xl border-border bg-background pr-10" 
                       />

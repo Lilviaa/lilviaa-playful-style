@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+﻿import { createFileRoute, Link } from "@tanstack/react-router";
 import { CheckCircle2, ShoppingBag, FileText } from "lucide-react";
 import { useEffect, useState } from "react";
 import { z } from "zod";
@@ -19,7 +19,7 @@ export const Route = createFileRoute("/order-success")({
   },
   head: () => ({
     meta: [
-      { title: "Payment Successful! — lilviaa" },
+      { title: "Payment Successful! â€” lilviaa" },
       { name: "robots", content: "noindex" },
     ],
   }),
@@ -53,7 +53,7 @@ function OrderSuccessPage() {
   deliveryStart.setDate(deliveryStart.getDate() + 2);
   const deliveryEnd = new Date(today);
   deliveryEnd.setDate(deliveryEnd.getDate() + 4);
-  const deliveryString = `${deliveryStart.getDate()} ${deliveryStart.toLocaleString('default', { month: 'short' })} – ${deliveryEnd.getDate()} ${deliveryEnd.toLocaleString('default', { month: 'short' })}`;
+  const deliveryString = `${deliveryStart.getDate()} ${deliveryStart.toLocaleString('default', { month: 'short' })} â€“ ${deliveryEnd.getDate()} ${deliveryEnd.toLocaleString('default', { month: 'short' })}`;
 
   return (
     <div className="mx-auto max-w-lg px-6 py-20 text-center">

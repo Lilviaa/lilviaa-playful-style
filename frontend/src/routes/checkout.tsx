@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
+﻿import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { formatINR, useCart } from "@/lib/cart";
 import { useAuth } from "@/lib/auth";
 import { useAddresses } from "@/lib/addresses-api";
@@ -24,7 +24,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 export const Route = createFileRoute("/checkout")({
   head: () => ({
     meta: [
-      { title: "Secure Checkout — lilviaa" },
+      { title: "Secure Checkout â€” lilviaa" },
       { name: "description", content: "Complete your purchase securely." },
       { name: "robots", content: "noindex" },
     ],
@@ -372,7 +372,7 @@ function CheckoutPage() {
 
   const deliveryStart = addBusinessDays(today, minDays);
   const deliveryEnd = addBusinessDays(today, maxDays);
-  const deliveryString = `${deliveryStart.getDate()} ${deliveryStart.toLocaleString('default', { month: 'short' })} – ${deliveryEnd.getDate()} ${deliveryEnd.toLocaleString('default', { month: 'short' })}`;
+  const deliveryString = `${deliveryStart.getDate()} ${deliveryStart.toLocaleString('default', { month: 'short' })} â€“ ${deliveryEnd.getDate()} ${deliveryEnd.toLocaleString('default', { month: 'short' })}`;
 
   const paymentMethodLabels: Record<string, string> = {
     upi: "UPI",
@@ -968,7 +968,7 @@ function CheckoutPage() {
                   Damage Protection
                 </div>
                 <div className="flex flex-col items-center justify-center p-3 rounded-xl bg-background border border-border">
-                  <span className="text-lg mb-1">🇮🇳</span>
+                  <span className="text-lg mb-1">ðŸ‡®ðŸ‡³</span>
                   Made in India
                 </div>
               </div>

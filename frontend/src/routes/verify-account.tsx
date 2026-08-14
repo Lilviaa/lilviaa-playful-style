@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+﻿import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { ShieldCheck } from "lucide-react";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
@@ -9,7 +9,7 @@ import { useAuth } from "@/lib/auth";
 export const Route = createFileRoute("/verify-account")({
   head: () => ({
     meta: [
-      { title: "Verify Account — lilviaa" },
+      { title: "Verify Account â€” lilviaa" },
     ],
   }),
   validateSearch: (search: Record<string, unknown>): { email?: string } => ({

@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+﻿import { createFileRoute } from "@tanstack/react-router";
 import { Sparkles, Heart, Leaf, Users, Star, Droplets, Sun, Moon, Shield, Smile } from "lucide-react";
 import { ProductCard } from "@/components/product-card";
 import { useFeaturedProducts } from "@/lib/products-api";
@@ -7,12 +7,12 @@ import { useCmsSection, usePhilosophyCards } from "@/lib/admin/cms-api";
 export const Route = createFileRoute("/about")({
   head: () => ({
     meta: [
-      { title: "Our story — lilviaa" },
+      { title: "Our story â€” lilviaa" },
       {
         name: "description",
         content: "What makes Lil Viaa different from other brands? Comfort is the first language of love.",
       },
-      { property: "og:title", content: "Our story — lilviaa" },
+      { property: "og:title", content: "Our story â€” lilviaa" },
       { property: "og:description", content: "Comfort is the first language of love." },
     ],
   }),
@@ -103,7 +103,7 @@ function AboutPage() {
             {
               icon: "Users",
               title: "Built on Trust",
-              description: "We don't promise perfection—we promise thoughtfulness. From selecting the right fabric to perfecting the fit, we create clothing children genuinely enjoy wearing.",
+              description: "We don't promise perfectionâ€”we promise thoughtfulness. From selecting the right fabric to perfecting the fit, we create clothing children genuinely enjoy wearing.",
             },
           ]).map((card: any, idx: number) => {
             const Icon = ICONS[card.icon] || Heart;

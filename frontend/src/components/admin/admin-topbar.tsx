@@ -1,4 +1,4 @@
-import { Search, Menu, LogOut, Loader2 } from "lucide-react";
+﻿import { Search, Menu, LogOut, Loader2 } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
@@ -22,7 +22,7 @@ function LiveClock() {
   return (
     <div className="text-sm font-medium text-cocoa/70 hidden sm:inline-block">
       {date.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-      {' � '}
+      {' • '}
       {date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
     </div>
   );

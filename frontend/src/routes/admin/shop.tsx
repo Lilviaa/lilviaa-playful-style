@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+﻿import { createFileRoute } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import { useCompanySettings, useUpdateCompanySettings } from "@/lib/admin/settings-api";
 import { uploadCmsImage } from "@/lib/admin/cms-api";
@@ -302,7 +302,7 @@ function CompanySettingsPage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Shipping Charge (Home State) ₹</Label>
+                  <Label>Shipping Charge (Home State) â‚¹</Label>
                   <Input 
                     type="number" 
                     name="shipping_charge_home" 
@@ -311,7 +311,7 @@ function CompanySettingsPage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Shipping Charge (Other States) ₹</Label>
+                  <Label>Shipping Charge (Other States) â‚¹</Label>
                   <Input 
                     type="number" 
                     name="shipping_charge_other" 
@@ -335,7 +335,7 @@ function CompanySettingsPage() {
 
                 {formData.enable_free_shipping && (
                   <div className="space-y-2">
-                    <Label>Free Shipping Above (₹)</Label>
+                    <Label>Free Shipping Above (â‚¹)</Label>
                     <Input 
                       type="number" 
                       name="free_shipping_above" 

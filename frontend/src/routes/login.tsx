@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+﻿import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -24,7 +24,7 @@ export const Route = createFileRoute("/login")({
   },
   head: () => ({
     meta: [
-      { title: "Log In — lilviaa" },
+      { title: "Log In â€” lilviaa" },
     ],
   }),
   component: LoginPage,
@@ -132,7 +132,7 @@ function LoginPage() {
                     <div className="relative">
                       <Input 
                         type={showPassword ? "text" : "password"} 
-                        placeholder="••••••••" 
+                        placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢" 
                         {...field} 
                         className="rounded-xl border-border bg-background pr-10" 
                       />
