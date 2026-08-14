@@ -277,9 +277,9 @@ function ProductPage() {
 
         {/* Right Column - Sticky Details */}
         <div className="flex flex-col lg:sticky lg:top-24 h-fit">
-          {product.tag && (
-            <span className="mb-3 inline-block self-start bg-amber-200/90 text-amber-900 px-3 py-1 text-[10px] font-bold uppercase tracking-widest rounded-full">
-              {product.tag}
+          {(product.tag || displayCompareAt) && (
+            <span className={`mb-3 inline-block self-start px-3 py-1 text-[10px] font-bold uppercase tracking-widest rounded-full ${(displayCompareAt || product.tag === "sale") ? "bg-rose-100 text-rose-700" : "bg-amber-200/90 text-amber-900"}`}>
+              {(displayCompareAt || product.tag === "sale") ? "Sale" : product.tag}
             </span>
           )}
           

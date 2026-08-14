@@ -44,10 +44,11 @@ function ShopPage() {
   const { data: dbCategories = [] } = useCategories();
 
   const items = useMemo(() => {
-    return products.filter(
-      (p) =>
-        (tag === "all" || p.tag === tag),
-    );
+    return products.filter((p) => {
+      if (tag === "all") return true;
+      if (tag === "sale") return p.tag === "sale" || !!p.compareAt;
+      return p.tag === tag;
+    });
   }, [tag, products]);
 
   return (

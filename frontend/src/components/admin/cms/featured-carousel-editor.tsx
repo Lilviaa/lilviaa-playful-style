@@ -125,7 +125,8 @@ export function FeaturedCarouselEditor() {
   // Filter products for the search dropdown
   const filteredProducts = products.filter(p => {
     const matchesSearch = searchTerm ? p.name.toLowerCase().includes(searchTerm.toLowerCase()) : true;
-    const matchesTag = tagFilter === "all" ? true : p.tag === tagFilter;
+    const matchesTag = tagFilter === "all" ? true :
+                       (tagFilter === "sale" ? (p.tag === "sale" || p.sale_price !== null) : p.tag === tagFilter);
     return matchesSearch && matchesTag;
   });
 

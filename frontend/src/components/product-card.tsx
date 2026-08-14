@@ -111,14 +111,14 @@ export function ProductCard({ product }: { product: Product }) {
             loading="lazy"
             className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
           />
-          {product.tag && (
+          {(product.tag || displayCompareAt) && (
             <span
               className={cn(
                 "absolute left-2 top-2 rounded px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide",
-                tagStyles[product.tag] || "bg-primary text-primary-foreground",
+                (displayCompareAt || product.tag === "sale") ? tagStyles.sale : tagStyles[product.tag || ""],
               )}
             >
-              {product.tag === "sale" ? "Sale" : product.tag}
+              {(displayCompareAt || product.tag === "sale") ? "Sale" : product.tag}
             </span>
           )}
           
