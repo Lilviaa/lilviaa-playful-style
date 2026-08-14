@@ -106,7 +106,7 @@ function AccountSettingsPage() {
           <Settings className="h-6 w-6 text-primary" /> Account Settings
         </h2>
 
-        <div className="space-y-10 max-w-3xl">
+        <div className="space-y-10">
           
           {/* PERSONAL INFORMATION */}
           <div>

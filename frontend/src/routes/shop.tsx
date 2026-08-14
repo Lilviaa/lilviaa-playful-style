@@ -37,6 +37,11 @@ function ShopPage() {
   const [tag, setTag] = useState<string>(search.tag ?? "all");
   const [sort, setSort] = useState<string>("featured");
 
+  useEffect(() => {
+    setCat(search.category ?? "all");
+    setTag(search.tag ?? "all");
+  }, [search.category, search.tag]);
+
   const { data: products = [], isLoading } = useProducts(
     cat === "all" ? undefined : cat, 
     sort === "featured" ? undefined : sort

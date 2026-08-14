@@ -396,7 +396,7 @@ function CheckoutPage() {
           </button>
         </div>
 
-        <div className="grid gap-8 lg:grid-cols-[1.6fr_1fr]">
+        <div className="flex flex-col-reverse gap-8 lg:grid lg:grid-cols-[1.6fr_1fr]">
           
           {/* Left Content Column (Progressive Form) */}
           <div className="space-y-6">
