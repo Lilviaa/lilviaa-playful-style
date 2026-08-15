@@ -208,7 +208,11 @@ def update_call_confirmed(order_id: str, body: CallConfirmedUpdate, request: Req
 @limiter.limit("20/minute", key_func=get_admin_id)
 async def push_order_to_shiprocket(order_id: str, request: Request, background_tasks: BackgroundTasks):
     """Manually push/retry an order to Shiprocket."""
-    from app.services.shiprocket import automate_shiprocket_fulfillment
+    try:
+        from app.services.shiprocket import automate_shiprocket_fulfillment
+    except ImportError:
+        raise AppError("Shiprocket automation is not yet available. The automate_shiprocket_fulfillment function has not been deployed.", 501)
+
     supabase = get_supabase()
     
     # 1. Fetch Order Details

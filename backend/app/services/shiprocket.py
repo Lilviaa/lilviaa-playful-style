@@ -43,7 +43,7 @@ async def _get_token() -> str:
         except Exception as e:
             raise AppError(f"Shiprocket Connection Error: {str(e)}", 500)
 
-async def _request(method: str, endpoint: str, json_data: dict = None) -> Dict[str, Any]:
+async def _request(method: str, endpoint: str, json_data: dict = None, params: dict = None) -> Dict[str, Any]:
     """Helper to make authenticated requests to Shiprocket API with auto-retry on 401."""
     token = await _get_token()
     headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
@@ -56,6 +56,8 @@ async def _request(method: str, endpoint: str, json_data: dict = None) -> Dict[s
         }
         if json_data:
             request_params["json"] = json_data
+        if params:
+            request_params["params"] = params
             
         try:
             response = await client.request(**request_params)
@@ -89,11 +91,12 @@ async def create_custom_order(order_payload: dict) -> Dict[str, Any]:
     """
     return await _request("POST", "/orders/create/adhoc", order_payload)
 
-async def generate_awb(shipment_id: int) -> Dict[str, Any]:
+async def generate_awb(shipment_id) -> Dict[str, Any]:
     """
     Generates an AWB and assigns a courier for a given shipment_id.
+    shipment_id can be int or BIGINT from Postgres.
     """
-    return await _request("POST", "/courier/assign/awb", {"shipment_id": shipment_id})
+    return await _request("POST", "/courier/assign/awb", {"shipment_id": int(shipment_id)})
 
 async def track_awb(awb_code: str) -> Dict[str, Any]:
     """
@@ -104,47 +107,146 @@ async def track_awb(awb_code: str) -> Dict[str, Any]:
 async def get_serviceability(pickup_pincode: str, delivery_pincode: str, weight: float, cod: int = 0) -> Dict[str, Any]:
     """
     Get available couriers for a given route and weight.
+    Now uses _request() helper for automatic 401 token retry.
     """
-    token = await _get_token()
-    headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
-    
-    async with httpx.AsyncClient() as client:
-        try:
-            response = await client.get(
-                f"{SHIPROCKET_API_BASE}/courier/serviceability/",
-                headers=headers,
-                params={
-                    "pickup_postcode": pickup_pincode,
-                    "delivery_postcode": delivery_pincode,
-                    "weight": weight,
-                    "cod": cod
-                }
-            )
-            response.raise_for_status()
-            return response.json()
-        except httpx.HTTPStatusError as e:
-            raise AppError(f"Shiprocket Serviceability Error: {e.response.text}", 400)
-        except Exception as e:
-            raise AppError(f"Shiprocket Connection Error: {str(e)}", 500)
+    return await _request("GET", "/courier/serviceability/", params={
+        "pickup_postcode": pickup_pincode,
+        "delivery_postcode": delivery_pincode,
+        "weight": weight,
+        "cod": cod
+    })
 
-def get_best_courier(serviceability_data: dict) -> Optional[int]:
+
+async def automate_shiprocket_fulfillment(order_id: str):
     """
-    Implements Option C (Best Value): 
-    - Rating >= 3.0
-    - Lowest rate. If tied, fastest delivery.
-    """
-    couriers = serviceability_data.get("data", {}).get("available_courier_companies", [])
-    if not couriers:
-        return None
-        
-    valid_couriers = [c for c in couriers if float(c.get("rating", 0)) >= 3.0]
+    Background task: pushes an order to Shiprocket and generates an AWB.
+    Shiprocket's dashboard Courier Priority rules select the best courier automatically.
     
-    # Fallback to all if none are >= 3.0
-    if not valid_couriers:
-        valid_couriers = couriers
+    This function is called as a background task after payment confirmation.
+    It must NEVER raise — all errors are caught and logged to the DB.
+    """
+    from app.core.supabase import get_supabase
+    import logging
+    
+    logger = logging.getLogger(__name__)
+    supabase = get_supabase()
+    
+    try:
+        # 1. Fetch order with items and address
+        order_res = supabase.table("orders").select(
+            "*, items:order_items(*, product_variants(*, products(*))), addresses(*), users(email, phone)"
+        ).eq("id", order_id).execute()
         
-    # Sort by rate (primary), then by estimated_delivery_days (secondary)
-    # Shiprocket estimated_delivery_days is an integer (days) or a string date. 
-    # They usually provide `etd` or `estimated_delivery_days`. Let's use `rate`.
-    best_courier = sorted(valid_couriers, key=lambda x: (float(x.get("rate", 9999)), int(x.get("estimated_delivery_days", 99))))[0]
-    return best_courier.get("courier_company_id")
+        if not order_res.data:
+            logger.error(f"Order {order_id} not found for Shiprocket fulfillment.")
+            return
+            
+        order = order_res.data[0]
+        
+        # Don't re-push if already pushed
+        if order.get("shiprocket_order_id"):
+            logger.info(f"Order {order_id} already pushed to Shiprocket.")
+            return
+            
+        # 2. Build payload
+        address = order.get("addresses") or {}
+        items = order.get("items") or []
+        user = order.get("users") or {}
+        
+        order_items = []
+        for item in items:
+            product = item.get("product_variants", {}).get("products", {})
+            variant = item.get("product_variants", {})
+            name = product.get("name", "Product")
+            if variant.get("size"):
+                name += f" ({variant.get('size')})"
+                
+            order_items.append({
+                "name": name,
+                "sku": variant.get("sku", ""),
+                "units": item.get("quantity", 1),
+                "selling_price": str(item.get("unit_price", 0)),
+                "discount": "0",
+                "tax": "0",
+                "hsn": ""
+            })
+            
+        # Default weight: 0.5kg per item (kids clothing)
+        total_weight = sum(0.5 * item.get("quantity", 1) for item in items)
+        
+        order_payload = {
+            "order_id": order_id,
+            "order_date": datetime.now().strftime("%Y-%m-%d %H:%M"),
+            "pickup_location": "Primary",
+            "billing_customer_name": address.get("first_name", address.get("full_name", "Customer").split()[0]),
+            "billing_last_name": address.get("last_name", " ".join(address.get("full_name", "Customer").split()[1:]) or ""),
+            "billing_address": address.get("address_line1", address.get("address", "")),
+            "billing_address_2": address.get("address_line2", ""),
+            "billing_city": address.get("city", ""),
+            "billing_pincode": address.get("postal_code", address.get("zip", "")),
+            "billing_state": address.get("state", ""),
+            "billing_country": address.get("country", "India"),
+            "billing_email": address.get("email") or user.get("email") or "customer@lilviaa.com",
+            "billing_phone": address.get("phone") or user.get("phone") or "9999999999",
+            "shipping_is_billing": True,
+            "order_items": order_items,
+            "payment_method": "Prepaid" if order.get("payment_method") != "cod" else "COD",
+            "sub_total": float(order.get("total_amount", 0)),
+            "length": 10,
+            "breadth": 10,
+            "height": 10,
+            "weight": total_weight
+        }
+        
+        # 3. Push order to Shiprocket
+        logger.info(f"Pushing order {order_id} to Shiprocket...")
+        create_res = await create_custom_order(order_payload)
+        
+        shiprocket_order_id = create_res.get("order_id")
+        shiprocket_shipment_id = create_res.get("shipment_id")
+        
+        if not shiprocket_shipment_id:
+            error_msg = f"Shiprocket did not return a shipment ID: {create_res}"
+            logger.error(error_msg)
+            supabase.table("orders").update({
+                "shiprocket_error": error_msg
+            }).eq("id", order_id).execute()
+            return
+            
+        # Update DB with Shiprocket IDs
+        supabase.table("orders").update({
+            "shiprocket_order_id": shiprocket_order_id,
+            "shiprocket_shipment_id": shiprocket_shipment_id,
+            "tracking_status": "PROCESSING",
+            "shiprocket_error": None
+        }).eq("id", order_id).execute()
+        
+        # 4. Auto-generate AWB (Shiprocket picks the courier based on dashboard rules)
+        logger.info(f"Generating AWB for order {order_id}...")
+        awb_res = await generate_awb(shiprocket_shipment_id)
+        
+        response_payload = awb_res.get("response", {})
+        data_payload = response_payload.get("data", {})
+        
+        awb_code = data_payload.get("awb_code") or response_payload.get("awb_code") or awb_res.get("awb_code")
+        courier_name = data_payload.get("courier_name") or response_payload.get("courier_name") or awb_res.get("courier_name")
+        
+        if awb_code:
+            supabase.table("orders").update({
+                "awb_code": awb_code,
+                "courier_name": courier_name,
+                "tracking_status": "AWB_GENERATED"
+            }).eq("id", order_id).execute()
+            logger.info(f"Order {order_id} → AWB: {awb_code}, Courier: {courier_name}")
+        else:
+            logger.warning(f"AWB generation returned no code for {order_id}: {awb_res}")
+            
+    except Exception as e:
+        logger.error(f"Shiprocket fulfillment failed for {order_id}: {str(e)}")
+        # Save error to DB so admin panel can display it
+        try:
+            supabase.table("orders").update({
+                "shiprocket_error": str(e)
+            }).eq("id", order_id).execute()
+        except Exception:
+            logger.error(f"Failed to save shiprocket_error for {order_id}")

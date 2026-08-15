@@ -395,8 +395,15 @@ def verify_payment(req: VerifyPaymentRequest, request: Request, background_tasks
 
         enqueue_notifications(background_tasks, created_order)
 
-    from app.services.shiprocket import automate_shiprocket_fulfillment
-    background_tasks.add_task(automate_shiprocket_fulfillment, order_id)
+    try:
+        from app.services.shiprocket import automate_shiprocket_fulfillment
+        background_tasks.add_task(automate_shiprocket_fulfillment, order_id)
+    except ImportError:
+        import logging
+        logging.getLogger(__name__).warning(f"automate_shiprocket_fulfillment not found in shiprocket.py. Skipping automation for order {order_id}")
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).error(f"Failed to enqueue Shiprocket automation for {order_id}: {str(e)}")
 
     return {"success": True}
 

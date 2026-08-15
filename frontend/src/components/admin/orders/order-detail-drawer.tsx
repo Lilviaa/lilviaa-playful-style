@@ -55,7 +55,7 @@ export function OrderDetailDrawer({ order, isOpen, onClose, onPrint }: OrderDeta
   const { mutate: updateTracking } = useUpdateTracking();
   const { mutate: updateCallConfirmed } = useUpdateCallConfirmed();
   const { mutate: createReturn, isPending: creatingReturn } = useCreateReturn();
-  
+
   const { mutate: pushToShiprocket, isPending: pushingShiprocket } = usePushToShiprocket();
   const { mutate: generateAwb, isPending: generatingAwb } = useGenerateAwb();
   const { mutate: refreshTracking, isPending: refreshingTracking } = useRefreshTracking();
@@ -191,11 +191,10 @@ export function OrderDetailDrawer({ order, isOpen, onClose, onPrint }: OrderDeta
                 </div>
               </div>
               <div className="mt-4 flex flex-wrap gap-2">
-                <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold uppercase border ${
-                  order.payment_method === 'razorpay' 
-                    ? 'bg-amber-50 text-amber-800 border-amber-200' 
+                <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold uppercase border ${order.payment_method === 'razorpay'
+                    ? 'bg-amber-50 text-amber-800 border-amber-200'
                     : 'bg-slate-100 text-slate-800 border-slate-200'
-                }`}>
+                  }`}>
                   {order.payment_method === 'razorpay' ? 'Razorpay (Pending Confirm)' : order.payment_method}
                 </span>
                 <span className="inline-flex items-center rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-semibold text-emerald-800 capitalize border border-emerald-200">
@@ -209,9 +208,9 @@ export function OrderDetailDrawer({ order, isOpen, onClose, onPrint }: OrderDeta
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="font-semibold text-cocoa">Tracking & Shipping (Shiprocket)</h3>
                   {order.awb_code && (
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
+                    <Button
+                      variant="ghost"
+                      size="sm"
                       onClick={() => refreshTracking(order.id)}
                       disabled={refreshingTracking}
                       className="h-8 gap-1.5"
@@ -221,21 +220,21 @@ export function OrderDetailDrawer({ order, isOpen, onClose, onPrint }: OrderDeta
                     </Button>
                   )}
                 </div>
-                
+
                 <div className="bg-[#fcfaf7] rounded-xl border border-border p-4 mb-6">
                   {!order.shiprocket_order_id ? (
                     <div className="flex flex-col gap-3 items-start">
                       <p className="text-sm text-slate-600 mb-2">Order has not been pushed to Shiprocket yet.</p>
-                      
+
                       {(order.tracking_status === 'PUSH_FAILED' || order.tracking_status === 'AWB_FAILED') && (
                         <div className="w-full bg-red-50 text-red-600 p-3 rounded-lg border border-red-200 text-sm mb-3 break-words whitespace-pre-wrap">
                           <span className="font-semibold block mb-1">Automation Failed</span>
                           {order.shiprocket_error || "Check Shiprocket wallet balance or configuration."}
                         </div>
                       )}
-                      
-                      <Button 
-                        onClick={() => pushToShiprocket(order.id)} 
+
+                      <Button
+                        onClick={() => pushToShiprocket(order.id)}
                         disabled={pushingShiprocket || (order.payment_method === 'razorpay' && order.payment_status !== 'paid')}
                         className="w-full gap-2"
                       >
@@ -252,16 +251,16 @@ export function OrderDetailDrawer({ order, isOpen, onClose, onPrint }: OrderDeta
                         <span className="font-medium text-indigo-900">Shiprocket Order ID</span>
                         <span className="font-mono text-indigo-700">{order.shiprocket_order_id}</span>
                       </div>
-                      
+
                       {(order.tracking_status === 'AWB_FAILED') && (
                         <div className="w-full bg-red-50 text-red-600 p-3 rounded-lg border border-red-200 text-sm mb-3 break-words whitespace-pre-wrap">
                           <span className="font-semibold block mb-1">AWB Generation Failed</span>
                           {order.shiprocket_error || "Check Shiprocket wallet balance."}
                         </div>
                       )}
-                      
-                      <Button 
-                        onClick={() => generateAwb(order.id)} 
+
+                      <Button
+                        onClick={() => generateAwb(order.id)}
                         disabled={generatingAwb}
                         className="w-full bg-indigo-600 hover:bg-indigo-700 text-white gap-2"
                       >
@@ -287,15 +286,15 @@ export function OrderDetailDrawer({ order, isOpen, onClose, onPrint }: OrderDeta
                           </span>
                         </div>
                         {order.tracking_last_updated && (
-                           <p className="text-[10px] text-muted-foreground text-right mt-1">
-                             Last updated: {new Date(order.tracking_last_updated).toLocaleString()}
-                           </p>
+                          <p className="text-[10px] text-muted-foreground text-right mt-1">
+                            Last updated: {new Date(order.tracking_last_updated).toLocaleString()}
+                          </p>
                         )}
                       </div>
                     </div>
                   )}
                 </div>
-                
+
                 {/* Fallback to manual tracking if needed */}
                 <div className="pt-4 border-t border-cocoa/10">
                   <Label className="text-xs text-muted-foreground mb-1.5 block">Manual Tracking Override</Label>
@@ -428,3 +427,4 @@ export function OrderDetailDrawer({ order, isOpen, onClose, onPrint }: OrderDeta
     </Sheet>
   );
 }
+

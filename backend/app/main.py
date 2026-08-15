@@ -51,6 +51,50 @@ app.add_middleware(SlowAPIMiddleware)
 # Register custom exception handler
 app.add_exception_handler(AppError, app_error_handler)
 
+import traceback
+from fastapi.responses import JSONResponse
+import asyncio
+
+@app.exception_handler(Exception)
+async def global_unhandled_exception_handler(request: Request, exc: Exception):
+    """
+    Catches all unhandled 500 errors, logs them, and emails the admin.
+    """
+    from app.core.email import _send_email
+    from app.core.config import settings
+    import logging
+
+    error_msg = f"{type(exc).__name__}: {str(exc)}"
+    tb_str = "".join(traceback.format_exception(type(exc), exc, exc.__traceback__))
+    
+    # 1. Log to console for Render
+    logging.error(f"UNHANDLED EXCEPTION: {error_msg}\n{tb_str}")
+    
+    # 2. Fire and forget an email alert to the admin
+    admin_email = settings.SMTP_FROM_EMAIL or "lilviaa.project@gmail.com" # fallback to sender email
+    subject = f"🔴 URGENT: Production Bug on Lilviaa - {error_msg}"
+    html = f"""
+    <html>
+      <body style="font-family: monospace; padding: 20px; background: #fff0f0; color: #333;">
+        <h2 style="color: #d32f2f;">Lilviaa Production Error</h2>
+        <p><strong>URL:</strong> {request.method} {request.url}</p>
+        <p><strong>Error:</strong> {error_msg}</p>
+        <hr>
+        <pre style="background: #f4f4f4; padding: 10px; overflow-x: auto;">{tb_str}</pre>
+      </body>
+    </html>
+    """
+    
+    # Run in background to avoid delaying the 500 response
+    asyncio.create_task(asyncio.to_thread(_send_email, admin_email, subject, html))
+    
+    # 3. Return standard 500 error to user
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "An unexpected error occurred. Our team has been notified."}
+    )
+
+
 # Include Routers
 from app.api.v1 import addresses, categories, products, admin_products, orders, cart, banners, reviews, cms
 from app.api.v1 import admin_dashboard, admin_orders, admin_customers, admin_coupons, admin_banners, admin_reviews, admin_cms, admin_emails
