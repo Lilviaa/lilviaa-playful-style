@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
-import { Link } from "@tanstack/react-router";
 import { Hammer } from "lucide-react";
+import { useAuth } from "@/lib/auth";
 
 export function MaintenancePage() {
+  const { user, logout } = useAuth();
+
   // Use a fixed, global target date so all users and devices see the exact same countdown.
   const [targetDate] = useState(() => new Date("2026-08-15T17:00:00+05:30").getTime());
   
@@ -57,9 +59,18 @@ export function MaintenancePage() {
       </div>
 
       <div className="mt-4 sm:mt-6">
-        <a href="/login" className="text-[11px] sm:text-xs text-muted-foreground hover:text-foreground underline underline-offset-4 transition-colors">
+        <button 
+          onClick={async (e) => {
+            e.preventDefault();
+            if (user) {
+              await logout();
+            }
+            window.location.href = "/login";
+          }} 
+          className="text-[11px] sm:text-xs text-muted-foreground hover:text-foreground underline underline-offset-4 transition-colors"
+        >
           Admin Login
-        </a>
+        </button>
       </div>
     </div>
   );
