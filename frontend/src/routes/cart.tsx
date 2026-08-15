@@ -57,16 +57,16 @@ function CartPage() {
   }
 
   return (
-    <div className="mx-auto max-w-7xl px-6 py-12">
+    <div className="mx-auto w-full max-w-7xl px-6 py-12">
       <h1 className="font-display text-4xl text-cocoa md:text-5xl">Your cart</h1>
       <p className="mt-2 text-muted-foreground">{items.length} lovely items</p>
 
-      <div className="mt-8 grid gap-8 lg:grid-cols-[1.6fr_1fr]">
-        <ul className="space-y-4">
+      <div className="mt-8 grid w-full gap-8 lg:grid-cols-[1.6fr_1fr]">
+        <ul className="w-full space-y-4">
           {items.map((it) => (
             <li
               key={it.slug + it.size}
-              className="flex gap-4 rounded-3xl bg-card p-4 shadow-cute"
+              className="flex w-full gap-4 rounded-3xl bg-card p-4 shadow-cute"
             >
               <img
                 src={it.image}
@@ -138,7 +138,7 @@ function CartPage() {
           </button>
         </ul>
 
-        <aside className="h-max rounded-3xl bg-card p-6 shadow-cute">
+        <aside className="h-max w-full rounded-3xl bg-card p-6 shadow-cute">
           <h2 className="font-display text-2xl text-cocoa">Order summary</h2>
           <dl className="mt-4 space-y-2 text-sm">
             <div className="flex justify-between">
