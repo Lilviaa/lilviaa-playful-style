@@ -146,11 +146,12 @@ function AppContent() {
   
   const isAdmin = pathname.startsWith("/admin");
   const isAuthPage = pathname === "/login" || pathname === "/register" || pathname === "/forgot-password";
+  const isAccountPage = pathname.startsWith("/account");
   const isCheckout = pathname === "/checkout";
   const isInvoice = pathname.startsWith("/invoice");
   
-  // Show maintenance page if mode is active, user is NOT admin, and not trying to login
-  const showMaintenance = IS_MAINTENANCE_MODE && !isAdminUser && !isAuthPage && !isLoading;
+  // Show maintenance page if mode is active, user is NOT admin, and not trying to login or view their account
+  const showMaintenance = IS_MAINTENANCE_MODE && !isAdminUser && !isAuthPage && !isAccountPage && !isLoading;
   
   const hideHeader = isAdmin || isAuthPage || isInvoice || showMaintenance;
   const hideFooter = isAdmin || isAuthPage || isCheckout || isInvoice || showMaintenance;
