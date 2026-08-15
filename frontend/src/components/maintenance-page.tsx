@@ -57,9 +57,9 @@ export function MaintenancePage() {
       </div>
 
       <div className="mt-4 sm:mt-6">
-        <Link to="/login" className="text-[11px] sm:text-xs text-muted-foreground hover:text-foreground underline underline-offset-4 transition-colors">
+        <a href="/login" className="text-[11px] sm:text-xs text-muted-foreground hover:text-foreground underline underline-offset-4 transition-colors">
           Admin Login
-        </Link>
+        </a>
       </div>
     </div>
   );
