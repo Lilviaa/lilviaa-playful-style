@@ -51,12 +51,17 @@ def send_mail(to: str, subject: str, html_body: str, plain_body: str = None):
         if os.name == 'nt':
             kwargs['source_address'] = ('0.0.0.0', 0)
             
+        print(f"[MAILER DEBUG] Attempting SMTP connection to {config['host']}:{config['port']}...")
         with smtplib.SMTP(config["host"], config["port"], **kwargs) as server:
             server.starttls()
             server.login(config["user"], config["pass"])
             server.send_message(msg)
+        print(f"[MAILER DEBUG] Email sent successfully to {to}")
         logger.info(f"Email sent successfully to {to}")
     except Exception as e:
+        import traceback
+        print(f"[MAILER DEBUG] SMTP FAILED: {str(e)}")
+        traceback.print_exc()
         logger.error(f"Failed to send email to {to}: {str(e)}")
 
 def format_inr(amount: float) -> str:
