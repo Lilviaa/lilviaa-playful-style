@@ -100,7 +100,7 @@ function AccountSettingsPage() {
   };
 
   return (
-    <div className="space-y-8 w-full">
+    <div className="space-y-8">
       <div className="flex items-center gap-2 font-display text-2xl text-cocoa mb-2 px-2">
         <Settings className="h-6 w-6 text-primary" /> Account Settings
       </div>
