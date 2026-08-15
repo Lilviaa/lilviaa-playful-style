@@ -439,7 +439,7 @@ function HomePage() {
         </div>
         {topReviews.length > 3 ? (
           <div className="mt-10 overflow-hidden whitespace-nowrap mask-edges">
-            <div className="flex gap-5 w-max animate-marquee pb-4 pl-6">
+            <div className="flex flex-row flex-nowrap gap-5 w-max min-w-max animate-marquee pb-4 pl-6">
               {[...topReviews, ...topReviews].map((t, i) => {
                 const bg = ["bg-blush", "bg-mint", "bg-butter"][i % 3];
                 return (
