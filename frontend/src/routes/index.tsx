@@ -431,13 +431,15 @@ function HomePage() {
       </ScrollReveal>
 
       {/* TESTIMONIALS */}
-      <ScrollReveal className="mx-auto max-w-7xl px-6 py-20">
-        <h2 className="text-center font-display text-3xl text-cocoa md:text-4xl">
-          Kind words from tiny critics (and their grown-ups)
-        </h2>
+      <ScrollReveal className="py-20">
+        <div className="mx-auto max-w-7xl px-6">
+          <h2 className="text-center font-display text-3xl text-cocoa md:text-4xl">
+            Kind words from tiny critics (and their grown-ups)
+          </h2>
+        </div>
         {topReviews.length > 3 ? (
           <div className="mt-10 overflow-hidden whitespace-nowrap mask-edges">
-            <div className="flex gap-5 w-max animate-marquee pb-4">
+            <div className="flex gap-5 w-max animate-marquee pb-4 pl-6">
               {[...topReviews, ...topReviews].map((t, i) => {
                 const bg = ["bg-blush", "bg-mint", "bg-butter"][i % 3];
                 return (
@@ -457,7 +459,7 @@ function HomePage() {
             </div>
           </div>
         ) : (
-          <div className="mt-10 grid gap-5 md:grid-cols-3">
+          <div className="mx-auto max-w-7xl px-6 mt-10 grid gap-5 md:grid-cols-3">
             {topReviews.length > 0 ? (
               topReviews.map((t, i) => {
                 const bg = ["bg-blush", "bg-mint", "bg-butter"][i % 3];

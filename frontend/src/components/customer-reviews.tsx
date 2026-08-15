@@ -86,7 +86,7 @@ export function CustomerReviews({ productId }: { productId: string }) {
         throw new Error(data.detail || "Failed to submit review");
       }
 
-      toast.success("Review submitted! It will appear once approved by our team.");
+      toast.success("Review submitted successfully!");
       setIsWriting(false);
       
       // Reset form
