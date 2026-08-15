@@ -4,7 +4,7 @@ import { Hammer } from "lucide-react";
 
 export function MaintenancePage() {
   // Use a fixed, global target date so all users and devices see the exact same countdown.
-  const [targetDate] = useState(() => new Date("2026-08-15T12:00:00+05:30").getTime());
+  const [targetDate] = useState(() => new Date("2026-08-15T17:00:00+05:30").getTime());
   
   const [timeLeft, setTimeLeft] = useState({
     days: 0,
