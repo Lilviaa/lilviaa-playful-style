@@ -131,7 +131,7 @@ def create_review(review: ReviewCreate, request: Request, user: dict = Depends(g
         "rating": review.rating,
         "title": review.title,
         "text": review.text,
-        "status": "pending"
+        "status": "approved"
     }
     
     try:
