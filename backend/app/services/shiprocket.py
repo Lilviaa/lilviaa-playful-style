@@ -125,6 +125,9 @@ async def automate_shiprocket_fulfillment(order_id: str):
     This function is called as a background task after payment confirmation.
     It must NEVER raise — all errors are caught and logged to the DB.
     """
+    import asyncio
+    await asyncio.sleep(3) # Wait for database transaction to fully settle
+    
     from app.db.supabase import get_supabase
     import logging
     
