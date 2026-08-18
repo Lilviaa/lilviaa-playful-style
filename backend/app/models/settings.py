@@ -29,6 +29,9 @@ class CompanySettingsBase(BaseModel):
     shipping_charge_other: float = 0.0
     enable_free_shipping: bool = False
     free_shipping_above: float = 0.0
+    
+    # Website Status
+    is_maintenance_mode: bool = False
 
 class CompanySettingsUpdate(CompanySettingsBase):
     pass

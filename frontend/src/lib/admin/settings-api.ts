@@ -31,6 +31,9 @@ export interface CompanySettings {
   shipping_charge_other?: number;
   enable_free_shipping?: boolean;
   free_shipping_above?: number;
+  
+  // Website Status
+  is_maintenance_mode?: boolean;
 }
 
 // Public hook to fetch settings

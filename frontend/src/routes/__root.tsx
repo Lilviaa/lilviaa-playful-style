@@ -137,12 +137,12 @@ function RootShell({ children }: { children: ReactNode }) {
 
 import { AdminAuthProvider, useAdminAuth } from "@/lib/admin/admin-auth";
 import { MaintenancePage } from "@/components/maintenance-page";
-
-const IS_MAINTENANCE_MODE = true;
+import { useCompanySettings } from "@/lib/admin/settings-api";
 
 function AppContent() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const { isAdminUser, isLoading } = useAdminAuth();
+  const { isAdminUser, isLoading: isAuthLoading } = useAdminAuth();
+  const { data: companySettings, isLoading: isSettingsLoading } = useCompanySettings();
   
   const isAdmin = pathname.startsWith("/admin");
   const isAuthPage = pathname === "/login" || pathname === "/register" || pathname === "/forgot-password";
@@ -151,7 +151,8 @@ function AppContent() {
   const isInvoice = pathname.startsWith("/invoice");
   
   // Show maintenance page if mode is active, user is NOT admin, and not trying to login or view their account
-  const showMaintenance = IS_MAINTENANCE_MODE && !isAdminUser && !isAuthPage && !isAccountPage && !isLoading;
+  const isMaintenanceMode = companySettings?.is_maintenance_mode ?? false;
+  const showMaintenance = isMaintenanceMode && !isAdminUser && !isAuthPage && !isAccountPage && !isAuthLoading && !isSettingsLoading;
   
   const hideHeader = isAdmin || isAuthPage || isInvoice || showMaintenance;
   const hideFooter = isAdmin || isAuthPage || isCheckout || isInvoice || showMaintenance;

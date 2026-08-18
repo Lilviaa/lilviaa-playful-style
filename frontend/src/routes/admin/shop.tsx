@@ -1,4 +1,4 @@
-﻿import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import { useCompanySettings, useUpdateCompanySettings } from "@/lib/admin/settings-api";
 import { uploadCmsImage } from "@/lib/admin/cms-api";
@@ -243,6 +243,28 @@ function CompanySettingsPage() {
             <div className="space-y-2">
               <Label>YouTube URL</Label>
               <Input name="youtube_url" value={formData.youtube_url || ""} onChange={handleChange} />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Website Status */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Globe className="h-5 w-5 text-primary" /> Website Status
+            </CardTitle>
+            <CardDescription>Control public access to your website</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between p-4 border rounded-lg bg-sand/10">
+              <div className="space-y-0.5">
+                <Label className="text-base font-semibold">Maintenance Mode</Label>
+                <p className="text-sm text-muted-foreground">When enabled, customers will see a maintenance page. Admins can still access the site.</p>
+              </div>
+              <Switch 
+                checked={formData.is_maintenance_mode || false} 
+                onCheckedChange={(c) => handleSwitchChange("is_maintenance_mode", c)} 
+              />
             </div>
           </CardContent>
         </Card>
