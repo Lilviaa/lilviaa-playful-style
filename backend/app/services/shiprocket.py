@@ -125,7 +125,7 @@ async def automate_shiprocket_fulfillment(order_id: str):
     This function is called as a background task after payment confirmation.
     It must NEVER raise — all errors are caught and logged to the DB.
     """
-    from app.core.supabase import get_supabase
+    from app.db.supabase import get_supabase
     import logging
     
     logger = logging.getLogger(__name__)
@@ -134,7 +134,7 @@ async def automate_shiprocket_fulfillment(order_id: str):
     try:
         # 1. Fetch order with items and address
         order_res = supabase.table("orders").select(
-            "*, items:order_items(*, product_variants(*, products(*))), addresses(*), users(email, phone)"
+            "*, items:order_items(*, product_variants(*, products(*))), addresses(*), users(email)"
         ).eq("id", order_id).execute()
         
         if not order_res.data:
@@ -177,7 +177,7 @@ async def automate_shiprocket_fulfillment(order_id: str):
         order_payload = {
             "order_id": order_id,
             "order_date": datetime.now().strftime("%Y-%m-%d %H:%M"),
-            "pickup_location": "Primary",
+            "pickup_location": "Home",
             "billing_customer_name": address.get("first_name", address.get("full_name", "Customer").split()[0]),
             "billing_last_name": address.get("last_name", " ".join(address.get("full_name", "Customer").split()[1:]) or ""),
             "billing_address": address.get("address_line1", address.get("address", "")),
@@ -187,7 +187,7 @@ async def automate_shiprocket_fulfillment(order_id: str):
             "billing_state": address.get("state", ""),
             "billing_country": address.get("country", "India"),
             "billing_email": address.get("email") or user.get("email") or "customer@lilviaa.com",
-            "billing_phone": address.get("phone") or user.get("phone") or "9999999999",
+            "billing_phone": address.get("phone") or "9999999999",
             "shipping_is_billing": True,
             "order_items": order_items,
             "payment_method": "Prepaid" if order.get("payment_method") != "cod" else "COD",
