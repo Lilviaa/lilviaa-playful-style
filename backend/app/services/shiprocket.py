@@ -174,16 +174,18 @@ async def automate_shiprocket_fulfillment(order_id: str):
         # Default weight: 0.5kg per item (kids clothing)
         total_weight = sum(0.5 * item.get("quantity", 1) for item in items)
         
+        full_name = address.get("full_name") or "Customer"
+        
         order_payload = {
             "order_id": order_id,
             "order_date": datetime.now().strftime("%Y-%m-%d %H:%M"),
             "pickup_location": "Home",
-            "billing_customer_name": address.get("first_name", address.get("full_name", "Customer").split()[0]),
-            "billing_last_name": address.get("last_name", " ".join(address.get("full_name", "Customer").split()[1:]) or ""),
-            "billing_address": address.get("address_line1", address.get("address", "")),
-            "billing_address_2": address.get("address_line2", ""),
-            "billing_city": address.get("city", ""),
-            "billing_pincode": address.get("postal_code", address.get("zip", "")),
+            "billing_customer_name": address.get("first_name") or full_name.split()[0],
+            "billing_last_name": address.get("last_name") or (" ".join(full_name.split()[1:]) if len(full_name.split()) > 1 else ""),
+            "billing_address": address.get("address_line1") or address.get("address") or "",
+            "billing_address_2": address.get("address_line2") or "",
+            "billing_city": address.get("city") or "",
+            "billing_pincode": address.get("postal_code") or address.get("zip") or "",
             "billing_state": address.get("state", ""),
             "billing_country": address.get("country", "India"),
             "billing_email": address.get("email") or user.get("email") or "customer@lilviaa.com",
