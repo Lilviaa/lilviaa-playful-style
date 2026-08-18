@@ -211,11 +211,29 @@ async def automate_shiprocket_fulfillment(order_id: str):
             error_msg = f"Shiprocket did not return a shipment ID: {create_res}"
             logger.error(error_msg)
             supabase.table("orders").update({
-                "shiprocket_error": error_msg
+                "shiprocket_error": error_msg,
+                "tracking_status": "PUSH_FAILED"
             }).eq("id", order_id).execute()
             return
             
-        # Update DB with Shiprocket IDs
+        # Check if Shiprocket auto-assigned an AWB in the creation response
+        auto_awb = create_res.get("awb_code")
+        auto_courier = create_res.get("courier_name")
+        
+        if auto_awb:
+            # Shiprocket already generated the AWB! Save it immediately.
+            supabase.table("orders").update({
+                "shiprocket_order_id": shiprocket_order_id,
+                "shiprocket_shipment_id": shiprocket_shipment_id,
+                "awb_code": auto_awb,
+                "courier_name": auto_courier,
+                "tracking_status": "AWB_GENERATED",
+                "shiprocket_error": None
+            }).eq("id", order_id).execute()
+            logger.info(f"Order {order_id} auto-assigned AWB {auto_awb} by Shiprocket.")
+            return
+
+        # Update DB with Shiprocket IDs before attempting explicit AWB generation
         supabase.table("orders").update({
             "shiprocket_order_id": shiprocket_order_id,
             "shiprocket_shipment_id": shiprocket_shipment_id,
@@ -242,6 +260,11 @@ async def automate_shiprocket_fulfillment(order_id: str):
             logger.info(f"Order {order_id} → AWB: {awb_code}, Courier: {courier_name}")
         else:
             logger.warning(f"AWB generation returned no code for {order_id}: {awb_res}")
+            error_details = awb_res.get("response", {}).get("data", {}).get("message") or str(awb_res)
+            supabase.table("orders").update({
+                "shiprocket_error": f"AWB Generation Failed: {error_details}",
+                "tracking_status": "AWB_FAILED"
+            }).eq("id", order_id).execute()
             
     except Exception as e:
         logger.error(f"Shiprocket fulfillment failed for {order_id}: {str(e)}")
