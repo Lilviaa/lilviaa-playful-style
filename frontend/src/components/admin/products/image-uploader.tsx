@@ -109,20 +109,19 @@ export function ImageUploader({ images, onChange }: ImageUploaderProps) {
                           className="w-full h-full object-cover" 
                         />
                         
-                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                          <button
-                            type="button"
-                            {...provided.dragHandleProps}
-                            className="p-2 text-white/80 hover:text-white"
-                          >
-                            <GripVertical className="h-6 w-6" />
-                          </button>
+                        {/* Drag Handle */}
+                        <div 
+                           {...provided.dragHandleProps}
+                           className="absolute top-1 left-1 h-6 w-6 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center text-cocoa md:opacity-0 md:group-hover:opacity-100 transition-opacity shadow-sm cursor-grab active:cursor-grabbing z-10"
+                        >
+                          <GripVertical className="h-4 w-4" />
                         </div>
                         
+                        {/* Remove Button */}
                         <button
                           type="button"
                           onClick={() => removeImage(index)}
-                          className="absolute top-1 right-1 h-6 w-6 bg-white/80 rounded-full flex items-center justify-center text-cocoa hover:bg-white hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                          className="absolute top-1 right-1 h-6 w-6 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center text-cocoa hover:bg-white hover:text-rose-500 md:opacity-0 md:group-hover:opacity-100 transition-opacity shadow-sm z-10"
                         >
                           <X className="h-4 w-4" />
                         </button>
