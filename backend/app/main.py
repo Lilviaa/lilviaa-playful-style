@@ -98,7 +98,7 @@ async def global_unhandled_exception_handler(request: Request, exc: Exception):
 # Include Routers
 from app.api.v1 import addresses, categories, products, admin_products, orders, cart, banners, reviews, cms
 from app.api.v1 import admin_dashboard, admin_orders, admin_customers, admin_coupons, admin_banners, admin_reviews, admin_cms, admin_emails
-from app.api.v1 import whatsapp_webhook, contact, wishlists, shipping
+from app.api.v1 import whatsapp_webhook, shiprocket_webhook, contact, wishlists, shipping
 
 # (I will just add them below the others)
 app.include_router(firebase_auth.router, prefix="/api/v1/firebase_auth", tags=["Firebase Auth"])
@@ -121,6 +121,7 @@ app.include_router(admin_reviews.router, prefix="/api/v1/admin/reviews", tags=["
 app.include_router(admin_cms.router, prefix="/api/v1/admin/cms", tags=["Admin CMS"])
 app.include_router(admin_emails.router, prefix="/api/v1/admin/emails", tags=["Admin Emails"])
 app.include_router(whatsapp_webhook.router, prefix="/api/v1/whatsapp", tags=["WhatsApp Webhook"])
+app.include_router(shiprocket_webhook.router, prefix="/api/v1/shiprocket", tags=["Shiprocket Webhook"])
 app.include_router(contact.router, prefix="/api/v1/contact", tags=["Contact"])
 app.include_router(shipping.router, prefix="/api/v1/shipping", tags=["Shipping"])
 

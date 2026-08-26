@@ -314,3 +314,92 @@ def send_owner_order_alert(order_data: dict):
             f"Error in WhatsApp send_owner_order_alert "
             f"for order {order_data.get('id')}: {str(e)}"
         )
+
+
+def send_order_status_update(order_data: dict, current_status: str, expected_delivery: str):
+    """
+    Send the 'order_status_update_customer' WhatsApp template.
+    Template variables:
+      {{1}} = Customer name
+      {{2}} = Order ID
+      {{3}} = Current Status (e.g. Out for Delivery)
+      {{4}} = Expected Delivery Date
+    """
+    try:
+        address = order_data.get("addresses") or order_data.get("shipping_address") or {}
+        if isinstance(address, list):
+            address = address[0] if address else {}
+
+        customer_phone = address.get("phone") or order_data.get("phone")
+        if not customer_phone:
+            return
+
+        customer_name = address.get("full_name", order_data.get("full_name", "Customer"))
+        short_id = _get_order_short_id(order_data)
+
+        components = [
+            {
+                "type": "body",
+                "parameters": [
+                    {"type": "text", "text": str(customer_name)},
+                    {"type": "text", "text": short_id},
+                    {"type": "text", "text": current_status},
+                    {"type": "text", "text": expected_delivery or "Soon"},
+                ],
+            }
+        ]
+
+        send_template_message(
+            to=customer_phone,
+            template_name="order_status_update_customer",
+            language_code="en",
+            components=components,
+        )
+    except Exception as e:
+        logger.error(f"Error in WA status update for order {order_data.get('id')}: {str(e)}")
+
+
+def send_order_delivered(order_data: dict):
+    """
+    Send the 'order_delivered_customer_1' WhatsApp template.
+    Template variables:
+      {{1}} = Customer name
+      {{2}} = Order ID
+      {{3}} = Order Amount (Raw number without currency symbol)
+    """
+    try:
+        address = order_data.get("addresses") or order_data.get("shipping_address") or {}
+        if isinstance(address, list):
+            address = address[0] if address else {}
+
+        customer_phone = address.get("phone") or order_data.get("phone")
+        if not customer_phone:
+            return
+
+        customer_name = address.get("full_name", order_data.get("full_name", "Customer"))
+        short_id = _get_order_short_id(order_data)
+        
+        # Template has ₹ hardcoded, so just format the number
+        amount = float(order_data.get("total_amount", order_data.get("grand_total", 0)))
+        total_formatted = f"{amount:,.2f}"
+
+        components = [
+            {
+                "type": "body",
+                "parameters": [
+                    {"type": "text", "text": str(customer_name)},
+                    {"type": "text", "text": short_id},
+                    {"type": "text", "text": total_formatted},
+                ],
+            }
+        ]
+
+        send_template_message(
+            to=customer_phone,
+            template_name="order_delivered_customer_1",
+            language_code="en",
+            components=components,
+        )
+    except Exception as e:
+        logger.error(f"Error in WA order delivered for order {order_data.get('id')}: {str(e)}")
+

@@ -733,7 +733,7 @@ def validate_coupon(req: ValidateCouponRequest, request: Request):
 
 @router.post("/{order_id}/refresh-tracking", dependencies=[Depends(PreAuthRateLimit("30/minute"))])
 @limiter.limit("10/minute", key_func=get_user_id)
-async def refresh_tracking_status_customer(order_id: str, request: Request, user: dict = Depends(get_current_user_token)):
+async def refresh_tracking_status_customer(order_id: str, request: Request, background_tasks: BackgroundTasks, user: dict = Depends(get_current_user_token)):
     """Fetches latest tracking from Shiprocket for a customer's order based on TTL."""
     from app.services.shiprocket import track_awb
     from datetime import datetime, timezone, timedelta
@@ -780,6 +780,29 @@ async def refresh_tracking_status_customer(order_id: str, request: Request, user
     history = tracking_data.get("shipment_track_activities") or tracking_data.get("shipment_track") or []
     
     now = datetime.now(timezone.utc).isoformat()
+    
+    old_status = order.get("tracking_status")
+    
+    if status != old_status:
+        status_upper = status.upper()
+        if status_upper in ["SHIPPED", "OUT FOR DELIVERY"]:
+            etd = tracking_data.get("etd", "")
+            if etd:
+                try:
+                    dt = datetime.fromisoformat(etd.replace("Z", "+00:00"))
+                    etd = dt.strftime("%A, %d %B %Y")
+                except Exception:
+                    pass
+            from app.services.whatsapp import send_order_status_update
+            full_order_res = supabase.table("orders").select("*, addresses(*)").eq("id", order_id).execute()
+            if full_order_res.data:
+                background_tasks.add_task(send_order_status_update, full_order_res.data[0], status, etd)
+                
+        elif status_upper == "DELIVERED":
+            from app.services.whatsapp import send_order_delivered
+            full_order_res = supabase.table("orders").select("*, addresses(*)").eq("id", order_id).execute()
+            if full_order_res.data:
+                background_tasks.add_task(send_order_delivered, full_order_res.data[0])
     
     supabase.table("orders").update({
         "tracking_status": status,

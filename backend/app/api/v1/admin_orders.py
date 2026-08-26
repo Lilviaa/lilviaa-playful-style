@@ -275,7 +275,7 @@ async def generate_order_awb(order_id: str, request: Request):
 
 @router.post("/{order_id}/refresh-tracking", dependencies=[Depends(PreAuthRateLimit("30/minute")), Depends(require_admin)])
 @limiter.limit("30/minute", key_func=get_admin_id)
-async def refresh_tracking_status(order_id: str, request: Request):
+async def refresh_tracking_status(order_id: str, request: Request, background_tasks: BackgroundTasks):
     """Fetches latest tracking from Shiprocket based on TTL."""
     from app.services.shiprocket import track_awb
     from datetime import datetime, timezone, timedelta
@@ -320,6 +320,32 @@ async def refresh_tracking_status(order_id: str, request: Request):
     history = tracking_data.get("shipment_track_activities") or tracking_data.get("shipment_track") or []
     
     now = datetime.now(timezone.utc).isoformat()
+    
+    old_status = order.get("tracking_status")
+    
+    if status != old_status:
+        status_upper = status.upper()
+        if status_upper in ["SHIPPED", "OUT FOR DELIVERY"]:
+            etd = tracking_data.get("etd", "")
+            if etd:
+                try:
+                    dt = datetime.fromisoformat(etd.replace("Z", "+00:00"))
+                    etd = dt.strftime("%A, %d %B %Y")
+                except Exception:
+                    pass
+            from app.services.whatsapp import send_order_status_update
+            # We need the full order data for WA. 
+            # The current order dict only has awb, tracking_last_updated, tracking_status, tracking_history.
+            # So we must fetch the full order.
+            full_order_res = supabase.table("orders").select("*, addresses(*)").eq("id", order_id).execute()
+            if full_order_res.data:
+                background_tasks.add_task(send_order_status_update, full_order_res.data[0], status, etd)
+                
+        elif status_upper == "DELIVERED":
+            from app.services.whatsapp import send_order_delivered
+            full_order_res = supabase.table("orders").select("*, addresses(*)").eq("id", order_id).execute()
+            if full_order_res.data:
+                background_tasks.add_task(send_order_delivered, full_order_res.data[0])
     
     supabase.table("orders").update({
         "tracking_status": status,
