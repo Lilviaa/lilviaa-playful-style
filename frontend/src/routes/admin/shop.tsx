@@ -43,6 +43,7 @@ function CompanySettingsPage() {
     shipping_charge_other: 0,
     enable_free_shipping: false,
     free_shipping_above: 0,
+    maintenance_end_time: "",
   });
 
   useEffect(() => {
@@ -255,7 +256,7 @@ function CompanySettingsPage() {
             </CardTitle>
             <CardDescription>Control public access to your website</CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-4">
             <div className="flex items-center justify-between p-4 border rounded-lg bg-sand/10">
               <div className="space-y-0.5">
                 <Label className="text-base font-semibold">Maintenance Mode</Label>
@@ -266,6 +267,22 @@ function CompanySettingsPage() {
                 onCheckedChange={(c) => handleSwitchChange("is_maintenance_mode", c)} 
               />
             </div>
+            
+            {formData.is_maintenance_mode && (
+              <div className="p-4 border rounded-lg bg-sand/5 space-y-3">
+                <div className="space-y-1">
+                  <Label className="text-base font-semibold">Maintenance End Time</Label>
+                  <p className="text-sm text-muted-foreground">Set a target date and time for the countdown timer on the maintenance page.</p>
+                </div>
+                <Input 
+                  type="datetime-local" 
+                  name="maintenance_end_time" 
+                  value={formData.maintenance_end_time || ""} 
+                  onChange={handleChange} 
+                  className="max-w-md"
+                />
+              </div>
+            )}
           </CardContent>
         </Card>
 

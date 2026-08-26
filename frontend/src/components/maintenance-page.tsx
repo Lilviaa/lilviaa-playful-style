@@ -1,13 +1,12 @@
 import { useEffect, useState } from "react";
 import { Hammer } from "lucide-react";
 import { useAuth } from "@/lib/auth";
+import { useCompanySettings } from "@/lib/admin/settings-api";
 
 export function MaintenancePage() {
   const { user, logout } = useAuth();
+  const { data: settings, isLoading } = useCompanySettings();
 
-  // Use a fixed, global target date so all users and devices see the exact same countdown.
-  const [targetDate] = useState(() => new Date("2026-08-15T17:00:00+05:30").getTime());
-  
   const [timeLeft, setTimeLeft] = useState({
     days: 0,
     hours: 0,
@@ -16,6 +15,10 @@ export function MaintenancePage() {
   });
 
   useEffect(() => {
+    if (!settings?.maintenance_end_time) return;
+    
+    const targetDate = new Date(settings.maintenance_end_time).getTime();
+
     const calculateTimeLeft = () => {
       const now = new Date().getTime();
       const difference = targetDate - now;
@@ -35,7 +38,11 @@ export function MaintenancePage() {
     calculateTimeLeft();
     const timer = setInterval(calculateTimeLeft, 1000);
     return () => clearInterval(timer);
-  }, [targetDate]);
+  }, [settings?.maintenance_end_time]);
+
+  if (isLoading) {
+    return null;
+  }
 
   return (
     <div className="flex min-h-[100dvh] flex-col items-center justify-center bg-background px-4 py-6 text-center overflow-hidden">
