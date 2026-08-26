@@ -1,4 +1,4 @@
-﻿import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -224,6 +224,16 @@ function LoginPage() {
               />
             </svg>
             Continue with Google
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              navigate({ to: search.redirect || "/" });
+            }}
+            className="mt-4 w-full flex items-center justify-center gap-2 px-4 py-2 border border-[#d8c3a5] rounded-xl text-[#605a54] bg-white hover:bg-[#fdfaf6] transition-colors shadow-sm font-medium"
+          >
+            Continue as Guest
           </button>
         </div>
       </div>

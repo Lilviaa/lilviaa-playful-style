@@ -73,31 +73,27 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (isLoading) return; // Don't write back during initial auth loading to prevent wiping
-    if (!user) return; // Guests don't have wishlists, so don't write empty lists
     try {
       localStorage.setItem(KEY, JSON.stringify(items));
     } catch {}
   }, [items, isLoading, user]);
 
   const add: WishlistCtx["add"] = async (item) => {
-    if (!user) {
-      navigate({ to: "/login" });
-      return;
-    }
-    
     // Optimistic UI update
     setItems((prev) => {
       if (prev.some((p) => p.slug === item.slug)) return prev;
       return [...prev, item];
     });
 
-    try {
-      await apiFetch("/wishlists/", {
-        method: "POST",
-        body: JSON.stringify({ slug: item.slug })
-      });
-    } catch (err) {
-      console.error("Failed to save wishlist item to DB", err);
+    if (user) {
+      try {
+        await apiFetch("/wishlists/", {
+          method: "POST",
+          body: JSON.stringify({ slug: item.slug })
+        });
+      } catch (err) {
+        console.error("Failed to save wishlist item to DB", err);
+      }
     }
   };
 

@@ -1,4 +1,4 @@
-﻿import { createContext, useContext, useState, ReactNode, useEffect } from "react";
+import { createContext, useContext, useState, ReactNode, useEffect } from "react";
 import { auth } from "./firebase";
 import { 
   onAuthStateChanged, 
@@ -136,7 +136,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       // Attempt cart merge via our standard apiFetch which now handles the Authorization header
       try {
-        const rawCart = localStorage.getItem("lilviaa-cart-v1-guest");
+        const rawCart = localStorage.getItem("lilviaa-cart-v2");
         if (rawCart) {
           const parsed = JSON.parse(rawCart);
           if (Array.isArray(parsed) && parsed.length > 0) {
@@ -153,7 +153,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               body: JSON.stringify({ items })
             });
             if (mergeRes.ok) {
-              localStorage.removeItem("lilviaa-cart-v1-guest");
+              localStorage.removeItem("lilviaa-cart-v2");
             }
           }
         }
@@ -260,7 +260,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       window.dispatchEvent(new Event("lilviaa-logged-in"));
 
       try {
-        const rawCart = localStorage.getItem("lilviaa-cart-v1-guest");
+        const rawCart = localStorage.getItem("lilviaa-cart-v2");
         if (rawCart) {
           const parsed = JSON.parse(rawCart);
           if (Array.isArray(parsed) && parsed.length > 0) {
@@ -277,7 +277,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               body: JSON.stringify({ items })
             });
             if (mergeRes.ok) {
-              localStorage.removeItem("lilviaa-cart-v1-guest");
+              localStorage.removeItem("lilviaa-cart-v2");
             }
           }
         }

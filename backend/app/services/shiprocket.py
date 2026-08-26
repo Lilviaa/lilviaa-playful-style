@@ -152,7 +152,7 @@ async def automate_shiprocket_fulfillment(order_id: str):
             return
             
         # 2. Build payload
-        address = order.get("addresses") or {}
+        address = order.get("addresses") or order.get("shipping_address") or {}
         items = order.get("items") or []
         user = order.get("users") or {}
         
@@ -191,7 +191,7 @@ async def automate_shiprocket_fulfillment(order_id: str):
             "billing_pincode": address.get("postal_code") or address.get("zip") or "",
             "billing_state": address.get("state", ""),
             "billing_country": address.get("country", "India"),
-            "billing_email": address.get("email") or user.get("email") or "customer@lilviaa.com",
+            "billing_email": address.get("email") or user.get("email") or getattr(order, "email", "customer@lilviaa.com"),
             "billing_phone": address.get("phone") or "9999999999",
             "shipping_is_billing": True,
             "order_items": order_items,

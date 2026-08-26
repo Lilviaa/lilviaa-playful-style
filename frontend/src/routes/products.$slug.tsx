@@ -162,10 +162,6 @@ function ProductPage() {
   };
 
   const handleAdd = () => {
-    if (!user) {
-      navigate({ to: "/login" });
-      return false;
-    }
     if (inCart) {
       // If already in cart, just go to cart/checkout or do nothing
       return true;
@@ -187,10 +183,6 @@ function ProductPage() {
   };
 
   const handleBuyNow = () => {
-    if (!user) {
-      navigate({ to: "/login" });
-      return;
-    }
     if (displayStock === 0) return;
     
     sessionStorage.setItem("buyNowItem", JSON.stringify({

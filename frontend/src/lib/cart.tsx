@@ -170,11 +170,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const add: CartCtx["add"] = async (item) => {
-    if (!user) {
-      navigate({ to: "/login" });
-      return;
-    }
-
     // Optimistic update immediately
     setItems((prev) => {
       const idx = prev.findIndex((p) => p.slug === item.slug && p.size === item.size);
@@ -189,21 +184,23 @@ export function CartProvider({ children }: { children: ReactNode }) {
       return next;
     });
 
-    try {
-      const response = await apiFetch("/cart", {
-        method: "POST",
-        body: JSON.stringify({ product_variant_id: item.variant_id, quantity: item.qty }),
-      });
-      if (!response.ok) {
-        const errData = await response.json();
-        throw new Error(errData.detail || "Failed to add to cart");
+    if (user) {
+      try {
+        const response = await apiFetch("/cart", {
+          method: "POST",
+          body: JSON.stringify({ product_variant_id: item.variant_id, quantity: item.qty }),
+        });
+        if (!response.ok) {
+          const errData = await response.json();
+          throw new Error(errData.detail || "Failed to add to cart");
+        }
+        // Sync with real DB values
+        await fetchBackendCart();
+      } catch (e: any) {
+        console.error(e);
+        toast.error(e.message || "Failed to add to cart");
+        await fetchBackendCart(); // Rollback to real DB state
       }
-      // Sync with real DB values
-      await fetchBackendCart();
-    } catch (e: any) {
-      console.error(e);
-      toast.error(e.message || "Failed to add to cart");
-      await fetchBackendCart(); // Rollback to real DB state
     }
   };
 
