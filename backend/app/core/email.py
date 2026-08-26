@@ -19,6 +19,7 @@ def _send_email(to_email: str, subject: str, html_content: str):
     msg.add_alternative(html_content, subtype='html')
 
     try:
+        print(f"[SMTP DEBUG] Attempting connection to {settings.SMTP_HOST} on port {settings.SMTP_PORT}...")
         # Pass source_address=('0.0.0.0', 0) to force IPv4. This fixes the common 
         # "[Errno 101] Network is unreachable" on Windows when IPv6 is unrouted.
         with smtplib.SMTP(settings.SMTP_HOST, settings.SMTP_PORT, source_address=('0.0.0.0', 0)) as server:
@@ -27,8 +28,11 @@ def _send_email(to_email: str, subject: str, html_content: str):
             server.starttls()
             server.login(settings.SMTP_USERNAME, settings.SMTP_PASSWORD)
             server.send_message(msg)
-            print(f"Successfully sent email to {to_email}")
+            print(f"[SMTP DEBUG] Successfully sent email to {to_email}")
     except Exception as e:
+        import traceback
+        print(f"[SMTP DEBUG] CONNECTION OR SEND FAILED: {type(e).__name__} - {str(e)}")
+        traceback.print_exc()
         print(f"Failed to send email to {to_email}: {e}")
 
 
