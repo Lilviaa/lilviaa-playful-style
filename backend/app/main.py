@@ -121,7 +121,7 @@ app.include_router(admin_reviews.router, prefix="/api/v1/admin/reviews", tags=["
 app.include_router(admin_cms.router, prefix="/api/v1/admin/cms", tags=["Admin CMS"])
 app.include_router(admin_emails.router, prefix="/api/v1/admin/emails", tags=["Admin Emails"])
 app.include_router(whatsapp_webhook.router, prefix="/api/v1/whatsapp", tags=["WhatsApp Webhook"])
-app.include_router(shiprocket_webhook.router, prefix="/api/v1/shiprocket", tags=["Shiprocket Webhook"])
+app.include_router(shiprocket_webhook.router, prefix="/api/v1/logistics", tags=["Logistics Webhook"])
 app.include_router(contact.router, prefix="/api/v1/contact", tags=["Contact"])
 app.include_router(shipping.router, prefix="/api/v1/shipping", tags=["Shipping"])
 
