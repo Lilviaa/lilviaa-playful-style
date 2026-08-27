@@ -2,7 +2,7 @@ import { useState, useRef } from "react";
 import { ProductImage } from "@/lib/admin/products-api";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { GripVertical, X, UploadCloud, Image as ImageIcon } from "lucide-react";
+import { GripVertical, X, UploadCloud, Image as ImageIcon, RotateCw } from "lucide-react";
 import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd";
 
 interface ImageUploaderProps {
@@ -61,6 +61,48 @@ export function ImageUploader({ images, onChange }: ImageUploaderProps) {
     }
   };
 
+  const rotateImage = async (index: number) => {
+    const imgData = images[index];
+    
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.src = imgData.url;
+    
+    await new Promise((resolve, reject) => {
+      img.onload = resolve;
+      img.onerror = reject;
+    });
+
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    // Swap width and height for 90 degree rotation to prevent cropping or white bars
+    canvas.width = img.height;
+    canvas.height = img.width;
+
+    ctx.translate(canvas.width / 2, canvas.height / 2);
+    ctx.rotate((90 * Math.PI) / 180);
+    ctx.drawImage(img, -img.width / 2, -img.height / 2);
+
+    canvas.toBlob((blob) => {
+      if (!blob) return;
+      const rotatedFile = new File([blob], `rotated_${Date.now()}.webp`, { type: "image/webp" });
+      const newImages = [...images];
+      
+      // We change the ID to a local one so the backend deletes the old image and uploads this new one.
+      // This prevents image duplication on save.
+      newImages[index] = {
+        ...imgData,
+        id: `img_local_${Date.now()}`, 
+        url: URL.createObjectURL(rotatedFile),
+        file: rotatedFile,
+      };
+      
+      onChange(newImages);
+    }, "image/webp", 1.0);
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -116,6 +158,19 @@ export function ImageUploader({ images, onChange }: ImageUploaderProps) {
                         >
                           <GripVertical className="h-4 w-4" />
                         </div>
+                        
+                        {/* Rotate Button */}
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            rotateImage(index);
+                          }}
+                          className="absolute top-1 right-9 h-6 w-6 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center text-cocoa hover:bg-white hover:text-blue-500 md:opacity-0 md:group-hover:opacity-100 transition-opacity shadow-sm z-10"
+                          title="Rotate 90°"
+                        >
+                          <RotateCw className="h-3.5 w-3.5" />
+                        </button>
                         
                         {/* Remove Button */}
                         <button
