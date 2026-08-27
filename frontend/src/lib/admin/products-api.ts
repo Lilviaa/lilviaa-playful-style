@@ -309,10 +309,14 @@ export function useSaveProduct() {
             if (!uploadRes.ok) throw new Error("Failed to upload image");
             
             // 3. Confirm upload
-            await apiFetch('/admin/products/upload/confirm', {
+            const confirmRes = await apiFetch('/admin/products/upload/confirm', {
               method: 'POST',
               body: JSON.stringify({ file_path, product_id: productId, sort_order: index })
             });
+            if (!confirmRes.ok) {
+              const err = await confirmRes.json().catch(() => ({}));
+              throw new Error(err.detail || "Failed to confirm upload to database");
+            }
           }
         }
       }
