@@ -231,14 +231,28 @@ export function useSaveProduct() {
         const incomingVariantIds = new Set(data.variants.map((v) => v.id));
 
       if (!isNew) {
-        // Fetch existing variants to figure out if any were deleted
+        // Fetch existing data to figure out if any variants or images were deleted
         const pRes = await apiFetch(`/admin/products/`);
         const pData = await pRes.json();
         const existingProduct = pData.find((prod: any) => prod.id === productId);
-        if (existingProduct && existingProduct.variants) {
-          for (const ev of existingProduct.variants) {
-            if (!incomingVariantIds.has(ev.id)) {
-              await apiFetch(`/admin/products/variants/${ev.id}`, { method: 'DELETE' });
+        
+        if (existingProduct) {
+          // Delete removed variants
+          if (existingProduct.variants) {
+            for (const ev of existingProduct.variants) {
+              if (!incomingVariantIds.has(ev.id)) {
+                await apiFetch(`/admin/products/variants/${ev.id}`, { method: 'DELETE' });
+              }
+            }
+          }
+          
+          // Delete removed images (e.g., when an image is rotated, its old ID is removed)
+          const incomingImageIds = new Set(data.images.map((i) => i.id));
+          if (existingProduct.images) {
+            for (const ei of existingProduct.images) {
+              if (!incomingImageIds.has(ei.id)) {
+                await apiFetch(`/admin/products/images/${ei.id}`, { method: 'DELETE' });
+              }
             }
           }
         }
