@@ -29,8 +29,14 @@ export function OrderTable({ data, isLoading }: OrderTableProps) {
   const [rowSelection, setRowSelection] = useState({});
   const deleteOrders = useDeleteOrders();
 
-  const handleRowClick = (order: Order) => {
-    // Only open drawer if we didn't click on a checkbox or actions
+  const handleRowClick = (order: Order, e?: React.MouseEvent) => {
+    // Only open drawer if we didn't click on a checkbox or button
+    if (e) {
+      const target = e.target as HTMLElement;
+      if (target.closest('button') || target.closest('[role="checkbox"]')) {
+        return;
+      }
+    }
     setSelectedOrder(order);
     setIsDrawerOpen(true);
   };
@@ -211,7 +217,7 @@ export function OrderTable({ data, isLoading }: OrderTableProps) {
                 table.getRowModel().rows.map((row) => (
                   <TableRow
                     key={row.id}
-                    onClick={() => handleRowClick(row.original)}
+                    onClick={(e) => handleRowClick(row.original, e)}
                     className="border-b border-cocoa/5 hover:bg-primary/5 transition-colors duration-200 cursor-pointer"
                   >
                     {row.getVisibleCells().map((cell) => (
@@ -251,7 +257,7 @@ export function OrderTable({ data, isLoading }: OrderTableProps) {
               return (
                 <div
                   key={row.id}
-                  onClick={() => handleRowClick(order)}
+                  onClick={(e) => handleRowClick(order, e)}
                   className="flex flex-col gap-2 p-4 bg-white hover:bg-primary/5 transition-colors cursor-pointer relative"
                 >
                   <div className="absolute top-4 right-4 z-10" onClick={(e) => e.stopPropagation()}>
