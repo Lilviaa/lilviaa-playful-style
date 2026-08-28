@@ -20,6 +20,24 @@ app = FastAPI(
     version="1.0.0",
 )
 
+@app.on_event("startup")
+async def start_background_tasks():
+    import asyncio
+    asyncio.create_task(release_expired_stock_loop())
+
+async def release_expired_stock_loop():
+    from app.db.supabase import get_supabase
+    import asyncio
+    import logging
+    while True:
+        try:
+            # We delay first to give the app time to boot fully
+            await asyncio.sleep(60)
+            supabase = get_supabase()
+            supabase.rpc("release_expired_stock_reservations").execute()
+        except Exception as e:
+            logging.error(f"Failed to run stock release cron: {str(e)}")
+
 # Set up CORS
 
 
@@ -98,7 +116,7 @@ async def global_unhandled_exception_handler(request: Request, exc: Exception):
 # Include Routers
 from app.api.v1 import addresses, categories, products, admin_products, orders, cart, banners, reviews, cms
 from app.api.v1 import admin_dashboard, admin_orders, admin_customers, admin_coupons, admin_banners, admin_reviews, admin_cms, admin_emails
-from app.api.v1 import whatsapp_webhook, shiprocket_webhook, contact, wishlists, shipping
+from app.api.v1 import whatsapp_webhook, shiprocket_webhook, contact, wishlists, shipping, webhooks
 
 # (I will just add them below the others)
 app.include_router(firebase_auth.router, prefix="/api/v1/firebase_auth", tags=["Firebase Auth"])
@@ -124,6 +142,7 @@ app.include_router(whatsapp_webhook.router, prefix="/api/v1/whatsapp", tags=["Wh
 app.include_router(shiprocket_webhook.router, prefix="/api/v1/logistics", tags=["Logistics Webhook"])
 app.include_router(contact.router, prefix="/api/v1/contact", tags=["Contact"])
 app.include_router(shipping.router, prefix="/api/v1/shipping", tags=["Shipping"])
+app.include_router(webhooks.router, prefix="/api/v1/webhooks", tags=["Webhooks"])
 
 @app.get("/health")
 def health_check():
