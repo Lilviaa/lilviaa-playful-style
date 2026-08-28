@@ -213,7 +213,13 @@ def create_order(order: OrderCreate, request: Request, background_tasks: Backgro
         shipping_amount = 0.0
     else:
         cust_state = (order.state or "").strip().lower()
-        if cust_state == home_state.strip().lower():
+        cust_zip = (order.zip or "").strip()
+        
+        home_prefixes = [p.strip() for p in home_state.split(",") if p.strip()]
+        is_home_zip = any(cust_zip.startswith(prefix) for prefix in home_prefixes) if home_prefixes else False
+        is_home_state = (cust_state == home_state.strip().lower())
+        
+        if is_home_zip or is_home_state:
             shipping_amount = shipping_charge_home
         else:
             shipping_amount = shipping_charge_other

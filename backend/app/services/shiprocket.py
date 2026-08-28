@@ -77,7 +77,12 @@ async def _request(method: str, endpoint: str, json_data: dict = None, params: d
             error_details = e.response.text
             try:
                 err_json = e.response.json()
-                error_details = err_json.get("message") or err_json
+                msg = err_json.get("message", "Unknown error")
+                validation_errors = err_json.get("errors", {})
+                if validation_errors:
+                    error_details = f"{msg} Details: {validation_errors}"
+                else:
+                    error_details = msg or err_json
             except:
                 pass
             raise AppError(f"Shiprocket API Error: {error_details}", 400)
@@ -164,9 +169,14 @@ async def automate_shiprocket_fulfillment(order_id: str):
             if variant.get("size"):
                 name += f" ({variant.get('size')})"
                 
+            # Shiprocket requires a non-empty SKU
+            sku = variant.get("sku")
+            if not sku:
+                sku = f"SKU-{item.get('id', '0')[:8]}"
+                
             order_items.append({
-                "name": name,
-                "sku": variant.get("sku", ""),
+                "name": name[:50], # Shiprocket name limit
+                "sku": sku[:50],
                 "units": item.get("quantity", 1),
                 "selling_price": str(item.get("unit_price", 0)),
                 "discount": "0",

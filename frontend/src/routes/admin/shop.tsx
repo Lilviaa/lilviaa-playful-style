@@ -332,13 +332,14 @@ function CompanySettingsPage() {
               
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-2">
-                  <Label>Home State (Case Insensitive)</Label>
+                  <Label>Home Pincodes / State</Label>
                   <Input 
                     name="home_state" 
                     value={formData.home_state || ""} 
                     onChange={handleChange} 
-                    placeholder="e.g., Tamil Nadu" 
+                    placeholder="e.g. 60, 61, 62, 63, 64" 
                   />
+                  <p className="text-[10px] text-muted-foreground leading-tight">Comma-separated pincode prefixes (e.g. 60, 61) or state name.</p>
                 </div>
                 <div className="space-y-2">
                   <Label>Shipping Charge (Home State) ₹</Label>

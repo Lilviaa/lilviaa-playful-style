@@ -125,10 +125,19 @@ function CheckoutPage() {
   if (settings) {
     if (freeShipping || (settings.enable_free_shipping && subtotal >= (settings.free_shipping_above || 0))) {
       shipping = 0;
-    } else if (customerState.trim().toLowerCase() === (settings.home_state || "").trim().toLowerCase()) {
-      shipping = settings.shipping_charge_home || 0;
     } else {
-      shipping = settings.shipping_charge_other || 0;
+      const customerZip = (form.watch("zip") || "").trim();
+      const homeStateSetting = (settings.home_state || "").trim();
+      const homePrefixes = homeStateSetting.split(",").map(p => p.trim()).filter(Boolean);
+      
+      const isHomeZip = homePrefixes.length > 0 && homePrefixes.some(prefix => customerZip.startsWith(prefix));
+      const isHomeStateStr = customerState.trim().toLowerCase() === homeStateSetting.toLowerCase();
+      
+      if (isHomeZip || isHomeStateStr) {
+        shipping = settings.shipping_charge_home || 0;
+      } else {
+        shipping = settings.shipping_charge_other || 0;
+      }
     }
   } else {
     shipping = freeShipping ? 0 : (subtotal >= 3000 ? 0 : 79);
