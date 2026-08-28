@@ -318,9 +318,6 @@ function CheckoutPage() {
       };
 
       const rzp = new (window as any).Razorpay(options);
-      rzp.on('payment.failed', function (response: any) {
-        navigate({ to: "/order-failed", replace: true });
-      });
       rzp.open();
     } catch (error: any) {
       setPaymentError(error.message || "Something went wrong during checkout.");

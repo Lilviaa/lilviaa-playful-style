@@ -32,6 +32,7 @@ class CompanySettingsBase(BaseModel):
     
     # Website Status
     is_maintenance_mode: bool = False
+    maintenance_end_time: Optional[str] = None
 
 class CompanySettingsUpdate(CompanySettingsBase):
     pass

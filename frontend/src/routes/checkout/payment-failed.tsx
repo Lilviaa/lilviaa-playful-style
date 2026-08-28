@@ -69,10 +69,6 @@ function PaymentFailedPage() {
       };
 
       const rzp = new (window as any).Razorpay(options);
-      rzp.on('payment.failed', function (response: any) {
-        setError("Payment failed: " + response.error.description);
-        setIsRetrying(false);
-      });
       rzp.open();
 
     } catch (err: any) {
