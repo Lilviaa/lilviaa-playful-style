@@ -27,6 +27,8 @@ def list_orders(
     payment_method: Optional[str] = Query(None, alias="paymentMethod"),
     source: Optional[str] = Query(None),
     search: Optional[str] = Query(None),
+    timeframe: Optional[str] = Query(None),
+    date: Optional[str] = Query(None),
     page: int = Query(1, ge=1),
     limit: int = Query(20, ge=1, le=100)
 ):
@@ -42,6 +44,26 @@ def list_orders(
         query = query.eq("payment_method", payment_method)
     if source and source != "all":
         query = query.eq("order_source", source)
+
+    from datetime import datetime, timedelta, timezone
+    
+    # Date overrides timeframe
+    if date:
+        try:
+            # Assumes YYYY-MM-DD
+            dt = datetime.strptime(date, "%Y-%m-%d").replace(tzinfo=timezone.utc)
+            start_of_day = dt.isoformat()
+            end_of_day = (dt + timedelta(days=1)).isoformat()
+            query = query.gte("created_at", start_of_day).lt("created_at", end_of_day)
+        except ValueError:
+            pass
+    elif timeframe == "in_process":
+        cutoff = (datetime.now(timezone.utc) - timedelta(hours=24)).isoformat()
+        query = query.lt("created_at", cutoff).in_("status", ["processing", "confirmed", "packed", "shipped"])
+    elif timeframe == "recent":
+        cutoff = (datetime.now(timezone.utc) - timedelta(hours=24)).isoformat()
+        query = query.gte("created_at", cutoff)
+    # if timeframe == "all" or None, do nothing
 
         
     if search:

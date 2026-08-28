@@ -61,7 +61,8 @@ export interface Order {
 export interface OrderFilters {
   status?: string;
   paymentMethod?: string;
-  dateRange?: { from: Date; to: Date } | null;
+  timeframe?: string;
+  date?: string;
   search?: string;
   source?: string;
 }
@@ -81,6 +82,8 @@ export function useOrders(filters?: OrderFilters) {
       if (filters?.status && filters.status !== "all") params.set("status", filters.status);
       if (filters?.paymentMethod && filters.paymentMethod !== "all") params.set("paymentMethod", filters.paymentMethod);
       if (filters?.source && filters.source !== "all") params.set("source", filters.source);
+      if (filters?.timeframe && filters.timeframe !== "all") params.set("timeframe", filters.timeframe);
+      if (filters?.date) params.set("date", filters.date);
       if (filters?.search) params.set("search", filters.search);
 
       const qs = params.toString();
@@ -221,6 +224,31 @@ export function useRefreshTracking() {
     },
     onError: (error: any) => {
       console.error("Failed to refresh tracking", error);
+    }
+  });
+}
+
+export function useDeleteOrders() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (orderIds: string[]) => {
+      const res = await apiFetch(`/admin/orders/bulk-delete`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ order_ids: orderIds }),
+      });
+      if (!res.ok) throw new Error("Failed to delete orders");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-orders"] });
+      toast.success("Orders deleted successfully");
+    },
+    onError: (error: any) => {
+      toast.error("Failed to delete orders", {
+        description: error.message
+      });
     }
   });
 }

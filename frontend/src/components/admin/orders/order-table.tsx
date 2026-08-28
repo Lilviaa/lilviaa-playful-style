@@ -8,13 +8,15 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Order } from "@/lib/admin/orders-api";
+import { Order, useDeleteOrders } from "@/lib/admin/orders-api";
 import { formatINR } from "@/lib/cart";
 import { formatOrderId } from "@/lib/utils";
 import { OrderStatusBadge } from "./order-status-badge";
 import { OrderDetailDrawer } from "./order-detail-drawer";
 import { PackingSlipPrint } from "./packing-slip-print";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Trash2 } from "lucide-react";
 
 interface OrderTableProps {
   data: Order[];
@@ -24,8 +26,11 @@ interface OrderTableProps {
 export function OrderTable({ data, isLoading }: OrderTableProps) {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [rowSelection, setRowSelection] = useState({});
+  const deleteOrders = useDeleteOrders();
 
   const handleRowClick = (order: Order) => {
+    // Only open drawer if we didn't click on a checkbox or actions
     setSelectedOrder(order);
     setIsDrawerOpen(true);
   };
@@ -36,7 +41,40 @@ export function OrderTable({ data, isLoading }: OrderTableProps) {
     }, 100);
   };
 
+  const handleDeleteSelected = async () => {
+    const selectedIds = Object.keys(rowSelection).map(index => data[parseInt(index)].id);
+    if (!selectedIds.length) return;
+    
+    if (window.confirm(`Are you sure you want to delete ${selectedIds.length} selected order(s)? This cannot be undone.`)) {
+      await deleteOrders.mutateAsync(selectedIds);
+      setRowSelection({});
+    }
+  };
+
   const columns: ColumnDef<Order>[] = [
+    {
+      id: "select",
+      header: ({ table }) => (
+        <Checkbox
+          checked={table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && "indeterminate")}
+          onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+          aria-label="Select all"
+          className="translate-y-[2px]"
+        />
+      ),
+      cell: ({ row }) => (
+        <div onClick={(e) => e.stopPropagation()}>
+          <Checkbox
+            checked={row.getIsSelected()}
+            onCheckedChange={(value) => row.toggleSelected(!!value)}
+            aria-label="Select row"
+            className="translate-y-[2px]"
+          />
+        </div>
+      ),
+      enableSorting: false,
+      enableHiding: false,
+    },
     {
       accessorKey: "id",
       header: "Order ID",
@@ -114,11 +152,34 @@ export function OrderTable({ data, isLoading }: OrderTableProps) {
   const table = useReactTable({
     data,
     columns,
+    state: {
+      rowSelection,
+    },
+    enableRowSelection: true,
+    onRowSelectionChange: setRowSelection,
     getCoreRowModel: getCoreRowModel(),
   });
 
+  const selectedCount = Object.keys(rowSelection).length;
+
   return (
     <>
+      {selectedCount > 0 && (
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 flex justify-between items-center print:hidden animate-in fade-in slide-in-from-top-4">
+          <span className="text-sm font-medium text-amber-800">
+            {selectedCount} order{selectedCount !== 1 ? 's' : ''} selected
+          </span>
+          <button
+            onClick={handleDeleteSelected}
+            disabled={deleteOrders.isPending}
+            className="flex items-center gap-2 px-3 py-1.5 bg-red-600 text-white text-xs font-semibold rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+            {deleteOrders.isPending ? "Deleting..." : "Delete Selected"}
+          </button>
+        </div>
+      )}
+
       <div className="rounded-2xl border border-cocoa/10 bg-white shadow-sm overflow-hidden flex flex-col">
         <div className="hidden md:block">
           <Table>
@@ -191,9 +252,16 @@ export function OrderTable({ data, isLoading }: OrderTableProps) {
                 <div
                   key={row.id}
                   onClick={() => handleRowClick(order)}
-                  className="flex flex-col gap-2 p-4 bg-white hover:bg-primary/5 transition-colors cursor-pointer"
+                  className="flex flex-col gap-2 p-4 bg-white hover:bg-primary/5 transition-colors cursor-pointer relative"
                 >
-                  <div className="flex justify-between items-start">
+                  <div className="absolute top-4 right-4 z-10" onClick={(e) => e.stopPropagation()}>
+                    <Checkbox
+                      checked={row.getIsSelected()}
+                      onCheckedChange={(value) => row.toggleSelected(!!value)}
+                    />
+                  </div>
+                  
+                  <div className="flex justify-between items-start pr-8">
                     <span className="font-semibold text-cocoa leading-tight">{formatOrderId(order.id)}</span>
                     <span className="text-xs text-muted-foreground">{new Date(order.created_at).toLocaleDateString()}</span>
                   </div>
