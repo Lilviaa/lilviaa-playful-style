@@ -376,3 +376,31 @@ async def refresh_tracking_status(order_id: str, request: Request, background_ta
     }).eq("id", order_id).execute()
     
     return {"message": "Tracking updated from Shiprocket", "status": status, "history": history}
+
+class BulkDeleteRequest(BaseModel):
+    order_ids: List[str]
+
+@router.post("/bulk-delete", dependencies=[Depends(PreAuthRateLimit("20/minute")), Depends(require_admin)])
+@limiter.limit("20/minute", key_func=get_admin_id)
+def bulk_delete_orders(
+    request: Request,
+    payload: BulkDeleteRequest
+):
+    supabase = get_supabase()
+    if not payload.order_ids:
+        return {"success": True, "deleted": 0}
+        
+    try:
+        # Delete dependent records first to avoid foreign key violations
+        # order_items
+        supabase.table("order_items").delete().in_("order_id", payload.order_ids).execute()
+        # payment_transactions
+        supabase.table("payment_transactions").delete().in_("order_id", payload.order_ids).execute()
+        # returns
+        supabase.table("returns").delete().in_("order_id", payload.order_ids).execute()
+        # You might also have to delete refunds if tied to orders
+        
+        res = supabase.table("orders").delete().in_("id", payload.order_ids).execute()
+        return {"success": True, "deleted": len(res.data) if res.data else 0}
+    except Exception as e:
+        raise AppError(status_code=500, detail=f"Failed to delete orders: {str(e)}")
