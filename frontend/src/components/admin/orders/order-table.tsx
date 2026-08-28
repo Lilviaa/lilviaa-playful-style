@@ -17,6 +17,16 @@ import { PackingSlipPrint } from "./packing-slip-print";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Trash2 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface OrderTableProps {
   data: Order[];
@@ -27,6 +37,7 @@ export function OrderTable({ data, isLoading }: OrderTableProps) {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [rowSelection, setRowSelection] = useState({});
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const deleteOrders = useDeleteOrders();
 
   const handleRowClick = (order: Order, e?: React.MouseEvent) => {
@@ -54,14 +65,17 @@ export function OrderTable({ data, isLoading }: OrderTableProps) {
     }, 100);
   };
 
-  const handleDeleteSelected = async () => {
+  const promptDelete = () => {
+    setIsDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
     const selectedIds = Object.keys(rowSelection).map(index => data[parseInt(index)].id);
     if (!selectedIds.length) return;
     
-    if (window.confirm(`Are you sure you want to delete ${selectedIds.length} selected order(s)? This cannot be undone.`)) {
-      await deleteOrders.mutateAsync(selectedIds);
-      setRowSelection({});
-    }
+    await deleteOrders.mutateAsync(selectedIds);
+    setRowSelection({});
+    setIsDeleteDialogOpen(false);
   };
 
   const columns: ColumnDef<Order>[] = [
@@ -183,7 +197,7 @@ export function OrderTable({ data, isLoading }: OrderTableProps) {
             {selectedCount} order{selectedCount !== 1 ? 's' : ''} selected
           </span>
           <button
-            onClick={handleDeleteSelected}
+            onClick={promptDelete}
             disabled={deleteOrders.isPending}
             className="flex items-center gap-2 px-3 py-1.5 bg-red-600 text-white text-xs font-semibold rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
           >
@@ -192,6 +206,26 @@ export function OrderTable({ data, isLoading }: OrderTableProps) {
           </button>
         </div>
       )}
+
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent className="bg-white rounded-3xl border-cocoa/10 sm:max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-xl font-bold text-cocoa">Delete {selectedCount} Order{selectedCount !== 1 ? 's' : ''}</AlertDialogTitle>
+            <AlertDialogDescription className="text-muted-foreground">
+              Are you sure you want to delete {selectedCount} selected order{selectedCount !== 1 ? 's' : ''}? This action cannot be undone and will permanently remove these orders from the database.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="mt-6">
+            <AlertDialogCancel className="rounded-full border-cocoa/20 hover:bg-cocoa/5 hover:text-cocoa">Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleConfirmDelete}
+              className="rounded-full bg-red-600 text-white hover:bg-red-700"
+            >
+              Yes, delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <div className="rounded-2xl border border-cocoa/10 bg-white shadow-sm overflow-hidden flex flex-col">
         <div className="hidden md:block">
