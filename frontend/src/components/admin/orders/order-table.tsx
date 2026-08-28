@@ -33,7 +33,14 @@ export function OrderTable({ data, isLoading }: OrderTableProps) {
     // Only open drawer if we didn't click on a checkbox or button
     if (e) {
       const target = e.target as HTMLElement;
-      if (target.closest('button') || target.closest('[role="checkbox"]')) {
+      
+      // If we clicked inside the first column (checkbox column), ignore the row click
+      const td = target.closest('td');
+      if (td && td.cellIndex === 0) {
+        return;
+      }
+
+      if (target.closest('button') || target.closest('[role="checkbox"]') || target.closest('.checkbox-container')) {
         return;
       }
     }
@@ -69,7 +76,7 @@ export function OrderTable({ data, isLoading }: OrderTableProps) {
         />
       ),
       cell: ({ row }) => (
-        <div onClick={(e) => e.stopPropagation()}>
+        <div className="checkbox-container flex items-center justify-center w-full h-full cursor-default" onClick={(e) => e.stopPropagation()}>
           <Checkbox
             checked={row.getIsSelected()}
             onCheckedChange={(value) => row.toggleSelected(!!value)}
@@ -260,7 +267,7 @@ export function OrderTable({ data, isLoading }: OrderTableProps) {
                   onClick={(e) => handleRowClick(order, e)}
                   className="flex flex-col gap-2 p-4 bg-white hover:bg-primary/5 transition-colors cursor-pointer relative"
                 >
-                  <div className="absolute top-4 right-4 z-10" onClick={(e) => e.stopPropagation()}>
+                  <div className="absolute top-4 right-4 z-10 checkbox-container" onClick={(e) => e.stopPropagation()}>
                     <Checkbox
                       checked={row.getIsSelected()}
                       onCheckedChange={(value) => row.toggleSelected(!!value)}
