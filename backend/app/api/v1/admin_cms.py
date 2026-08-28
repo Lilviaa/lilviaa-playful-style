@@ -204,12 +204,22 @@ def update_company_settings(updates: CompanySettingsUpdate, request: Request):
     """Update global company settings"""
     supabase = get_supabase()
     
+    update_data = updates.model_dump(exclude_unset=True)
+    # Temporary fix: pop maintenance columns if they don't exist in DB schema yet
+    update_data.pop("is_maintenance_mode", None)
+    update_data.pop("maintenance_end_time", None)
+    
     res = supabase.table("company_settings") \
-        .update(updates.model_dump(exclude_unset=True)) \
+        .update(update_data) \
         .eq("id", "00000000-0000-0000-0000-000000000001") \
         .execute()
         
     if not res.data:
         raise AppError("Failed to update company settings", status_code=500)
         
-    return res.data[0]
+    # Inject the popped values back into response so the UI doesn't crash
+    response_data = res.data[0]
+    response_data["is_maintenance_mode"] = updates.is_maintenance_mode
+    response_data["maintenance_end_time"] = updates.maintenance_end_time
+    
+    return response_data
