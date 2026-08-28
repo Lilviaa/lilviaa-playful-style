@@ -392,15 +392,22 @@ def bulk_delete_orders(
         
     try:
         # Delete dependent records first to avoid foreign key violations
-        # order_items
-        supabase.table("order_items").delete().in_("order_id", payload.order_ids).execute()
-        # payment_transactions
-        supabase.table("payment_transactions").delete().in_("order_id", payload.order_ids).execute()
-        # returns
-        supabase.table("returns").delete().in_("order_id", payload.order_ids).execute()
-        # You might also have to delete refunds if tied to orders
+        try:
+            supabase.table("order_items").delete().in_("order_id", payload.order_ids).execute()
+        except Exception:
+            pass
+            
+        try:
+            supabase.table("payment_transactions").delete().in_("order_id", payload.order_ids).execute()
+        except Exception:
+            pass
+            
+        try:
+            supabase.table("returns").delete().in_("order_id", payload.order_ids).execute()
+        except Exception:
+            pass
         
         res = supabase.table("orders").delete().in_("id", payload.order_ids).execute()
         return {"success": True, "deleted": len(res.data) if res.data else 0}
     except Exception as e:
-        raise AppError(status_code=500, detail=f"Failed to delete orders: {str(e)}")
+        raise AppError(f"Failed to delete orders: {str(e)}", 500)
