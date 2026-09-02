@@ -198,7 +198,7 @@ async def automate_shiprocket_fulfillment(order_id: str):
             clean_phone = clean_phone.rjust(10, '0')
         
         order_payload = {
-            "order_id": order_id,
+            "order_id": order.get("display_id") or order_id,
             "order_date": datetime.now().strftime("%Y-%m-%d %H:%M"),
             "pickup_location": "Home",
             "billing_customer_name": address.get("first_name") or full_name.split()[0],
