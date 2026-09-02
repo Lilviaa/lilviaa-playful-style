@@ -189,6 +189,14 @@ async def automate_shiprocket_fulfillment(order_id: str):
         
         full_name = address.get("full_name") or "Customer"
         
+        # Sanitize phone number (Shiprocket strictly expects exactly 10 digits)
+        raw_phone = address.get("phone") or "9999999999"
+        clean_phone = ''.join(filter(str.isdigit, str(raw_phone)))
+        if len(clean_phone) >= 10:
+            clean_phone = clean_phone[-10:]
+        else:
+            clean_phone = clean_phone.rjust(10, '0')
+        
         order_payload = {
             "order_id": order_id,
             "order_date": datetime.now().strftime("%Y-%m-%d %H:%M"),
@@ -202,7 +210,7 @@ async def automate_shiprocket_fulfillment(order_id: str):
             "billing_state": address.get("state", ""),
             "billing_country": address.get("country", "India"),
             "billing_email": address.get("email") or user.get("email") or getattr(order, "email", "customer@lilviaa.com"),
-            "billing_phone": address.get("phone") or "9999999999",
+            "billing_phone": clean_phone,
             "shipping_is_billing": True,
             "order_items": order_items,
             "payment_method": "Prepaid" if order.get("payment_method") != "cod" else "COD",

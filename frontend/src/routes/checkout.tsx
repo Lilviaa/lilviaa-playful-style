@@ -94,7 +94,6 @@ function CheckoutPage() {
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
   const [isVerifyingPayment, setIsVerifyingPayment] = useState(false);
   const [paymentError, setPaymentError] = useState<string | null>(null);
-  const [isSummaryExpanded, setIsSummaryExpanded] = useState(false);
 
   // Pincode serviceability
   const { pincode: checkedPin, result: pincodeResult, isChecking: isPincodeChecking, checkPincode } = usePincode();
@@ -436,18 +435,63 @@ function CheckoutPage() {
     <div className="min-h-screen bg-[#fcf9f2]">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 pb-24 pt-8">
         
-        {/* Mobile Order Summary Toggle */}
-        <div className="lg:hidden mb-6">
-          <button 
-            onClick={() => setIsSummaryExpanded(!isSummaryExpanded)}
-            className="w-full flex items-center justify-between bg-card p-4 rounded-2xl border border-border text-cocoa font-semibold shadow-sm"
-          >
-            <span className="flex items-center gap-2">Order Summary {isSummaryExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}</span>
-            <span>{formatINR(total)}</span>
-          </button>
+        {/* Mobile Order Summary (Compact Inline) */}
+        <div className="lg:hidden mb-6 bg-card rounded-3xl border border-border p-5 shadow-cute">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="font-display text-xl text-cocoa">Order Summary</h3>
+            <span className="font-bold text-xl text-cocoa">{formatINR(total)}</span>
+          </div>
           
-          {/* Always visible mobile coupon box */}
-          {renderCouponBox("mt-4 p-4 rounded-2xl bg-card border border-border shadow-sm")}
+          {/* Horizontal Items Scroll */}
+          <div className="flex overflow-x-auto gap-3 pb-4 snap-x hide-scrollbar">
+            {items.map((it) => (
+              <div key={it.slug + it.size} className="flex-shrink-0 w-[200px] flex gap-3 bg-[#fcf9f2] border border-border p-2 rounded-2xl snap-start relative group">
+                <img src={it.image} alt={it.name} className="h-16 w-12 rounded-xl object-cover bg-muted shrink-0" />
+                <div className="flex flex-col justify-center min-w-0">
+                  <h4 className="font-display text-sm font-bold text-cocoa truncate">{it.name}</h4>
+                  <p className="text-[10px] text-muted-foreground mt-0.5">Size: {it.size} • Qty: {it.qty}</p>
+                  <p className="text-xs font-bold text-cocoa mt-1">{formatINR(it.price * it.qty)}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleRemoveItem(it.slug, it.size, it.variant_id)}
+                  className="absolute -top-2 -right-2 bg-white rounded-full p-1 border border-border text-muted-foreground hover:text-red-500 shadow-sm"
+                  aria-label="Remove item"
+                >
+                  <Trash2 className="h-3 w-3" />
+                </button>
+              </div>
+            ))}
+          </div>
+
+          {/* Coupon Field */}
+          {renderCouponBox("mb-4")}
+
+          {/* Breakdown */}
+          <dl className="space-y-2 text-xs text-muted-foreground border-t border-border pt-4">
+            <div className="flex justify-between">
+              <dt>Subtotal</dt>
+              <dd className="font-semibold text-cocoa">{formatINR(subtotal)}</dd>
+            </div>
+            {discount > 0 && (
+              <div className="flex justify-between text-green-600">
+                <dt>Discount</dt>
+                <dd className="font-semibold">- {formatINR(discount)}</dd>
+              </div>
+            )}
+            <div className="flex justify-between">
+              <dt>Shipping</dt>
+              <dd className="font-semibold text-cocoa">
+                {shipping === 0 ? <span className="text-green-600 uppercase text-[10px] tracking-wider">Free</span> : formatINR(shipping)}
+              </dd>
+            </div>
+            {settings?.enable_gst && (
+              <div className="flex justify-between">
+                <dt>GST ({settings.gst_percentage}%)</dt>
+                <dd className="font-semibold text-cocoa">{formatINR(gstAmount)}</dd>
+              </div>
+            )}
+          </dl>
         </div>
 
         <div className="flex flex-col-reverse gap-8 lg:grid lg:grid-cols-[1.6fr_1fr]">
@@ -935,7 +979,7 @@ function CheckoutPage() {
           </div>
 
           {/* Right Order Summary Column (Sticky) */}
-          <div className={`lg:block ${isSummaryExpanded ? 'block' : 'hidden'}`}>
+          <div className="hidden lg:block">
             <aside className="sticky top-6 h-max rounded-3xl bg-card p-6 shadow-cute animate-in fade-in">
               <h2 className="font-display text-2xl text-cocoa pb-4 border-b border-border">Order Summary</h2>
               
