@@ -196,9 +196,17 @@ async def automate_shiprocket_fulfillment(order_id: str):
             clean_phone = clean_phone[-10:]
         else:
             clean_phone = clean_phone.rjust(10, '0')
+            
+        # Match frontend display ID logic exactly
+        clean_id = str(order_id).replace('-', '')
+        if len(clean_id) >= 6:
+            numeric_hash = str(int(clean_id[:6], 16)).zfill(6)
+            display_id = f"ORD-LV-{numeric_hash}"
+        else:
+            display_id = order_id
         
         order_payload = {
-            "order_id": order.get("display_id") or order_id,
+            "order_id": display_id,
             "order_date": datetime.now().strftime("%Y-%m-%d %H:%M"),
             "pickup_location": "Home",
             "billing_customer_name": address.get("first_name") or full_name.split()[0],
