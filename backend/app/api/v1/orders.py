@@ -415,7 +415,7 @@ def verify_payment(req: VerifyPaymentRequest, request: Request, background_tasks
 
 @router.post("/{order_id}/sync-payment", dependencies=[Depends(PreAuthRateLimit("20/minute"))])
 @limiter.limit("10/minute")
-async def sync_payment(order_id: str, background_tasks: BackgroundTasks):
+async def sync_payment(order_id: str, request: Request, background_tasks: BackgroundTasks):
     """
     Actively checks Razorpay for a captured payment on a pending order.
     Used by the frontend to poll for success when Webhooks might be disabled or delayed.
