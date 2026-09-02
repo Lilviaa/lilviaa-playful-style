@@ -320,6 +320,7 @@ function CheckoutPage() {
         },
         modal: {
           ondismiss: function() {
+            if ((window as any)._rzpPollInterval) clearInterval((window as any)._rzpPollInterval);
             navigate({ to: "/order-failed", replace: true });
           }
         }
@@ -327,6 +328,37 @@ function CheckoutPage() {
 
       const rzp = new (window as any).Razorpay(options);
       rzp.open();
+      
+      // Active polling fallback in case webhook is delayed or QR reconnect fails
+      if ((window as any)._rzpPollInterval) clearInterval((window as any)._rzpPollInterval);
+      (window as any)._rzpPollInterval = setInterval(async () => {
+        try {
+          const res = await apiFetch(`/orders/${orderData.id}/sync-payment`, { method: "POST" });
+          if (res.ok) {
+            const data = await res.json();
+            if (data.status === "processing" || data.status === "confirmed") {
+              clearInterval((window as any)._rzpPollInterval);
+              setIsVerifyingPayment(true);
+              
+              if (!isBuyNow) clear();
+              if (isBuyNow) sessionStorage.setItem("wasBuyNow", "true");
+              
+              navigate({ 
+                to: "/order-success",  
+                search: { order_id: orderData.id, amount: total },
+                replace: true 
+              });
+              
+              // Force cleanup Razorpay iframe
+              const rzpContainer = document.querySelector('.razorpay-container');
+              if (rzpContainer) rzpContainer.remove();
+            }
+          }
+        } catch (e) {
+          // ignore polling errors
+        }
+      }, 4000);
+
     } catch (error: any) {
       setPaymentError(error.message || "Something went wrong during checkout.");
     } finally {

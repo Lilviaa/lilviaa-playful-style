@@ -413,6 +413,85 @@ def verify_payment(req: VerifyPaymentRequest, request: Request, background_tasks
 
     return {"success": True}
 
+@router.post("/{order_id}/sync-payment", dependencies=[Depends(PreAuthRateLimit("20/minute"))])
+@limiter.limit("10/minute")
+async def sync_payment(order_id: str, background_tasks: BackgroundTasks):
+    """
+    Actively checks Razorpay for a captured payment on a pending order.
+    Used by the frontend to poll for success when Webhooks might be disabled or delayed.
+    """
+    supabase = get_supabase()
+    
+    # 1. Fetch order
+    order_res = supabase.table("orders").select("*").eq("id", order_id).execute()
+    if not order_res.data:
+        raise HTTPException(status_code=404, detail="Order not found")
+        
+    order = order_res.data[0]
+    
+    # If already confirmed/processing, just return success
+    if order.get("status") in ["processing", "confirmed", "shipped", "delivered"]:
+        return {"status": order.get("status"), "synced": False}
+        
+    # 2. Fetch transaction to get razorpay_order_id
+    tx_res = supabase.table("payment_transactions").select("*").eq("order_id", order_id).execute()
+    if not tx_res.data:
+        return {"status": order.get("status"), "synced": False}
+        
+    tx = tx_res.data[0]
+    razorpay_order_id = tx.get("razorpay_order_id")
+    if not razorpay_order_id:
+        return {"status": order.get("status"), "synced": False}
+        
+    # 3. Check Razorpay API
+    rzp = get_razorpay_client()
+    if not rzp:
+        return {"status": order.get("status"), "synced": False}
+        
+    try:
+        payments = rzp.order.payments(razorpay_order_id)
+        captured_payment = next((p for p in payments.get('items', []) if p.get('status') == 'captured'), None)
+        
+        if captured_payment:
+            # Payment was captured! Confirm it manually.
+            rpc_res = supabase.rpc("confirm_razorpay_payment", {
+                "p_razorpay_order_id": razorpay_order_id,
+                "p_razorpay_payment_id": captured_payment.get("id"),
+            }).execute()
+            
+            rpc_data = rpc_res.data
+            if rpc_data and rpc_data.get("success") and not rpc_data.get("idempotent"):
+                # Update payment method
+                method = captured_payment.get("method")
+                if method:
+                    supabase.table("orders").update({"payment_method": method}).eq("id", order_id).execute()
+                
+                # Fire side effects
+                full_order_res = supabase.table("orders").select(
+                    "*, items:order_items(*, product_variants(*, products(*))), addresses(*)"
+                ).eq("id", order_id).execute()
+                if full_order_res.data:
+                    created_order = full_order_res.data[0]
+                    if created_order.get("user_id"):
+                        user_res = supabase.table("users").select("email").eq("id", created_order["user_id"]).execute()
+                        if user_res.data and user_res.data[0].get("email"):
+                            created_order["user_email"] = user_res.data[0]["email"]
+                    enqueue_notifications(background_tasks, created_order)
+                
+                try:
+                    from app.services.shiprocket import automate_shiprocket_fulfillment
+                    background_tasks.add_task(automate_shiprocket_fulfillment, order_id)
+                except Exception as e:
+                    import logging
+                    logging.getLogger(__name__).error(f"Failed to enqueue Shiprocket via sync: {str(e)}")
+                    
+                return {"status": "processing", "synced": True}
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).warning(f"Razorpay sync check failed: {str(e)}")
+        
+    return {"status": order.get("status"), "synced": False}
+
 @router.post("/{order_id}/retry-payment", dependencies=[Depends(PreAuthRateLimit("10/minute"))])
 @limiter.limit("5/minute", key_func=get_user_id)
 def retry_payment(order_id: str, request: Request, user: dict = Depends(get_current_user_token)):
