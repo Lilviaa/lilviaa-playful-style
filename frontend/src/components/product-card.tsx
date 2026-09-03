@@ -1,4 +1,4 @@
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { Heart, Star, ShoppingCart } from "lucide-react";
 import type { Product } from "@/lib/products";
 import { formatINR, useCart } from "@/lib/cart";
@@ -17,6 +17,9 @@ export function ProductCard({ product }: { product: Product }) {
   const { add: addToWishlist, remove: removeFromWishlist, has } = useWishlist();
   const { add: addToCart } = useCart();
   const inWishlist = has(product.slug);
+  const navigate = useNavigate();
+  
+  const hasMultipleVariants = product.variants && product.variants.length > 1;
 
   const toggleWishlist = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -76,6 +79,11 @@ export function ProductCard({ product }: { product: Product }) {
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    
+    if (hasMultipleVariants) {
+      navigate({ to: "/products/$slug", params: { slug: product.slug } });
+      return;
+    }
     
     const defaultVariant = product.variants?.[0];
     if (!defaultVariant) {
@@ -186,7 +194,7 @@ export function ProductCard({ product }: { product: Product }) {
               className="flex w-full items-center justify-center gap-1.5 rounded-md bg-[#fbbf24] px-3 py-2 text-xs font-bold text-cocoa shadow-sm hover:bg-[#f59e0b] transition-colors"
             >
               <ShoppingCart className="h-3.5 w-3.5" />
-              Add to Cart
+              {hasMultipleVariants ? "Select Options" : "Add to Cart"}
             </button>
           </div>
         </div>
