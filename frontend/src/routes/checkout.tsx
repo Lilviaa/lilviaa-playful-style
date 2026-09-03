@@ -23,6 +23,11 @@ import { Input } from "@/components/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 export const Route = createFileRoute("/checkout")({
+  validateSearch: (search: Record<string, unknown>) => {
+    return {
+      type: search.type as string | undefined,
+    };
+  },
   head: () => ({
     meta: [
       { title: "Secure Checkout — lilviaa" },
@@ -56,14 +61,22 @@ function CheckoutPage() {
   const { items: cartItems, subtotal: cartSubtotal, clear, remove } = useCart();
   const [buyNowItem, setBuyNowItem] = useState<any>(null);
 
+  const search = Route.useSearch();
+  const isBuyNowIntent = search.type === "buy_now";
+
   useEffect(() => {
     try {
-      const stored = sessionStorage.getItem("buyNowItem");
-      if (stored) {
-        setBuyNowItem(JSON.parse(stored));
+      if (isBuyNowIntent) {
+        const stored = sessionStorage.getItem("buyNowItem");
+        if (stored) {
+          setBuyNowItem(JSON.parse(stored));
+        }
+      } else {
+        sessionStorage.removeItem("buyNowItem");
+        setBuyNowItem(null);
       }
     } catch (e) {}
-  }, []);
+  }, [isBuyNowIntent]);
 
   const isBuyNow = !!buyNowItem;
   const items = isBuyNow ? [buyNowItem] : cartItems;

@@ -195,7 +195,7 @@ function ProductPage() {
       max_qty: displayStock,
       variant_id: activeVariant?.id || "",
     }));
-    navigate({ to: "/checkout" });
+    navigate({ to: "/checkout", search: { type: "buy_now" } });
   };
 
   return (
