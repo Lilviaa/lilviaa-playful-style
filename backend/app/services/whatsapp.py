@@ -185,14 +185,15 @@ def _build_item_summary(order_data: dict) -> str:
     return ", ".join(parts) if parts else "Order items"
 
 
-def _get_order_short_id(order_data: dict) -> str:
-    """Generate a human-friendly short order ID, same logic as mailer.py."""
-    order_id = str(order_data.get("id", ""))
-    hex_prefix = order_id.replace("-", "")[:6]
+def format_order_id(order_id: str, order: dict = None) -> str:
+    """Format UUID to a short readable order ID, preferring display_id if available."""
+    if order and order.get("display_id"):
+        return order["display_id"]
     try:
-        numeric_hash = str(int(hex_prefix, 16)).zfill(6)
+        # Fallback for old orders if needed
+        numeric_hash = str(int(order_id.replace('-', '')[:6], 16)).zfill(6)
         return f"ORD-LV-{numeric_hash}"
-    except ValueError:
+    except:
         return f"ORD-LV-{order_id[:6].upper()}"
 
 

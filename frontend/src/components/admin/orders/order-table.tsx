@@ -107,7 +107,7 @@ export function OrderTable({ data, isLoading }: OrderTableProps) {
       header: "Order ID",
       cell: ({ row }) => (
         <div className="flex flex-col gap-1 items-start">
-          <span className="font-medium text-cocoa">{formatOrderId(row.original.id)}</span>
+          <span className="font-medium text-cocoa">{row.original.display_id || formatOrderId(row.original.id)}</span>
           {row.original.order_source === 'offline' ? (
             <span className="text-[9px] font-bold uppercase bg-gray-200 text-gray-700 px-1.5 py-0.5 rounded tracking-wider">Offline</span>
           ) : (
@@ -161,7 +161,7 @@ export function OrderTable({ data, isLoading }: OrderTableProps) {
       header: "Payment",
       cell: ({ row }) => {
         const method = row.original.payment_method;
-        const displayMethod = method === 'razorpay' ? 'RAZORPAY (PENDING)' : method;
+        const displayMethod = method === 'razorpay' ? (row.original.status === 'cancelled' ? 'FAILED' : 'RAZORPAY (PENDING)') : method;
         return (
           <span className={`uppercase text-xs font-medium ${method === 'razorpay' ? 'text-amber-600' : 'text-muted-foreground'}`}>
             {displayMethod}
@@ -309,7 +309,7 @@ export function OrderTable({ data, isLoading }: OrderTableProps) {
                   </div>
                   
                   <div className="flex justify-between items-start pr-8">
-                    <span className="font-semibold text-cocoa leading-tight">{formatOrderId(order.id)}</span>
+                    <span className="font-semibold text-cocoa leading-tight">{order.display_id || formatOrderId(order.id)}</span>
                     <span className="text-xs text-muted-foreground">{new Date(order.created_at).toLocaleDateString()}</span>
                   </div>
 
@@ -326,7 +326,7 @@ export function OrderTable({ data, isLoading }: OrderTableProps) {
                     <div className="flex flex-col items-center flex-1 border-r border-cocoa/10">
                       <span className="text-[10px] uppercase tracking-wider text-muted-foreground mb-0.5">Payment</span>
                       <span className={`text-[9px] font-semibold text-center ${order.payment_method === 'razorpay' ? 'text-amber-600' : 'text-muted-foreground uppercase'}`}>
-                        {order.payment_method === 'razorpay' ? 'RAZORPAY (PENDING)' : order.payment_method}
+                        {order.payment_method === 'razorpay' ? (order.status === 'cancelled' ? 'FAILED' : 'RAZORPAY (PENDING)') : order.payment_method}
                       </span>
                     </div>
                     <div className="flex flex-col items-center flex-1">

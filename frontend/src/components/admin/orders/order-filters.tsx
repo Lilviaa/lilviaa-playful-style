@@ -30,7 +30,12 @@ export function OrderFilters({ filters, onChange }: OrderFiltersProps) {
   };
 
   const handlePaymentMethodChange = (val: string) => {
-    onChange({ ...filters, paymentMethod: val });
+    onChange({ ...filters, paymentMethod: val === "all" ? undefined : val });
+    
+    navigate({
+      search: (old: any) => ({ ...old, paymentMethod: val === "all" ? undefined : val }),
+      replace: true,
+    });
   };
 
   const [localSearch, setLocalSearch] = useState(filters.search || "");
@@ -101,6 +106,18 @@ export function OrderFilters({ filters, onChange }: OrderFiltersProps) {
               <SelectItem value="shipped">Shipped</SelectItem>
               <SelectItem value="delivered">Delivered</SelectItem>
               <SelectItem value="cancelled">Cancelled</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Select value={filters.paymentMethod || "all"} onValueChange={handlePaymentMethodChange}>
+            <SelectTrigger className="w-[140px] rounded-full bg-white border-cocoa/20 h-10">
+              <SelectValue placeholder="Payment" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Payments</SelectItem>
+              <SelectItem value="upi">UPI</SelectItem>
+              <SelectItem value="razorpay">Razorpay</SelectItem>
+              <SelectItem value="cod">COD</SelectItem>
             </SelectContent>
           </Select>
         </div>

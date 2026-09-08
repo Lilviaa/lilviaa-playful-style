@@ -8,6 +8,11 @@ export function cn(...inputs: ClassValue[]) {
 export function formatOrderId(rawOrderId: string | number): string {
   if (!rawOrderId) return '';
   const strId = String(rawOrderId);
-  const numericHash = parseInt(strId.replace(/-/g, '').substring(0, 6), 16).toString().padStart(6, '0');
-  return `ORD-LV-${numericHash}`;
+  
+  // If it's already a display ID (e.g. ORD-LV-0001), just return it
+  if (strId.startsWith('ORD-LV-')) {
+    return strId;
+  }
+  
+  return strId;
 }

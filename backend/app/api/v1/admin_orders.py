@@ -77,19 +77,11 @@ def list_orders(
             
         if is_uuid:
             query = query.eq("id", search)
-        elif search.upper().startswith("ORD-LV-") or search.isdigit():
-            numeric_str = search.upper().replace("ORD-LV-", "") if search.upper().startswith("ORD-LV-") else search
-            try:
-                hex_prefix = format(int(numeric_str), 'x').zfill(6)
-                all_ids_res = supabase.table("orders").select("id").execute()
-                matching_ids = [row["id"] for row in all_ids_res.data if row["id"].startswith(hex_prefix)]
-                if matching_ids:
-                    query = query.in_("id", matching_ids)
-                else:
-                    # If no order ID matches this number, fallback to searching by phone/name
-                    query = query.or_(f"shipping_address->>full_name.ilike.%{search}%,shipping_address->>phone.ilike.%{search}%")
-            except ValueError:
-                query = query.or_(f"shipping_address->>full_name.ilike.%{search}%,shipping_address->>phone.ilike.%{search}%")
+        elif search.upper().startswith("ORD-LV-"):
+            query = query.ilike("display_id", f"%{search.upper()}%")
+        elif search.isdigit():
+            # Could be searching for the numeric part of display_id or a phone number
+            query = query.or_(f"display_id.ilike.%{search}%,shipping_address->>full_name.ilike.%{search}%,shipping_address->>phone.ilike.%{search}%")
         else:
             # Search by customer name or phone instead of ID
             query = query.or_(f"shipping_address->>full_name.ilike.%{search}%,shipping_address->>phone.ilike.%{search}%")

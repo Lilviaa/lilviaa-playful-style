@@ -1,8 +1,9 @@
-﻿import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { CheckCircle2, ShoppingBag, FileText } from "lucide-react";
 import { useEffect, useState } from "react";
 import { z } from "zod";
 import { useCart, formatINR } from "@/lib/cart";
+import { apiFetch } from "@/lib/api";
 import { formatOrderId } from "@/lib/utils";
 
 const searchSchema = z.object({
@@ -33,11 +34,24 @@ function OrderSuccessPage() {
   const amount = search.amount || 0;
 
   useEffect(() => {
-    if (search.order_id) {
-      setOrderNumber(formatOrderId(search.order_id));
-    } else {
-      setOrderNumber(`ORD-LV-${Math.floor(100000 + Math.random() * 900000)}`);
+    async function fetchOrderDetails() {
+      if (search.order_id) {
+        try {
+          const res = await apiFetch(`/orders/${search.order_id}`);
+          if (res.ok) {
+            const data = await res.json();
+            setOrderNumber(data.display_id || formatOrderId(search.order_id));
+          } else {
+            setOrderNumber(formatOrderId(search.order_id));
+          }
+        } catch (e) {
+          setOrderNumber(formatOrderId(search.order_id));
+        }
+      } else {
+        setOrderNumber(`ORD-LV-${Math.floor(100000 + Math.random() * 900000)}`);
+      }
     }
+    fetchOrderDetails();
     // Clear the cart if not Buy It Now
     const wasBuyNow = sessionStorage.getItem("wasBuyNow");
     if (!wasBuyNow) {

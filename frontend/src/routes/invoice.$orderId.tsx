@@ -57,7 +57,7 @@ function InvoicePage() {
   const rawOrderId = order.id;
   const numericHash = parseInt(rawOrderId.replace(/-/g, '').substring(0, 6), 16).toString().padStart(6, '0');
   const invoiceNumber = `INV-LV-${numericHash}`;
-  const formattedOrderId = `ORD-LV-${numericHash}`;
+  const formattedOrderId = order.display_id || `ORD-LV-${numericHash}`;
   const orderDate = new Date(order.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
   
   const shippingAddress = order.addresses || {};
