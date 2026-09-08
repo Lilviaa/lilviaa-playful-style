@@ -27,13 +27,84 @@ async def start_background_tasks():
 
 async def release_expired_stock_loop():
     from app.db.supabase import get_supabase
+    from app.api.v1.orders import get_razorpay_client
     import asyncio
     import logging
+    logger = logging.getLogger(__name__)
     while True:
         try:
-            # We delay first to give the app time to boot fully
+            # Delay first to give the app time to boot fully
             await asyncio.sleep(60)
             supabase = get_supabase()
+
+            # ── Safety-net: check Razorpay before cancelling ──
+            # Fetch all pending orders older than 15 minutes that have a
+            # payment_transactions row (i.e. Razorpay orders).
+            try:
+                pending_res = supabase.table("orders")\
+                    .select("id")\
+                    .eq("status", "pending")\
+                    .lt("created_at", (
+                        __import__("datetime").datetime.now(
+                            __import__("datetime").timezone.utc
+                        ) - __import__("datetime").timedelta(minutes=15)
+                    ).isoformat())\
+                    .execute()
+
+                if pending_res.data:
+                    rzp = get_razorpay_client()
+                    for order_row in pending_res.data:
+                        oid = order_row["id"]
+                        try:
+                            # Look up the razorpay_order_id for this order
+                            tx_res = supabase.table("payment_transactions")\
+                                .select("razorpay_order_id")\
+                                .eq("order_id", oid)\
+                                .eq("status", "pending")\
+                                .limit(1)\
+                                .execute()
+                            if not tx_res.data:
+                                continue
+                            rz_order_id = tx_res.data[0].get("razorpay_order_id")
+                            if not rz_order_id or not rzp:
+                                continue
+
+                            # Ask Razorpay if any payment was captured
+                            payments = rzp.order.payments(rz_order_id)
+                            captured = next(
+                                (p for p in payments.get("items", [])
+                                 if p.get("status") == "captured"),
+                                None,
+                            )
+                            if captured:
+                                # Payment WAS captured! Confirm the order
+                                logger.info(
+                                    f"Cron: Razorpay payment {captured['id']} "
+                                    f"captured for order {oid}. Confirming."
+                                )
+                                rpc_res = supabase.rpc(
+                                    "confirm_razorpay_payment",
+                                    {
+                                        "p_razorpay_order_id": rz_order_id,
+                                        "p_razorpay_payment_id": captured["id"],
+                                    },
+                                ).execute()
+                                rpc_data = rpc_res.data
+                                if rpc_data and rpc_data.get("success") and not rpc_data.get("idempotent"):
+                                    method = captured.get("method")
+                                    if method:
+                                        supabase.table("orders").update(
+                                            {"payment_method": method}
+                                        ).eq("id", oid).execute()
+                                    logger.info(f"Cron: Order {oid} confirmed via Razorpay check.")
+                        except Exception as inner_e:
+                            logger.warning(
+                                f"Cron: Failed Razorpay check for order {oid}: {inner_e}"
+                            )
+            except Exception as check_e:
+                logger.warning(f"Cron: Pre-cancel Razorpay check failed: {check_e}")
+
+            # Now cancel any orders that are STILL pending after our checks
             supabase.rpc("release_expired_stock_reservations").execute()
         except Exception as e:
             logging.error(f"Failed to run stock release cron: {str(e)}")

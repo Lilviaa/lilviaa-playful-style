@@ -332,9 +332,61 @@ function CheckoutPage() {
           color: "#9C6644", // cocoa
         },
         modal: {
-          ondismiss: function() {
-            if ((window as any)._rzpPollInterval) clearInterval((window as any)._rzpPollInterval);
-            navigate({ to: "/order-failed", replace: true });
+          ondismiss: async function() {
+            // Don't immediately assume failure — the payment may have succeeded!
+            // Do a final check with Razorpay before giving up.
+            try {
+              setIsVerifyingPayment(true);
+              const res = await apiFetch(`/orders/${orderData.id}/sync-payment`, { method: "POST" });
+              if (res.ok) {
+                const data = await res.json();
+                if (data.status === "processing" || data.status === "confirmed") {
+                  if ((window as any)._rzpPollInterval) clearInterval((window as any)._rzpPollInterval);
+                  if (!isBuyNow) clear();
+                  if (isBuyNow) sessionStorage.setItem("wasBuyNow", "true");
+                  navigate({ 
+                    to: "/order-success",  
+                    search: { order_id: orderData.id, amount: total },
+                    replace: true 
+                  });
+                  return;
+                }
+              }
+            } catch (e) {
+              // sync check failed, continue to retry below
+            }
+
+            // Payment not yet captured — give it one more chance with a short grace period
+            // Keep polling for 30 more seconds before giving up
+            let graceChecks = 0;
+            const graceInterval = setInterval(async () => {
+              graceChecks++;
+              try {
+                const res = await apiFetch(`/orders/${orderData.id}/sync-payment`, { method: "POST" });
+                if (res.ok) {
+                  const data = await res.json();
+                  if (data.status === "processing" || data.status === "confirmed") {
+                    clearInterval(graceInterval);
+                    if ((window as any)._rzpPollInterval) clearInterval((window as any)._rzpPollInterval);
+                    if (!isBuyNow) clear();
+                    if (isBuyNow) sessionStorage.setItem("wasBuyNow", "true");
+                    navigate({ 
+                      to: "/order-success",  
+                      search: { order_id: orderData.id, amount: total },
+                      replace: true 
+                    });
+                    return;
+                  }
+                }
+              } catch (e) {}
+
+              if (graceChecks >= 6) { // 6 checks × 5s = 30 seconds grace period
+                clearInterval(graceInterval);
+                if ((window as any)._rzpPollInterval) clearInterval((window as any)._rzpPollInterval);
+                setIsVerifyingPayment(false);
+                navigate({ to: "/order-failed", replace: true });
+              }
+            }, 5000);
           }
         }
       };
