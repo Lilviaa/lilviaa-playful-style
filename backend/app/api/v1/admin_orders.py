@@ -136,6 +136,8 @@ def list_orders(
         
         order_obj = {
             "id": o["id"],
+            "display_id": o.get("display_id"),
+            "order_number": o.get("order_number"),
             "customer_id": o.get("user_id"),
             "status": o["status"],
             "payment_method": o["payment_method"],
