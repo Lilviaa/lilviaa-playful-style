@@ -17,9 +17,6 @@ import {
   useUpdateOrderStatus,
   useUpdateTracking,
   useUpdateCallConfirmed,
-  usePushToShiprocket,
-  useGenerateAwb,
-  useRefreshTracking,
 } from "@/lib/admin/orders-api";
 import { useCreateReturn, ReturnReason, RefundMethod } from "@/lib/admin/returns-api";
 import { useState } from "react";
@@ -56,10 +53,6 @@ export function OrderDetailDrawer({ order, isOpen, onClose, onPrint }: OrderDeta
   const { mutate: updateCallConfirmed } = useUpdateCallConfirmed();
   const { mutate: createReturn, isPending: creatingReturn } = useCreateReturn();
 
-  const { mutate: pushToShiprocket, isPending: pushingShiprocket } = usePushToShiprocket();
-  const { mutate: generateAwb, isPending: generatingAwb } = useGenerateAwb();
-  const { mutate: refreshTracking, isPending: refreshingTracking } = useRefreshTracking();
-
   const [trackingNumber, setTrackingNumber] = useState(order?.tracking_number || "");
   const [showReturnModal, setShowReturnModal] = useState(false);
   const [returnReason, setReturnReason] = useState<ReturnReason>("size_issue");
@@ -90,7 +83,7 @@ export function OrderDetailDrawer({ order, isOpen, onClose, onPrint }: OrderDeta
   return (
     <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <SheetContent className="w-full sm:max-w-xl bg-white overflow-y-auto p-6 z-50 shadow-2xl">
-        {(updatingStatus || pushingShiprocket || generatingAwb) && (
+        {updatingStatus && (
           <div className="absolute inset-0 z-50 flex items-center justify-center bg-white/50 backdrop-blur-sm">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
@@ -205,99 +198,9 @@ export function OrderDetailDrawer({ order, isOpen, onClose, onPrint }: OrderDeta
 
             {order.order_source !== "offline" && (
               <div className="pt-6 border-t border-cocoa/10">
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="font-semibold text-cocoa">Tracking & Shipping (Shiprocket)</h3>
-                  {order.awb_code && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => refreshTracking(order.id)}
-                      disabled={refreshingTracking}
-                      className="h-8 gap-1.5"
-                    >
-                      <RefreshCcw className={`h-3.5 w-3.5 ${refreshingTracking ? 'animate-spin' : ''}`} />
-                      Refresh
-                    </Button>
-                  )}
-                </div>
-
-                <div className="bg-[#fcfaf7] rounded-xl border border-border p-4 mb-6">
-                  {!order.shiprocket_order_id ? (
-                    <div className="flex flex-col gap-3 items-start">
-                      <p className="text-sm text-slate-600 mb-2">Order has not been pushed to Shiprocket yet.</p>
-
-                      {(order.tracking_status === 'PUSH_FAILED' || order.tracking_status === 'AWB_FAILED') && (
-                        <div className="w-full bg-red-50 text-red-600 p-3 rounded-lg border border-red-200 text-sm mb-3 break-words whitespace-pre-wrap">
-                          <span className="font-semibold block mb-1">Automation Failed</span>
-                          {order.shiprocket_error || "Check Shiprocket wallet balance or configuration."}
-                        </div>
-                      )}
-
-                      <Button
-                        onClick={() => pushToShiprocket(order.id)}
-                        disabled={pushingShiprocket || (order.payment_method === 'razorpay' && order.payment_status !== 'paid')}
-                        className="w-full gap-2"
-                      >
-                        {pushingShiprocket ? <Loader2 className="h-4 w-4 animate-spin" /> : <Truck className="h-4 w-4" />}
-                        Push to Shiprocket
-                      </Button>
-                      {order.payment_method === 'razorpay' && order.payment_status !== 'paid' && (
-                        <p className="text-xs text-rose-600 mt-2 text-center w-full">Cannot push unpaid Razorpay orders.</p>
-                      )}
-                    </div>
-                  ) : !order.awb_code ? (
-                    <div className="w-full">
-                      <div className="flex justify-between items-center mb-3 text-sm">
-                        <span className="font-medium text-indigo-900">Shiprocket Order ID</span>
-                        <span className="font-mono text-indigo-700">{order.shiprocket_order_id}</span>
-                      </div>
-
-                      {(order.tracking_status === 'AWB_FAILED') && (
-                        <div className="w-full bg-red-50 text-red-600 p-3 rounded-lg border border-red-200 text-sm mb-3 break-words whitespace-pre-wrap">
-                          <span className="font-semibold block mb-1">AWB Generation Failed</span>
-                          {order.shiprocket_error || "Check Shiprocket wallet balance."}
-                        </div>
-                      )}
-
-                      <Button
-                        onClick={() => generateAwb(order.id)}
-                        disabled={generatingAwb}
-                        className="w-full bg-indigo-600 hover:bg-indigo-700 text-white gap-2"
-                      >
-                        {generatingAwb ? <Loader2 className="h-4 w-4 animate-spin" /> : <Printer className="h-4 w-4" />}
-                        Generate AWB (Assign Courier)
-                      </Button>
-                    </div>
-                  ) : (
-                    <div className="space-y-3">
-                      <div className="flex justify-between items-center bg-white p-3 rounded-lg border border-border">
-                        <span className="text-sm text-muted-foreground">AWB Code</span>
-                        <span className="font-mono text-sm font-semibold">{order.awb_code}</span>
-                      </div>
-                      <div className="flex justify-between items-center bg-white p-3 rounded-lg border border-border">
-                        <span className="text-sm text-muted-foreground">Courier</span>
-                        <span className="text-sm font-medium">{order.courier_name || 'Assigned'}</span>
-                      </div>
-                      <div className="p-3 bg-white rounded-xl border border-cocoa/20">
-                        <div className="flex justify-between items-center mb-2">
-                          <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Status</span>
-                          <span className="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-800">
-                            {order.tracking_status || "AWB Generated"}
-                          </span>
-                        </div>
-                        {order.tracking_last_updated && (
-                          <p className="text-[10px] text-muted-foreground text-right mt-1">
-                            Last updated: {new Date(order.tracking_last_updated).toLocaleString()}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* Fallback to manual tracking if needed */}
-                <div className="pt-4 border-t border-cocoa/10">
-                  <Label className="text-xs text-muted-foreground mb-1.5 block">Manual Tracking Override</Label>
+                <div className="mb-3">
+                  <h3 className="font-semibold text-cocoa">Tracking</h3>
+                  <Label className="text-xs text-muted-foreground mt-2 mb-1.5 block">Manual Tracking Number</Label>
                   <div className="flex gap-2">
                     <Input
                       placeholder="Enter tracking number"
@@ -325,7 +228,7 @@ export function OrderDetailDrawer({ order, isOpen, onClose, onPrint }: OrderDeta
                 <XCircle className="h-4 w-4" />
                 Cancel Order
               </Button>
-              {order.status === "delivered" && (
+              {order.status === "shipped" && (
                 <Button
                   variant="outline"
                   className="flex-1 gap-2 text-amber-600 hover:text-amber-700 hover:bg-amber-50 border-amber-200"

@@ -104,7 +104,6 @@ export function OrderFilters({ filters, onChange }: OrderFiltersProps) {
               <SelectItem value="confirmed">Confirmed</SelectItem>
               <SelectItem value="packed">Packed</SelectItem>
               <SelectItem value="shipped">Shipped</SelectItem>
-              <SelectItem value="delivered">Delivered</SelectItem>
               <SelectItem value="cancelled">Cancelled</SelectItem>
             </SelectContent>
           </Select>

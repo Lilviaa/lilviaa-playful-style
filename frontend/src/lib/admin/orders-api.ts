@@ -3,7 +3,7 @@ import { toast } from "sonner";
 import { formatOrderId } from "../utils";
 import { apiFetch } from "@/lib/api";
 
-export type OrderStatus = 'pending' | 'confirmed' | 'packed' | 'shipped' | 'delivered' | 'cancelled' | 'returned';
+export type OrderStatus = 'pending' | 'confirmed' | 'packed' | 'shipped' | 'cancelled' | 'returned';
 export type PaymentMethod = 'cod' | 'razorpay';
 export type PaymentStatus = 'pending' | 'paid' | 'failed';
 
@@ -249,6 +249,34 @@ export function useDeleteOrders() {
       toast.error("Failed to delete orders", {
         description: error.message
       });
+    }
+  });
+}
+
+export function useBulkUpdateStatus() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async ({ orderIds, status }: { orderIds: string[], status: OrderStatus }) => {
+      const res = await apiFetch(`/admin/orders/bulk-status`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ order_ids: orderIds, status }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.detail || "Failed to bulk update status");
+      }
+      return res.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["admin-orders"] });
+      toast.success(
+        `${data.updated} orders updated, ${data.notified} customers notified via WhatsApp`
+      );
+    },
+    onError: (error: any) => {
+      toast.error(error.message);
     }
   });
 }

@@ -29,6 +29,13 @@ async def shiprocket_webhook(request: Request, background_tasks: BackgroundTasks
     except Exception as e:
         logger.error(f"Shiprocket webhook non-JSON body: {str(e)}")
         return Response(status_code=400)
+
+    # Shiprocket disabled — see SHIPROCKET_ENABLED flag. Re-enable by setting to true.
+    # Route stays registered so Shiprocket doesn't 404, but we do nothing while disabled.
+    from app.services.shiprocket import is_shiprocket_enabled
+    if not is_shiprocket_enabled():
+        logger.info("Shiprocket disabled — ignoring webhook payload.")
+        return Response(status_code=200)
         
     awb = payload.get("awb")
     current_status = payload.get("current_status")

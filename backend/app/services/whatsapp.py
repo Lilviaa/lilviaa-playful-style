@@ -197,6 +197,13 @@ def format_order_id(order_id: str, order: dict = None) -> str:
         return f"ORD-LV-{order_id[:6].upper()}"
 
 
+def _get_order_short_id(order_data: dict) -> str:
+    """Helper to extract and format the short ID consistently."""
+    if not order_data:
+        return "Order"
+    return format_order_id(str(order_data.get("id", "")), order_data)
+
+
 def send_customer_order_confirmation(order_data: dict):
     """
     Send the 'order_confirmation_customer' WhatsApp template to the customer.
@@ -404,3 +411,41 @@ def send_order_delivered(order_data: dict):
     except Exception as e:
         logger.error(f"Error in WA order delivered for order {order_data.get('id')}: {str(e)}")
 
+
+def send_order_shipped_update(order_data: dict):
+    """
+    Send the 'order_shipped_update_v2' WhatsApp template.
+    Template variables:
+      {{1}} = Customer name
+      {{2}} = Order ID
+    """
+    try:
+        address = order_data.get("addresses") or order_data.get("shipping_address") or {}
+        if isinstance(address, list):
+            address = address[0] if address else {}
+
+        customer_phone = address.get("phone") or order_data.get("phone")
+        if not customer_phone:
+            return
+
+        customer_name = address.get("full_name", order_data.get("full_name", "Customer"))
+        short_id = _get_order_short_id(order_data)
+        
+        components = [
+            {
+                "type": "body",
+                "parameters": [
+                    {"type": "text", "text": str(customer_name)},
+                    {"type": "text", "text": short_id},
+                ],
+            }
+        ]
+
+        send_template_message(
+            to=customer_phone,
+            template_name="order_shipped_update_v2",
+            language_code="en",
+            components=components,
+        )
+    except Exception as e:
+        logger.error(f"Error in WA order shipped for order {order_data.get('id')}: {str(e)}")

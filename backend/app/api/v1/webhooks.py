@@ -107,8 +107,10 @@ async def razorpay_webhook(
             enqueue_notifications(background_tasks, created_order)
 
         try:
-            from app.services.shiprocket import automate_shiprocket_fulfillment
-            background_tasks.add_task(automate_shiprocket_fulfillment, order_id)
+            from app.services.shiprocket import automate_shiprocket_fulfillment, is_shiprocket_enabled
+            # Shiprocket disabled — see SHIPROCKET_ENABLED flag. Re-enable by setting to true.
+            if is_shiprocket_enabled():
+                background_tasks.add_task(automate_shiprocket_fulfillment, order_id)
         except Exception as e:
             logger.error(f"Failed to enqueue Shiprocket automation for {order_id} in webhook: {str(e)}")
 

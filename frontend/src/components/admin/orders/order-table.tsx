@@ -8,7 +8,14 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Order, useDeleteOrders } from "@/lib/admin/orders-api";
+import { Order, OrderStatus, useDeleteOrders, useBulkUpdateStatus } from "@/lib/admin/orders-api";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { formatINR } from "@/lib/cart";
 import { formatOrderId } from "@/lib/utils";
 import { OrderStatusBadge } from "./order-status-badge";
@@ -39,6 +46,24 @@ export function OrderTable({ data, isLoading }: OrderTableProps) {
   const [rowSelection, setRowSelection] = useState({});
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const deleteOrders = useDeleteOrders();
+  
+  const bulkUpdate = useBulkUpdateStatus();
+  const [bulkStatus, setBulkStatus] = useState<OrderStatus>("shipped");
+
+  const handleBulkUpdate = () => {
+    const selectedIds = Object.keys(rowSelection).filter(indexStr => {
+      const idx = parseInt(indexStr);
+      return data[idx] !== undefined;
+    }).map(indexStr => data[parseInt(indexStr)].id);
+
+    if (selectedIds.length === 0) return;
+
+    bulkUpdate.mutate({ orderIds: selectedIds, status: bulkStatus }, {
+      onSuccess: () => {
+        setRowSelection({});
+      }
+    });
+  };
 
   const handleRowClick = (order: Order, e?: React.MouseEvent) => {
     // Only open drawer if we didn't click on a checkbox or button
@@ -192,18 +217,45 @@ export function OrderTable({ data, isLoading }: OrderTableProps) {
   return (
     <>
       {selectedCount > 0 && (
-        <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 flex justify-between items-center print:hidden animate-in fade-in slide-in-from-top-4">
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 flex flex-wrap gap-4 justify-between items-center print:hidden animate-in fade-in slide-in-from-top-4">
           <span className="text-sm font-medium text-amber-800">
             {selectedCount} order{selectedCount !== 1 ? 's' : ''} selected
           </span>
-          <button
-            onClick={promptDelete}
-            disabled={deleteOrders.isPending}
-            className="flex items-center gap-2 px-3 py-1.5 bg-red-600 text-white text-xs font-semibold rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
-          >
-            <Trash2 className="w-3.5 h-3.5" />
-            {deleteOrders.isPending ? "Deleting..." : "Delete Selected"}
-          </button>
+          <div className="flex items-center gap-3 flex-wrap">
+            <div className="flex items-center gap-2">
+              <Select value={bulkStatus} onValueChange={(v) => setBulkStatus(v as OrderStatus)}>
+                <SelectTrigger className="w-32 h-8 text-xs bg-white border-amber-200 text-amber-900 focus:ring-amber-500">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="confirmed">Confirmed</SelectItem>
+                  <SelectItem value="packed">Packed</SelectItem>
+                  <SelectItem value="shipped">Shipped</SelectItem>
+                  <SelectItem value="returned">Returned</SelectItem>
+                  <SelectItem value="cancelled">Cancelled</SelectItem>
+                </SelectContent>
+              </Select>
+              <button
+                onClick={handleBulkUpdate}
+                disabled={bulkUpdate.isPending}
+                className="px-3 py-1.5 bg-amber-600 text-white text-xs font-semibold rounded-lg hover:bg-amber-700 transition-colors disabled:opacity-50"
+              >
+                {bulkUpdate.isPending ? "Updating..." : "Update Status"}
+              </button>
+            </div>
+            
+            <div className="w-px h-6 bg-amber-200 hidden sm:block"></div>
+            
+            <button
+              onClick={promptDelete}
+              disabled={deleteOrders.isPending || bulkUpdate.isPending}
+              className="flex items-center gap-2 px-3 py-1.5 bg-red-600 text-white text-xs font-semibold rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              {deleteOrders.isPending ? "Deleting..." : "Delete"}
+            </button>
+          </div>
         </div>
       )}
 

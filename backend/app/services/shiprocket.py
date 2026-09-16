@@ -7,6 +7,11 @@ from app.core.exceptions import AppError
 
 SHIPROCKET_API_BASE = "https://apiv2.shiprocket.in/v1/external"
 
+
+def is_shiprocket_enabled() -> bool:
+    """Check if Shiprocket integration is enabled via SHIPROCKET_ENABLED env flag."""
+    return os.environ.get("SHIPROCKET_ENABLED", "false").lower() in ("true", "1", "yes")
+
 # In-memory cache for the token
 _cached_token = None
 _token_expiry = None
@@ -130,6 +135,12 @@ async def automate_shiprocket_fulfillment(order_id: str):
     This function is called as a background task after payment confirmation.
     It must NEVER raise — all errors are caught and logged to the DB.
     """
+    # Shiprocket disabled — see SHIPROCKET_ENABLED flag. Re-enable by setting to true.
+    if not is_shiprocket_enabled():
+        import logging
+        logging.getLogger(__name__).info(f"Shiprocket disabled — skipping fulfillment for order {order_id}")
+        return
+
     import asyncio
     await asyncio.sleep(3) # Wait for database transaction to fully settle
     

@@ -12,7 +12,6 @@ const STEPS: { label: string; value: OrderStatus }[] = [
   { label: "Confirmed", value: "confirmed" },
   { label: "Packed", value: "packed" },
   { label: "Shipped", value: "shipped" },
-  { label: "Delivered", value: "delivered" },
 ];
 
 export function OrderStatusStepper({ order, onUpdateStatus }: OrderStatusStepperProps) {

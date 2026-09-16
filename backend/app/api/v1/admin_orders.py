@@ -174,8 +174,12 @@ def list_orders(
 
 @router.patch("/{order_id}/status", dependencies=[Depends(PreAuthRateLimit("30/minute")), Depends(require_admin)])
 @limiter.limit("30/minute", key_func=get_admin_id)
-def update_order_status(order_id: str, body: StatusUpdate, request: Request):
+def update_order_status(order_id: str, body: StatusUpdate, request: Request, background_tasks: BackgroundTasks):
     supabase = get_supabase()
+
+    # "Delivered" is no longer a valid status — use Shipped as final step
+    if body.status == "delivered":
+        raise AppError("'Delivered' is no longer a valid order status. Use 'shipped' as the final step.", status_code=400)
 
     # Verify order exists
     order_res = supabase.table("orders").select("id, status, payment_method, call_confirmed").eq("id", order_id).execute()
@@ -183,12 +187,25 @@ def update_order_status(order_id: str, body: StatusUpdate, request: Request):
         raise AppError("Order not found", status_code=404)
 
     order = order_res.data[0]
+    old_status = order["status"]
 
     # COD orders must be call-confirmed before packing
     if body.status == "packed" and order["payment_method"] == "cod" and not order.get("call_confirmed", False):
         raise AppError("COD orders require call confirmation before packing.", status_code=400)
 
     supabase.table("orders").update({"status": body.status}).eq("id", order_id).execute()
+
+    # WhatsApp: notify customer when status transitions TO "shipped" (duplicate guard)
+    if body.status == "shipped" and old_status != "shipped":
+        try:
+            from app.services.whatsapp import send_order_shipped_update
+            full_order_res = supabase.table("orders").select("*, addresses(*)").eq("id", order_id).execute()
+            if full_order_res.data:
+                background_tasks.add_task(send_order_shipped_update, full_order_res.data[0])
+        except Exception as e:
+            import logging
+            logging.getLogger(__name__).error(f"Failed to send shipped WA for {order_id}: {e}")
+
     return {"id": order_id, "status": body.status}
 
 
@@ -224,6 +241,11 @@ def update_call_confirmed(order_id: str, body: CallConfirmedUpdate, request: Req
 @limiter.limit("20/minute", key_func=get_admin_id)
 async def push_order_to_shiprocket(order_id: str, request: Request, background_tasks: BackgroundTasks):
     """Manually push/retry an order to Shiprocket."""
+    # Shiprocket disabled — see SHIPROCKET_ENABLED flag. Re-enable by setting to true.
+    from app.services.shiprocket import is_shiprocket_enabled
+    if not is_shiprocket_enabled():
+        return {"message": "Shiprocket is disabled. Set SHIPROCKET_ENABLED=true to re-enable."}
+
     try:
         from app.services.shiprocket import automate_shiprocket_fulfillment
     except ImportError:
@@ -254,6 +276,11 @@ async def push_order_to_shiprocket(order_id: str, request: Request, background_t
 @limiter.limit("20/minute", key_func=get_admin_id)
 async def generate_order_awb(order_id: str, request: Request):
     """Manually generate AWB/assign courier for an order pushed to Shiprocket."""
+    # Shiprocket disabled — see SHIPROCKET_ENABLED flag. Re-enable by setting to true.
+    from app.services.shiprocket import is_shiprocket_enabled
+    if not is_shiprocket_enabled():
+        return {"message": "Shiprocket is disabled. Set SHIPROCKET_ENABLED=true to re-enable."}
+
     from app.services.shiprocket import generate_awb
     supabase = get_supabase()
     
@@ -293,6 +320,11 @@ async def generate_order_awb(order_id: str, request: Request):
 @limiter.limit("30/minute", key_func=get_admin_id)
 async def refresh_tracking_status(order_id: str, request: Request, background_tasks: BackgroundTasks):
     """Fetches latest tracking from Shiprocket based on TTL."""
+    # Shiprocket disabled — see SHIPROCKET_ENABLED flag. Re-enable by setting to true.
+    from app.services.shiprocket import is_shiprocket_enabled
+    if not is_shiprocket_enabled():
+        return {"message": "Shiprocket is disabled. Set SHIPROCKET_ENABLED=true to re-enable."}
+
     from app.services.shiprocket import track_awb
     from datetime import datetime, timezone, timedelta
     
@@ -357,11 +389,13 @@ async def refresh_tracking_status(order_id: str, request: Request, background_ta
             if full_order_res.data:
                 background_tasks.add_task(send_order_status_update, full_order_res.data[0], status, etd)
                 
-        elif status_upper == "DELIVERED":
-            from app.services.whatsapp import send_order_delivered
-            full_order_res = supabase.table("orders").select("*, addresses(*)").eq("id", order_id).execute()
-            if full_order_res.data:
-                background_tasks.add_task(send_order_delivered, full_order_res.data[0])
+        # "Delivered" WA notification disabled — status no longer used.
+        # The send_order_delivered function is kept dormant in whatsapp.py.
+        # elif status_upper == "DELIVERED":
+        #     from app.services.whatsapp import send_order_delivered
+        #     full_order_res = supabase.table("orders").select("*, addresses(*)").eq("id", order_id).execute()
+        #     if full_order_res.data:
+        #         background_tasks.add_task(send_order_delivered, full_order_res.data[0])
     
     supabase.table("orders").update({
         "tracking_status": status,
@@ -405,3 +439,70 @@ def bulk_delete_orders(
         return {"success": True, "deleted": len(res.data) if res.data else 0}
     except Exception as e:
         raise AppError(f"Failed to delete orders: {str(e)}", 500)
+
+
+class BulkStatusUpdateRequest(BaseModel):
+    order_ids: List[str]
+    status: str
+
+@router.post("/bulk-status", dependencies=[Depends(PreAuthRateLimit("20/minute")), Depends(require_admin)])
+@limiter.limit("20/minute", key_func=get_admin_id)
+def bulk_update_order_status(
+    request: Request,
+    payload: BulkStatusUpdateRequest,
+    background_tasks: BackgroundTasks
+):
+    """
+    Bulk update status for multiple orders. Fires WhatsApp notification
+    for each order that transitions TO 'shipped' (duplicate guard per-order).
+    """
+    # "Delivered" is no longer a valid status
+    if payload.status == "delivered":
+        raise AppError("'Delivered' is no longer a valid order status.", status_code=400)
+
+    if not payload.order_ids:
+        return {"success": True, "updated": 0, "notified": 0}
+
+    supabase = get_supabase()
+    updated = 0
+    notified = 0
+
+    for order_id in payload.order_ids:
+        try:
+            # Fetch current status for duplicate guard
+            order_res = supabase.table("orders").select("id, status, payment_method, call_confirmed").eq("id", order_id).execute()
+            if not order_res.data:
+                continue
+
+            order = order_res.data[0]
+            old_status = order["status"]
+
+            # Skip if already at or beyond the target status, or cancelled/returned
+            if old_status == payload.status or old_status in ("cancelled", "returned"):
+                continue
+
+            # COD call-confirm check for packing
+            if payload.status == "packed" and order["payment_method"] == "cod" and not order.get("call_confirmed", False):
+                continue  # Silently skip in bulk — don't block the whole batch
+
+            supabase.table("orders").update({"status": payload.status}).eq("id", order_id).execute()
+            updated += 1
+
+            # WhatsApp: notify customer when transitioning TO "shipped" (duplicate guard)
+            if payload.status == "shipped" and old_status != "shipped":
+                try:
+                    from app.services.whatsapp import send_order_shipped_update
+                    full_order_res = supabase.table("orders").select("*, addresses(*)").eq("id", order_id).execute()
+                    if full_order_res.data:
+                        background_tasks.add_task(send_order_shipped_update, full_order_res.data[0])
+                        notified += 1
+                except Exception as e:
+                    import logging
+                    logging.getLogger(__name__).error(f"Bulk WA shipped failed for {order_id}: {e}")
+
+        except Exception as e:
+            import logging
+            logging.getLogger(__name__).error(f"Bulk status update failed for {order_id}: {e}")
+            continue
+
+    return {"success": True, "updated": updated, "notified": notified}
