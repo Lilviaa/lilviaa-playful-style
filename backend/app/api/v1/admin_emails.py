@@ -87,6 +87,7 @@ async def send_test_whatsapp(request: Request, background_tasks: BackgroundTasks
     from app.services.whatsapp import (
         send_customer_order_confirmation as wa_customer,
         send_owner_order_alert as wa_owner,
+        send_order_shipped_update as wa_shipped,
     )
 
     if not phone:
@@ -142,8 +143,10 @@ async def send_test_whatsapp(request: Request, background_tasks: BackgroundTasks
     background_tasks.add_task(wa_customer, mock_order)
     print(f">>> ABOUT TO QUEUE wa_owner (func={wa_owner})")
     background_tasks.add_task(wa_owner, mock_order)
+    print(f">>> ABOUT TO QUEUE wa_shipped (func={wa_shipped})")
+    background_tasks.add_task(wa_shipped, mock_order)
 
     return {
         "status": "success",
-        "message": f"Test WhatsApp messages have been queued for {phone}. Check your phone shortly.",
+        "message": f"Test WhatsApp messages (Confirmation, Owner Alert, and Shipped) have been queued for {phone}. Check your phone shortly.",
     }
