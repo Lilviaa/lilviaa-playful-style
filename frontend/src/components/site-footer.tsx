@@ -103,11 +103,6 @@ export function SiteFooter() {
             <ul className="mt-5 space-y-4 text-base text-cream/80">
               <li><Link to="/faq" className="transition-colors hover:text-cream">FAQ</Link></li>
               <li><Link to="/contact" className="transition-colors hover:text-cream">Contact us</Link></li>
-              <li>
-                <SizeGuide>
-                  <button className="text-left transition-colors hover:text-cream">Size Guide</button>
-                </SizeGuide>
-              </li>
             </ul>
           </div>
           <div className="col-span-2 md:col-span-1">

@@ -306,11 +306,6 @@ function ProductPage() {
             <div className="mt-8">
               <div className="mb-3 flex items-center justify-between">
                 <div className="text-sm font-bold text-cocoa uppercase tracking-wider">Select Size</div>
-                <SizeGuide>
-                  <button className="text-[11px] font-bold text-primary hover:underline uppercase tracking-wide">
-                    Size guide
-                  </button>
-                </SizeGuide>
               </div>
               <div className="flex flex-wrap gap-2">
                 {product.sizes.map((s) => (
@@ -398,11 +393,6 @@ function ProductPage() {
             <div className="flex items-center gap-2 bg-[#F7F2EC] px-4 py-2.5 rounded-full text-xs font-semibold text-cocoa shadow-sm">
               <ShieldCheck className="h-4 w-4 text-primary" /> Skin-safe fabric
             </div>
-            <SizeGuide>
-              <button className="flex items-center gap-2 bg-[#F7F2EC] px-4 py-2.5 rounded-full text-xs font-semibold text-cocoa hover:text-primary transition-colors shadow-sm">
-                <Ruler className="h-4 w-4 text-primary" /> Check size guide
-              </button>
-            </SizeGuide>
           </div>
 
           {/* SKU, Category & Payments */}

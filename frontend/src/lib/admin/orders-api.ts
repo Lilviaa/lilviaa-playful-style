@@ -32,6 +32,7 @@ export interface OrderItem {
 
 export interface Order {
   id: string;
+  display_id?: string;
   customer_id?: string;
   status: OrderStatus;
   payment_method: PaymentMethod;

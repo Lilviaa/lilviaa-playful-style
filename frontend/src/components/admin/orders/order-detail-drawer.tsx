@@ -90,7 +90,7 @@ export function OrderDetailDrawer({ order, isOpen, onClose, onPrint }: OrderDeta
         )}
         <SheetHeader className="p-6 sm:p-0 pb-0">
           <div className="flex items-center justify-between">
-            <SheetTitle className="font-display text-2xl text-cocoa">Order {formatOrderId(order.id)}</SheetTitle>
+            <SheetTitle className="font-display text-2xl text-cocoa">Order {formatOrderId(order.id, order.display_id)}</SheetTitle>
           </div>
           <SheetDescription>
             Placed on {new Date(order.created_at).toLocaleString()}
@@ -255,7 +255,7 @@ export function OrderDetailDrawer({ order, isOpen, onClose, onPrint }: OrderDeta
               <DialogHeader>
                 <DialogTitle>Create Return Request</DialogTitle>
                 <DialogDescription>
-                  Manually create a return for <strong>{formatOrderId(order.id)}</strong>. Use this for phone or WhatsApp requests.
+                  Manually create a return for <strong>{formatOrderId(order.id, order.display_id)}</strong>. Use this for phone or WhatsApp requests.
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4 py-2">

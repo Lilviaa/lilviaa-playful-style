@@ -5,7 +5,8 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-export function formatOrderId(rawOrderId: string | number): string {
+export function formatOrderId(rawOrderId: string | number, displayId?: string): string {
+  if (displayId) return displayId;
   if (!rawOrderId) return '';
   const strId = String(rawOrderId);
   
@@ -14,5 +15,16 @@ export function formatOrderId(rawOrderId: string | number): string {
     return strId;
   }
   
-  return strId;
+  try {
+    const cleanId = strId.replace(/-/g, '').substring(0, 6);
+    const parsedInt = parseInt(cleanId, 16);
+    if (!isNaN(parsedInt)) {
+      const numericHash = parsedInt.toString().padStart(6, '0');
+      return `ORD-LV-${numericHash}`;
+    }
+  } catch (e) {
+    // Fallback
+  }
+  
+  return `ORD-LV-${strId.substring(0, 6).toUpperCase()}`;
 }
