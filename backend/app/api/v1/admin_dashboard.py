@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, Request, Query
 from app.api.dependencies import require_admin
 from app.db.supabase import get_supabase
 from datetime import datetime, timezone, timedelta
@@ -176,3 +176,161 @@ def get_dashboard_stats(request: Request):
         "pendingOrdersCount": pending_orders_count,
         "recentActivity": recent_activity,
     }
+
+@router.get("/metrics", dependencies=[Depends(PreAuthRateLimit("60/minute")), Depends(require_admin)])
+@limiter.limit("60/minute", key_func=get_admin_id)
+def get_dashboard_metrics(
+    request: Request,
+    start_date: str = Query(...),
+    end_date: str = Query(...)
+):
+    supabase = get_supabase()
+    try:
+        start_dt = datetime.fromisoformat(start_date.replace("Z", "+00:00"))
+        end_dt = datetime.fromisoformat(end_date.replace("Z", "+00:00"))
+    except ValueError:
+        return {"error": "Invalid date format"}
+    
+    res = supabase.table("orders") \
+        .select("total_amount") \
+        .gte("created_at", start_dt.isoformat()) \
+        .lte("created_at", end_dt.isoformat()) \
+        .in_("status", ["pending", "confirmed", "packed", "shipped", "delivered"]) \
+        .execute()
+        
+    orders = res.data or []
+    total_orders = len(orders)
+    total_revenue = sum(float(o["total_amount"]) for o in orders)
+    
+    avg_order_value = total_revenue / total_orders if total_orders > 0 else 0
+    days = max((end_dt - start_dt).days, 1)
+    avg_daily_revenue = total_revenue / days
+    
+    return {
+        "totalRevenue": int(total_revenue * 100),
+        "avgDailyRevenue": int(avg_daily_revenue * 100),
+        "totalOrders": total_orders,
+        "avgOrderValue": int(avg_order_value * 100)
+    }
+
+@router.get("/chart", dependencies=[Depends(PreAuthRateLimit("60/minute")), Depends(require_admin)])
+@limiter.limit("60/minute", key_func=get_admin_id)
+def get_dashboard_chart(
+    request: Request,
+    time_range: str = Query(None),
+    start_date: str = Query(None),
+    end_date: str = Query(None)
+):
+    supabase = get_supabase()
+    now = datetime.now(timezone.utc)
+    
+    if time_range == "1d":
+        start_dt = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        end_dt = now
+    elif time_range == "7d":
+        start_dt = now - timedelta(days=7)
+        end_dt = now
+    elif time_range == "30d":
+        start_dt = now - timedelta(days=30)
+        end_dt = now
+    elif time_range == "1y":
+        start_dt = now.replace(month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
+        end_dt = now
+    elif start_date and end_date:
+        start_dt = datetime.fromisoformat(start_date.replace("Z", "+00:00"))
+        end_dt = datetime.fromisoformat(end_date.replace("Z", "+00:00"))
+    else:
+        start_dt = now - timedelta(days=30)
+        end_dt = now
+
+    res = supabase.table("orders") \
+        .select("created_at, total_amount") \
+        .gte("created_at", start_dt.isoformat()) \
+        .lte("created_at", end_dt.isoformat()) \
+        .in_("status", ["pending", "confirmed", "packed", "shipped", "delivered"]) \
+        .execute()
+        
+    orders = res.data or []
+    chart_data = {}
+    
+    delta = (end_dt - start_dt).days
+    if delta <= 1:
+        for i in range(24):
+            d_str = start_dt.replace(hour=i).strftime("%I %p")
+            chart_data[d_str] = 0.0
+    elif delta <= 60:
+        for i in range(delta + 1):
+            d = (start_dt + timedelta(days=i)).strftime("%b %d")
+            chart_data[d] = 0.0
+    else:
+        curr = start_dt
+        while curr <= end_dt:
+            m_str = curr.strftime("%b %Y")
+            chart_data[m_str] = 0.0
+            if curr.month == 12:
+                curr = curr.replace(year=curr.year + 1, month=1)
+            else:
+                curr = curr.replace(month=curr.month + 1)
+                
+    for o in orders:
+        o_dt = datetime.fromisoformat(o["created_at"].replace("Z", "+00:00"))
+        amt = float(o["total_amount"])
+        if delta <= 1:
+            k = o_dt.strftime("%I %p")
+        elif delta <= 60:
+            k = o_dt.strftime("%b %d")
+        else:
+            k = o_dt.strftime("%b %Y")
+            
+        if k in chart_data:
+            chart_data[k] += amt
+            
+    result = [{"date": k, "revenue": int(v * 100)} for k, v in chart_data.items()]
+    return {"chartData": result}
+
+@router.get("/report", dependencies=[Depends(PreAuthRateLimit("20/minute")), Depends(require_admin)])
+@limiter.limit("20/minute", key_func=get_admin_id)
+def get_dashboard_report(
+    request: Request,
+    start_date: str = Query(...),
+    end_date: str = Query(...)
+):
+    supabase = get_supabase()
+    try:
+        start_dt = datetime.fromisoformat(start_date.replace("Z", "+00:00"))
+        end_dt = datetime.fromisoformat(end_date.replace("Z", "+00:00"))
+    except ValueError:
+        return {"error": "Invalid date format"}
+        
+    res = supabase.table("orders") \
+        .select("*, order_items(*, product_variants(*, products(*)))") \
+        .gte("created_at", start_dt.isoformat()) \
+        .lte("created_at", end_dt.isoformat()) \
+        .order("created_at", desc=True) \
+        .execute()
+        
+    orders = res.data or []
+    reports = []
+    
+    for o in orders:
+        items = []
+        for i in o.get("order_items", []):
+            prod = i.get("product_variants", {}).get("products", {}) if i.get("product_variants") else {}
+            name = prod.get("name", "Unknown") if prod else "Unknown"
+            sku = i.get("product_variants", {}).get("sku", "Unknown") if i.get("product_variants") else "Unknown"
+            items.append(f"{name} (SKU: {sku}) x{i.get('quantity')}")
+            
+        addr = o.get("shipping_address") or {}
+        reports.append({
+            "orderId": o["id"],
+            "date": o["created_at"],
+            "customerName": addr.get("fullName", "Unknown"),
+            "customerEmail": addr.get("email", "Unknown"),
+            "status": o["status"],
+            "paymentMethod": o["payment_method"],
+            "total": float(o["total_amount"]),
+            "items": " | ".join(items)
+        })
+        
+    return {"reportData": reports}
+

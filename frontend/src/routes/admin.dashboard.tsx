@@ -4,6 +4,7 @@ import { RevenueCards } from "@/components/admin/dashboard/revenue-cards";
 import { RevenueChart } from "@/components/admin/dashboard/revenue-chart";
 import { LowStockBadge } from "@/components/admin/dashboard/low-stock-badge";
 import { PendingOrdersBadge } from "@/components/admin/dashboard/pending-orders-badge";
+import { OrderReportGenerator } from "@/components/admin/dashboard/order-report-generator";
 import { RecentActivityFeed } from "@/components/admin/dashboard/recent-activity-feed";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -51,12 +52,18 @@ function DashboardPage() {
         <p className="text-muted-foreground mt-1">Here's what's happening with your store today.</p>
       </div>
 
-      {/* Top Row: Revenue Cards */}
-      <RevenueCards data={data.revenue} />
+      <div id="dashboard-export-area" className="space-y-6">
+        {/* Top Row: Revenue Cards */}
+        <RevenueCards data={data.revenue} />
 
-      {/* Middle Row: Chart */}
+        {/* Middle Row: Chart */}
+        <div className="grid grid-cols-1 gap-6">
+          <RevenueChart />
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 gap-6">
-        <RevenueChart data={data.chartData} />
+        <OrderReportGenerator />
       </div>
 
       {/* Bottom Row: Badges & Activity */}
