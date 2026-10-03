@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, status, Query, Request, Depends
+from fastapi import APIRouter, HTTPException, status, Query, Request, Depends, Response
 from typing import List, Optional
 from datetime import datetime, timezone
 from app.models.public_product import PublicProductResponse
@@ -101,6 +101,7 @@ def map_product(row: dict) -> dict:
 @limiter.limit("60/minute")
 def get_products(
     request: Request,
+    response: Response,
     category: Optional[str] = None,
     sort: Optional[str] = Query(None, description="price_asc, price_desc, newest"),
     q: Optional[str] = Query(None, description="Search term for name and description"),
@@ -159,12 +160,20 @@ def get_products(
         products.sort(key=lambda x: x["price"])
     elif sort == "price_desc":
         products.sort(key=lambda x: x["price"], reverse=True)
-        
+
+    # Cache for 5 minutes at CDN/browser level. stale-while-revalidate lets CDN serve
+    # stale content for an extra 60s while it fetches fresh data in the background.
+    # Only cache non-search, non-personalised requests.
+    if not q:
+        response.headers["Cache-Control"] = "public, max-age=300, stale-while-revalidate=60"
+    else:
+        response.headers["Cache-Control"] = "private, no-store"
+
     return products
 
 @router.get("/featured", response_model=List[PublicProductResponse], dependencies=[Depends(PreAuthRateLimit("120/minute"))])
 @limiter.limit("120/minute")
-def get_featured_products(request: Request):
+def get_featured_products(request: Request, response: Response):
     """Fetch featured published products (e.g. tag is bestseller or new). Limit to 8."""
     supabase = get_supabase()
     
@@ -173,11 +182,12 @@ def get_featured_products(request: Request):
     ).eq("status", "published").in_("tag", ["bestseller", "new"]).order("created_at", desc=True).limit(8)
     
     result = query.execute()
+    response.headers["Cache-Control"] = "public, max-age=300, stale-while-revalidate=60"
     return [map_product(row) for row in result.data]
 
 @router.get("/{slug}", response_model=PublicProductResponse, dependencies=[Depends(PreAuthRateLimit("120/minute"))])
 @limiter.limit("120/minute")
-def get_product_by_slug(slug: str, request: Request):
+def get_product_by_slug(slug: str, request: Request, response: Response):
     """Fetch a single published product by slug. Admins can view drafts/archived."""
     supabase = get_supabase()
     
@@ -222,5 +232,12 @@ def get_product_by_slug(slug: str, request: Request):
     
     if not result.data:
         raise AppError("Product not found", status_code=404)
-        
+
+    # Only cache for unauthenticated public visitors.
+    # Admins previewing drafts must always get a fresh response.
+    if not is_admin:
+        response.headers["Cache-Control"] = "public, max-age=300, stale-while-revalidate=60"
+    else:
+        response.headers["Cache-Control"] = "private, no-store"
+
     return map_product(result.data[0])

@@ -11,19 +11,19 @@ export async function fetchProducts(category?: string, sort?: string, q?: string
     url.searchParams.append("sort", backendSort);
   }
   if (q) url.searchParams.append("q", q);
-  const res = await apiFetch(`/products/${url.search}`, { cache: 'no-store' });
+  const res = await apiFetch(`/products/${url.search}`);
   if (!res.ok) throw new Error("Failed to fetch products");
   return res.json();
 }
 
 export async function fetchFeaturedProducts(): Promise<Product[]> {
-  const res = await apiFetch(`/products/featured`, { cache: 'no-store' });
+  const res = await apiFetch(`/products/featured`);
   if (!res.ok) throw new Error("Failed to fetch featured products");
   return res.json();
 }
 
 export async function fetchProduct(slug: string): Promise<Product> {
-  const res = await apiFetch(`/products/${slug}`, { cache: 'no-store' });
+  const res = await apiFetch(`/products/${slug}`);
   if (!res.ok) {
     if (res.status === 404) throw new Error("Product not found");
     throw new Error("Failed to fetch product");
@@ -36,6 +36,7 @@ export function useProducts(category?: string, sort?: string, q?: string) {
   return useQuery({
     queryKey: ["products", category, sort, q],
     queryFn: () => fetchProducts(category, sort, q),
+    staleTime: 5 * 60 * 1000, // 5 minutes — prevents re-fetching on every page nav/tab focus
   });
 }
 
@@ -43,6 +44,7 @@ export function useFeaturedProducts() {
   return useQuery({
     queryKey: ["products", "featured"],
     queryFn: fetchFeaturedProducts,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -51,6 +53,7 @@ export function useProduct(slug: string) {
     queryKey: ["products", slug],
     queryFn: () => fetchProduct(slug),
     enabled: !!slug,
+    staleTime: 5 * 60 * 1000,
   });
 }
 

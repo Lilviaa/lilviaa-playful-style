@@ -28,6 +28,20 @@ def get_all_products(request: Request):
             product["images"].sort(key=lambda x: x.get("sort_order", 0))
     return result.data
 
+@router.get("/{product_id}", response_model=ProductResponse, dependencies=[Depends(PreAuthRateLimit("60/minute")), Depends(require_admin)])
+@limiter.limit("60/minute", key_func=get_admin_id)
+def get_single_product(product_id: str, request: Request):
+    """Admin: Fetch a single product by its UUID (without downloading the full catalog)."""
+    supabase = get_supabase()
+    result = supabase.table("products").select("*, category:categories(name, slug), images:product_images(*), variants:product_variants(*)").eq("id", product_id).execute()
+    if not result.data:
+        raise AppError("Product not found", status_code=404)
+    product = result.data[0]
+    if product.get("images"):
+        product["images"].sort(key=lambda x: x.get("sort_order", 0))
+    return product
+
+
 @router.post("", response_model=ProductResponse, status_code=status.HTTP_201_CREATED, dependencies=[Depends(PreAuthRateLimit("30/minute")), Depends(require_admin)])
 @limiter.limit("30/minute", key_func=get_admin_id)
 def create_product(product: ProductCreate, request: Request):

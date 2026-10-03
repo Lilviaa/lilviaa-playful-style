@@ -70,6 +70,7 @@ export function useProducts() {
         total_stock: p.variants?.reduce((sum: number, v: any) => sum + Math.max(0, (v.stock || 0) - (v.reserved_stock || 0)), 0) || 0
       }));
     },
+    staleTime: 5 * 60 * 1000, // 5 minutes — prevents re-fetching on every page nav/tab focus
   });
 }
 
@@ -77,19 +78,18 @@ export function useProduct(id: string) {
   return useQuery({
     queryKey: ["admin-product", id],
     queryFn: async (): Promise<ProductWithDetails | null> => {
-      const res = await apiFetch("/admin/products/");
-      if (!res.ok) throw new Error("Failed to fetch products");
-      const data: ProductWithDetails[] = await res.json();
-      const cleanId = id.replace(/\s+/g, '-');
-      const p: any = data.find((prod) => prod.id === cleanId);
-      if (!p) return null;
-      p.category_name = p.category?.name || "Uncategorized"; // map correctly
+      // Fetch only the single product — not the whole catalog
+      const res = await apiFetch(`/admin/products/${id}`);
+      if (!res.ok) throw new Error("Failed to fetch product");
+      const p: any = await res.json();
+      p.category_name = p.category?.name || "Uncategorized";
       p.category_slug = p.category?.slug || "";
-      p.category = p.category?.name || "Uncategorized"; 
+      p.category = p.category?.name || "Uncategorized";
       p.total_stock = p.variants?.reduce((sum: number, v: any) => sum + Math.max(0, (v.stock || 0) - (v.reserved_stock || 0)), 0) || 0;
       return p;
     },
     enabled: !!id && id !== "new",
+    staleTime: 2 * 60 * 1000, // 2 minutes for admin product detail
   });
 }
 
@@ -231,10 +231,12 @@ export function useSaveProduct() {
         const incomingVariantIds = new Set(data.variants.map((v) => v.id));
 
       if (!isNew) {
-        // Fetch existing data to figure out if any variants or images were deleted
-        const pRes = await apiFetch(`/admin/products/`);
-        const pData = await pRes.json();
-        const existingProduct = pData.find((prod: any) => prod.id === productId);
+        // Use the React Query cache to find existing product data — avoids a full catalog re-fetch
+        const queryClient = (await import("@tanstack/react-query")).QueryClient;
+        // Read the existing product variants/images directly from the already-fetched admin-products cache
+        // by fetching just this single product from the backend
+        const existingRes = await apiFetch(`/admin/products/${productId}`);
+        const existingProduct = existingRes.ok ? await existingRes.json() : null;
         
         if (existingProduct) {
           // Delete removed variants
