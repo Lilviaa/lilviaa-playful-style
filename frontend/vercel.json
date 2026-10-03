@@ -2,7 +2,7 @@
   "cleanUrls": true,
   "trailingSlash": false,
   "images": {
-    "sizes": [256, 384, 640, 750, 828, 1080, 1200, 1920, 2048, 3840],
+    "sizes": [100, 150, 200, 256, 300, 384, 400, 600, 640, 750, 800, 828, 1080, 1200, 1920, 2048, 3840],
     "domains": ["fcrbgzhpziffzcpxrthr.supabase.co"]
   },
   "rewrites": [
