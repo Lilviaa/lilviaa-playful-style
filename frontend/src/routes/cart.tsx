@@ -3,6 +3,7 @@ import { Minus, Plus, ShoppingBag, Trash2, ArrowRight, Truck } from "lucide-reac
 import { toast } from "sonner";
 import { formatINR, useCart } from "@/lib/cart";
 import { useCompanySettings } from "@/lib/admin/settings-api";
+import { getOptimizedImageUrl } from "@/lib/utils";
 
 export const Route = createFileRoute("/cart")({
   head: () => ({
@@ -69,7 +70,7 @@ function CartPage() {
               className="flex w-full gap-4 rounded-3xl bg-card p-4 shadow-cute"
             >
               <img
-                src={it.image}
+                src={it.image ? getOptimizedImageUrl(it.image, 200, 75) : "/fallback-image.jpg"}
                 alt={it.name}
                 className="h-28 w-28 shrink-0 rounded-2xl object-cover"
               />

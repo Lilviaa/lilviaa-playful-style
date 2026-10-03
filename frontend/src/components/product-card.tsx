@@ -3,7 +3,7 @@ import { Heart, Star, ShoppingCart } from "lucide-react";
 import type { Product } from "@/lib/products";
 import { formatINR, useCart } from "@/lib/cart";
 import { useWishlist } from "@/lib/wishlist";
-import { cn } from "@/lib/utils";
+import { cn, getOptimizedImageUrl } from "@/lib/utils";
 import { ScrollReveal } from "@/components/scroll-reveal";
 import { toast } from "sonner";
 
@@ -114,7 +114,7 @@ export function ProductCard({ product }: { product: Product }) {
       >
         <div className="relative aspect-[4/5] overflow-hidden bg-sand/30">
           <img
-            src={product.image || "/fallback-image.jpg"}
+            src={product.image ? getOptimizedImageUrl(product.image, 400, 75) : "/fallback-image.jpg"}
             alt={product.name}
             loading="lazy"
             className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"

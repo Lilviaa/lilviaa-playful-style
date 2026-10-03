@@ -4,6 +4,7 @@ import { useAuth } from "@/lib/auth";
 import { useAddresses } from "@/lib/addresses-api";
 import { API_URL } from "@/lib/products-api";
 import { apiFetch } from "@/lib/api";
+import { getOptimizedImageUrl } from "@/lib/utils";
 import { useCompanySettings } from "@/lib/admin/settings-api";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -543,7 +544,7 @@ function CheckoutPage() {
           <div className="flex overflow-x-auto gap-3 pb-4 snap-x hide-scrollbar">
             {items.map((it) => (
               <div key={it.slug + it.size} className="flex-shrink-0 w-[200px] flex gap-3 bg-[#fcf9f2] border border-border p-2 rounded-2xl snap-start relative group">
-                <img src={it.image} alt={it.name} className="h-16 w-12 rounded-xl object-cover bg-muted shrink-0" />
+                <img src={it.image ? getOptimizedImageUrl(it.image, 100, 75) : "/fallback-image.jpg"} alt={it.name} className="h-16 w-12 rounded-xl object-cover bg-muted shrink-0" />
                 <div className="flex flex-col justify-center min-w-0">
                   <h4 className="font-display text-sm font-bold text-cocoa truncate">{it.name}</h4>
                   <p className="text-[10px] text-muted-foreground mt-0.5">Size: {it.size} • Qty: {it.qty}</p>
@@ -1083,7 +1084,7 @@ function CheckoutPage() {
               <ul className="mt-4 mb-6 space-y-4 max-h-[40vh] overflow-y-auto pr-2">
                 {items.map((it) => (
                   <li key={it.slug + it.size} className="flex gap-4 relative group">
-                    <img src={it.image} alt={it.name} className="h-20 w-16 rounded-xl object-cover bg-muted" />
+                    <img src={it.image ? getOptimizedImageUrl(it.image, 150, 75) : "/fallback-image.jpg"} alt={it.name} className="h-20 w-16 rounded-xl object-cover bg-muted" />
                     <div className="flex flex-1 flex-col justify-center">
                       <div className="flex justify-between items-start">
                         <h3 className="font-display text-base font-bold text-cocoa leading-tight pr-6">{it.name}</h3>

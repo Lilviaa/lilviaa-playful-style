@@ -1,6 +1,9 @@
 {
   "cleanUrls": true,
   "trailingSlash": false,
+  "images": {
+    "domains": ["fcrbgzhpziffzcpxrthr.supabase.co"]
+  },
   "rewrites": [
     {
       "source": "/api/v1/:path*",

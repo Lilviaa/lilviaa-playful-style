@@ -18,6 +18,7 @@ import {
 import { CustomerReviews } from "@/components/customer-reviews";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PincodeChecker } from "@/components/pincode-checker";
+import { getOptimizedImageUrl } from "@/lib/utils";
 
 export const Route = createFileRoute("/products/$slug")({
   loader: async ({ params }): Promise<{ product: Product, error?: string }> => {
@@ -227,7 +228,7 @@ function ProductPage() {
                   activeImg === g ? "ring-2 ring-cocoa" : "opacity-60 hover:opacity-100"
                 }`}
               >
-                <img src={g || "/fallback-image.jpg"} alt={`${product.name} thumbnail ${i + 1}`} className="h-full w-full object-cover" />
+                <img src={g ? getOptimizedImageUrl(g, 150, 75) : "/fallback-image.jpg"} alt={`${product.name} thumbnail ${i + 1}`} className="h-full w-full object-cover" />
               </button>
             ))}
           </div>
@@ -254,7 +255,7 @@ function ProductPage() {
               }
             }}
           >
-            <img id="base-img" src={activeImg || "/fallback-image.jpg"} alt={product.name} className="h-full w-full object-cover transition-opacity duration-200" />
+            <img id="base-img" src={activeImg ? getOptimizedImageUrl(activeImg, 800, 85) : "/fallback-image.jpg"} alt={product.name} className="h-full w-full object-cover transition-opacity duration-200" />
             <div 
               id="zoom-layer"
               className="pointer-events-none absolute inset-0 z-10 opacity-0 transition-opacity duration-200"

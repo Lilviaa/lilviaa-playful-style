@@ -28,3 +28,15 @@ export function formatOrderId(rawOrderId: string | number, displayId?: string): 
   
   return `ORD-LV-${strId.substring(0, 6).toUpperCase()}`;
 }
+
+export function getOptimizedImageUrl(url: string, width: number = 400, quality: number = 75): string {
+  if (!url) return "";
+  if (url.startsWith("/") && !url.startsWith("http")) return url;
+  
+  if (typeof window !== "undefined" && window.location.hostname === "localhost") {
+    // Vercel image optimization only works when deployed
+    return url;
+  }
+  
+  return `/_vercel/image?url=${encodeURIComponent(url)}&w=${width}&q=${quality}`;
+}

@@ -8,6 +8,7 @@ import { usePublicBanners } from "@/lib/admin/banners-api";
 import { ProductCard } from "@/components/product-card";
 import type { Product } from "@/lib/products";
 import { ScrollReveal } from "@/components/scroll-reveal";
+import { getOptimizedImageUrl } from "@/lib/utils";
 
 export const Route = createFileRoute("/")({
   component: HomePage,
@@ -134,7 +135,7 @@ function HomePage() {
                     activeHeroImages.map((src: string, index: number) => (
                       <img
                         key={src}
-                        src={src}
+                        src={getOptimizedImageUrl(src, 1200, 80)}
                         alt="Lilviaa clothing"
                         className="h-full w-full min-w-full flex-shrink-0 object-cover object-top bg-sand/20"
                         loading={index === 0 ? "eager" : "lazy"}
@@ -294,7 +295,7 @@ function HomePage() {
                   {/* Background Image */}
                   <div className="absolute inset-0 z-0 bg-cocoa/20">
                     <img
-                      src={imageUrl}
+                      src={getOptimizedImageUrl(imageUrl, 600, 75)}
                       alt={name}
                       className="h-full w-full object-cover transition-transform duration-1000 ease-out group-hover:scale-110"
                     />
@@ -381,13 +382,13 @@ function HomePage() {
           <div className="grid grid-cols-2 gap-4">
             {featuredSection?.image_url ? (
               <img
-                src={featuredSection.image_url}
+                src={getOptimizedImageUrl(featuredSection.image_url, 600, 75)}
                 alt="Editorial 1"
                 className="aspect-[3/4] w-full rounded-3xl object-cover shadow-cute rotate-[-3deg]"
               />
             ) : featured.length > 2 && featured[2] ? (
               <img
-                src={featured[2].image}
+                src={getOptimizedImageUrl(featured[2].image, 600, 75)}
                 alt=""
                 className="aspect-[3/4] w-full rounded-3xl object-cover shadow-cute rotate-[-3deg]"
               />
@@ -395,13 +396,13 @@ function HomePage() {
 
             {featuredSection?.secondary_image_url ? (
               <img
-                src={featuredSection.secondary_image_url}
+                src={getOptimizedImageUrl(featuredSection.secondary_image_url, 600, 75)}
                 alt="Editorial 2"
                 className="mt-10 aspect-[3/4] w-full rounded-3xl object-cover shadow-cute rotate-[3deg]"
               />
             ) : featured.length > 5 && featured[5] ? (
               <img
-                src={featured[5].image}
+                src={getOptimizedImageUrl(featured[5].image, 600, 75)}
                 alt=""
                 className="mt-10 aspect-[3/4] w-full rounded-3xl object-cover shadow-cute rotate-[3deg]"
               />
