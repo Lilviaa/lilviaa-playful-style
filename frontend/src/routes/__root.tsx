@@ -8,7 +8,7 @@ import {
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { CartProvider } from "@/lib/cart";
@@ -126,6 +126,35 @@ function RootShell({ children }: { children: ReactNode }) {
     <html lang="en">
       <head>
         <HeadContent />
+        {/* Meta Pixel Code (Active on shop pages, excluded from /admin) */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/admin')) {
+                !function(f,b,e,v,n,t,s)
+                {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+                n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+                if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+                n.queue=[];t=b.createElement(e);t.async=!0;
+                t.src=v;s=b.getElementsByTagName(e)[0];
+                s.parentNode.insertBefore(t,s)}(window, document,'script',
+                'https://connect.facebook.net/en_US/fbevents.js');
+                fbq('init', '1358861453059805');
+                fbq('track', 'PageView');
+              }
+            `,
+          }}
+        />
+        <noscript>
+          <img
+            height="1"
+            width="1"
+            style={{ display: "none" }}
+            src="https://www.facebook.com/tr?id=1358861453059805&ev=PageView&noscript=1"
+            alt=""
+          />
+        </noscript>
+        {/* End Meta Pixel Code */}
       </head>
       <body className="overflow-x-hidden">
         {children}
@@ -138,6 +167,7 @@ function RootShell({ children }: { children: ReactNode }) {
 import { AdminAuthProvider, useAdminAuth } from "@/lib/admin/admin-auth";
 import { MaintenancePage } from "@/components/maintenance-page";
 import { useCompanySettings } from "@/lib/admin/settings-api";
+import { trackMetaPageView } from "@/lib/meta-pixel";
 
 function AppContent() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
@@ -150,6 +180,26 @@ function AppContent() {
   const isCheckout = pathname === "/checkout";
   const isInvoice = pathname.startsWith("/invoice");
   
+  // Track Meta Pixel on SPA route changes across all shop pages (strictly excluded from /admin)
+  const prevPathRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (isAdmin) {
+      prevPathRef.current = pathname;
+      return;
+    }
+
+    if (prevPathRef.current === null) {
+      prevPathRef.current = pathname;
+      return;
+    }
+
+    if (prevPathRef.current !== pathname) {
+      prevPathRef.current = pathname;
+      trackMetaPageView();
+    }
+  }, [pathname, isAdmin]);
+
   // Show maintenance page if mode is active, user is NOT admin, and not trying to login or view their account
   const isMaintenanceMode = companySettings?.is_maintenance_mode ?? false;
   const showMaintenance = isMaintenanceMode && !isAdminUser && !isAuthPage && !isAccountPage && !isAuthLoading && !isSettingsLoading;

@@ -6,6 +6,7 @@
 !.env.example
 firebase-admin.json
 backend/firebase-admin.json
+*firebase-adminsdk*.json
 
 # ──────────────────────────────────────────
 # Python / FastAPI (backend)

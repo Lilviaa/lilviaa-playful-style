@@ -296,12 +296,27 @@ def get_dashboard_report(
     end_date: str = Query(...)
 ):
     supabase = get_supabase()
+    import json
     try:
-        start_dt = datetime.fromisoformat(start_date.replace("Z", "+00:00"))
-        end_dt = datetime.fromisoformat(end_date.replace("Z", "+00:00"))
+        clean_start = start_date.replace("Z", "+00:00")
+        clean_end = end_date.replace("Z", "+00:00")
+        if len(clean_start) == 10:
+            start_dt = datetime.fromisoformat(f"{clean_start}T00:00:00+00:00")
+        else:
+            start_dt = datetime.fromisoformat(clean_start)
+            
+        if len(clean_end) == 10:
+            end_dt = datetime.fromisoformat(f"{clean_end}T23:59:59.999999+00:00")
+        else:
+            end_dt = datetime.fromisoformat(clean_end)
     except ValueError:
         return {"error": "Invalid date format"}
         
+    settings_res = supabase.table("company_settings").select("*").limit(1).execute()
+    settings = settings_res.data[0] if settings_res.data else {}
+    enable_gst = bool(settings.get("enable_gst", False))
+    store_gst_percentage = float(settings.get("gst_percentage") or 0.0)
+
     res = supabase.table("orders") \
         .select("*, order_items(*, product_variants(*, products(*)))") \
         .gte("created_at", start_dt.isoformat()) \
@@ -313,24 +328,72 @@ def get_dashboard_report(
     reports = []
     
     for o in orders:
-        items = []
+        items_summary = []
+        order_items_data = []
         for i in o.get("order_items", []):
-            prod = i.get("product_variants", {}).get("products", {}) if i.get("product_variants") else {}
-            name = prod.get("name", "Unknown") if prod else "Unknown"
-            sku = i.get("product_variants", {}).get("sku", "Unknown") if i.get("product_variants") else "Unknown"
-            items.append(f"{name} (SKU: {sku}) x{i.get('quantity')}")
+            pv = i.get("product_variants") or {}
+            prod = pv.get("products") or {}
+            name = prod.get("name") or "Unknown Product"
+            sku = pv.get("sku") or "Unknown"
+            size = pv.get("size") or ""
+            qty = int(i.get("quantity") or 1)
+            unit_price = float(i.get("unit_price") or 0.0)
+            total_price = float(i.get("total_price") or (qty * unit_price))
+            
+            items_summary.append(f"{name} (SKU: {sku}) x{qty}")
+            order_items_data.append({
+                "id": i.get("id"),
+                "productName": name,
+                "sku": sku,
+                "size": size,
+                "quantity": qty,
+                "unitPrice": unit_price,
+                "totalPrice": total_price
+            })
             
         addr = o.get("shipping_address") or {}
+        if isinstance(addr, str):
+            try:
+                addr = json.loads(addr)
+            except Exception:
+                addr = {}
+
+        customer_name = addr.get("fullName") or addr.get("full_name") or addr.get("name") or "Unknown"
+        customer_email = addr.get("email") or ""
+        customer_phone = addr.get("phone") or ""
+        customer_city = addr.get("city") or ""
+        customer_state = addr.get("state") or ""
+
+        order_gst_pct = float(o.get("gst_percentage") if o.get("gst_percentage") is not None else store_gst_percentage)
+        order_gst_amt = float(o.get("gst_amount") or 0.0)
+
         reports.append({
             "orderId": o["id"],
             "date": o["created_at"],
-            "customerName": addr.get("fullName", "Unknown"),
-            "customerEmail": addr.get("email", "Unknown"),
-            "status": o["status"],
-            "paymentMethod": o["payment_method"],
-            "total": float(o["total_amount"]),
-            "items": " | ".join(items)
+            "customerName": customer_name,
+            "customerEmail": customer_email,
+            "customerPhone": customer_phone,
+            "city": customer_city,
+            "state": customer_state,
+            "status": o.get("status", "pending"),
+            "paymentMethod": o.get("payment_method", "cod"),
+            "subtotal": float(o.get("subtotal") or 0.0),
+            "taxableAmount": float(o.get("taxable_amount") or 0.0),
+            "gstPercentage": order_gst_pct,
+            "gstAmount": order_gst_amt,
+            "shippingAmount": float(o.get("shipping_amount") or 0.0),
+            "discountAmount": float(o.get("discount_amount") or 0.0),
+            "couponCode": o.get("coupon_code") or "",
+            "total": float(o.get("total_amount") or 0.0),
+            "items": " | ".join(items_summary),
+            "orderItems": order_items_data
         })
         
-    return {"reportData": reports}
+    return {
+        "reportData": reports,
+        "settings": {
+            "enableGst": enable_gst,
+            "gstPercentage": store_gst_percentage
+        }
+    }
 

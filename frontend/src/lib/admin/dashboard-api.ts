@@ -91,19 +91,48 @@ export function useDashboardChart(timeRange?: string, startDate?: string, endDat
   });
 }
 
+export interface ReportOrderItem {
+  id?: string;
+  productName: string;
+  sku: string;
+  size?: string;
+  quantity: number;
+  unitPrice: number;
+  totalPrice: number;
+}
+
 export interface ReportItem {
   orderId: string;
   date: string;
   customerName: string;
   customerEmail: string;
+  customerPhone?: string;
+  city?: string;
+  state?: string;
   status: string;
   paymentMethod: string;
+  subtotal?: number;
+  taxableAmount?: number;
+  gstPercentage?: number;
+  gstAmount?: number;
+  shippingAmount?: number;
+  discountAmount?: number;
+  couponCode?: string;
   total: number;
   items: string;
+  orderItems?: ReportOrderItem[];
+}
+
+export interface DashboardReportResponse {
+  reportData: ReportItem[];
+  settings?: {
+    enableGst: boolean;
+    gstPercentage: number;
+  };
 }
 
 export function useDashboardReport(startDate: string, endDate: string, enabled: boolean = false) {
-  return useQuery<{ reportData: ReportItem[] }>({
+  return useQuery<DashboardReportResponse>({
     queryKey: ["admin", "dashboardReport", startDate, endDate],
     queryFn: async () => {
       const res = await apiFetch(`/admin/dashboard/report?start_date=${startDate}&end_date=${endDate}`);
