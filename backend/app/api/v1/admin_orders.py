@@ -77,8 +77,9 @@ def list_orders(
             
         if is_uuid:
             query = query.eq("id", search)
-        elif search.upper().startswith("ORD-LV-"):
-            query = query.ilike("display_id", f"%{search.upper()}%")
+        elif search.upper().startswith("ORD-LIL-") or search.upper().startswith("ORD-LV-"):
+            clean_term = search.upper().replace("ORD-LIL-", "").replace("ORD-LV-", "")
+            query = query.or_(f"display_id.ilike.%{search.upper()}%,display_id.ilike.%{clean_term}%")
         elif search.isdigit():
             # Could be searching for the numeric part of display_id or a phone number
             query = query.or_(f"display_id.ilike.%{search}%,shipping_address->>full_name.ilike.%{search}%,shipping_address->>phone.ilike.%{search}%")
@@ -134,10 +135,19 @@ def list_orders(
 
         addr_snap = o.get("shipping_address") or {}
         
+        order_num = o.get("order_number")
+        raw_did = o.get("display_id")
+        if order_num:
+            formatted_did = f"ORD-LIL-{int(order_num):04d}"
+        elif raw_did and str(raw_did).startswith("ORD-LV-"):
+            formatted_did = str(raw_did).replace("ORD-LV-", "ORD-LIL-")
+        else:
+            formatted_did = raw_did
+
         order_obj = {
             "id": o["id"],
-            "display_id": o.get("display_id"),
-            "order_number": o.get("order_number"),
+            "display_id": formatted_did,
+            "order_number": order_num,
             "customer_id": o.get("user_id"),
             "status": o["status"],
             "payment_method": o["payment_method"],

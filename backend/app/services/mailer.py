@@ -79,14 +79,19 @@ def send_customer_order_confirmation(order: dict):
             return
 
         order_id = str(order.get("id"))
-        short_order_id = order.get("display_id")
-        if not short_order_id:
+        order_num = order.get("order_number")
+        if order_num:
+            short_order_id = f"ORD-LIL-{int(order_num):04d}"
+        elif order.get("display_id"):
+            did = str(order.get("display_id"))
+            short_order_id = did.replace("ORD-LV-", "ORD-LIL-") if did.startswith("ORD-LV-") else did
+        else:
             hex_prefix = order_id.replace("-", "")[:6]
             try:
                 numeric_hash = str(int(hex_prefix, 16)).zfill(6)
-                short_order_id = f"ORD-LV-{numeric_hash}"
+                short_order_id = f"ORD-LIL-{numeric_hash}"
             except ValueError:
-                short_order_id = f"ORD-LV-{order_id[:6].upper()}"
+                short_order_id = f"ORD-LIL-{order_id[:6].upper()}"
         created_at = order.get("created_at")
         date_str = datetime.fromisoformat(created_at.replace("Z", "+00:00")).strftime("%d %b %Y") if created_at else datetime.now().strftime("%d %b %Y")
         
@@ -293,14 +298,19 @@ def send_owner_order_notification(order: dict):
             return
 
         order_id = str(order.get("id"))
-        short_order_id = order.get("display_id")
-        if not short_order_id:
+        order_num = order.get("order_number")
+        if order_num:
+            short_order_id = f"ORD-LIL-{int(order_num):04d}"
+        elif order.get("display_id"):
+            did = str(order.get("display_id"))
+            short_order_id = did.replace("ORD-LV-", "ORD-LIL-") if did.startswith("ORD-LV-") else did
+        else:
             hex_prefix = order_id.replace("-", "")[:6]
             try:
                 numeric_hash = str(int(hex_prefix, 16)).zfill(6)
-                short_order_id = f"ORD-LV-{numeric_hash}"
+                short_order_id = f"ORD-LIL-{numeric_hash}"
             except ValueError:
-                short_order_id = f"ORD-LV-{order_id[:6].upper()}"
+                short_order_id = f"ORD-LIL-{order_id[:6].upper()}"
         grand_total = float(order.get("total_amount", order.get("grand_total", 0)))
         
         address_info = order.get("addresses", {})

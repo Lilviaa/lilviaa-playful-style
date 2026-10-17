@@ -6,13 +6,27 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function formatOrderId(rawOrderId: string | number, displayId?: string): string {
-  if (displayId) return displayId;
+  if (displayId) {
+    if (displayId.startsWith('ORD-LV-')) {
+      return displayId.replace('ORD-LV-', 'ORD-LIL-');
+    }
+    return displayId;
+  }
   if (!rawOrderId) return '';
   const strId = String(rawOrderId);
   
-  // If it's already a display ID (e.g. ORD-LV-0001), just return it
-  if (strId.startsWith('ORD-LV-')) {
+  // If it's already an ORD-LIL- display ID, return it
+  if (strId.startsWith('ORD-LIL-')) {
     return strId;
+  }
+  // Convert legacy ORD-LV- prefix
+  if (strId.startsWith('ORD-LV-')) {
+    return strId.replace('ORD-LV-', 'ORD-LIL-');
+  }
+
+  // If pure numeric (e.g. order_number)
+  if (/^\d+$/.test(strId)) {
+    return `ORD-LIL-${strId.padStart(4, '0')}`;
   }
   
   try {
@@ -20,13 +34,13 @@ export function formatOrderId(rawOrderId: string | number, displayId?: string): 
     const parsedInt = parseInt(cleanId, 16);
     if (!isNaN(parsedInt)) {
       const numericHash = parsedInt.toString().padStart(6, '0');
-      return `ORD-LV-${numericHash}`;
+      return `ORD-LIL-${numericHash}`;
     }
   } catch (e) {
     // Fallback
   }
   
-  return `ORD-LV-${strId.substring(0, 6).toUpperCase()}`;
+  return `ORD-LIL-${strId.substring(0, 6).toUpperCase()}`;
 }
 
 export function getOptimizedImageUrl(url: string, width: number = 400, quality: number = 75): string {

@@ -318,7 +318,7 @@ def get_dashboard_report(
     store_gst_percentage = float(settings.get("gst_percentage") or 0.0)
 
     res = supabase.table("orders") \
-        .select("*, order_items(*, product_variants(*, products(*)))") \
+        .select("*, order_items(*, product_variants(*, products(*))), payment_transactions(*)") \
         .gte("created_at", start_dt.isoformat()) \
         .lte("created_at", end_dt.isoformat()) \
         .order("created_at", desc=True) \
@@ -328,6 +328,27 @@ def get_dashboard_report(
     reports = []
     
     for o in orders:
+        # Determine readable order number (ORD-LIL-0001 format)
+        order_num = o.get("order_number")
+        display_id = o.get("display_id")
+        if order_num:
+            readable_order_id = f"ORD-LIL-{int(order_num):04d}"
+        elif display_id and str(display_id).startswith("ORD-LV-"):
+            readable_order_id = str(display_id).replace("ORD-LV-", "ORD-LIL-")
+        elif display_id:
+            readable_order_id = str(display_id)
+        else:
+            clean_uuid = str(o["id"]).replace("-", "")[:6]
+            try:
+                numeric_hash = str(int(clean_uuid, 16)).zfill(6)
+                readable_order_id = f"ORD-LIL-{numeric_hash}"
+            except ValueError:
+                readable_order_id = f"ORD-LIL-{str(o['id'])[:6].upper()}"
+
+        order_gst_pct = float(o.get("gst_percentage") if o.get("gst_percentage") is not None else store_gst_percentage)
+        order_gst_amt = float(o.get("gst_amount") or 0.0)
+        is_order_taxable = enable_gst or order_gst_amt > 0 or order_gst_pct > 0
+
         items_summary = []
         order_items_data = []
         for i in o.get("order_items", []):
@@ -339,8 +360,10 @@ def get_dashboard_report(
             qty = int(i.get("quantity") or 1)
             unit_price = float(i.get("unit_price") or 0.0)
             total_price = float(i.get("total_price") or (qty * unit_price))
+            item_gst_amt = round((total_price * order_gst_pct) / 100, 2) if is_order_taxable else 0.0
+            item_total_with_gst = round(total_price + item_gst_amt, 2)
             
-            items_summary.append(f"{name} (SKU: {sku}) x{qty}")
+            items_summary.append(f"{name}{f' ({size})' if size else ''} x{qty}")
             order_items_data.append({
                 "id": i.get("id"),
                 "productName": name,
@@ -348,7 +371,10 @@ def get_dashboard_report(
                 "size": size,
                 "quantity": qty,
                 "unitPrice": unit_price,
-                "totalPrice": total_price
+                "totalPrice": total_price,
+                "gstRate": f"{order_gst_pct}%" if is_order_taxable else "0%",
+                "gstAmount": item_gst_amt,
+                "totalWithGst": item_total_with_gst
             })
             
         addr = o.get("shipping_address") or {}
@@ -358,25 +384,48 @@ def get_dashboard_report(
             except Exception:
                 addr = {}
 
-        customer_name = addr.get("fullName") or addr.get("full_name") or addr.get("name") or "Unknown"
+        customer_name = addr.get("fullName") or addr.get("full_name") or addr.get("name") or o.get("offline_customer_name") or "Customer"
         customer_email = addr.get("email") or ""
-        customer_phone = addr.get("phone") or ""
+        customer_phone = addr.get("phone") or o.get("offline_customer_phone") or ""
+        customer_address = addr.get("address") or addr.get("street") or ""
         customer_city = addr.get("city") or ""
         customer_state = addr.get("state") or ""
+        customer_zip = addr.get("zip") or addr.get("postal_code") or addr.get("pincode") or ""
+        customer_country = addr.get("country") or "India"
 
-        order_gst_pct = float(o.get("gst_percentage") if o.get("gst_percentage") is not None else store_gst_percentage)
-        order_gst_amt = float(o.get("gst_amount") or 0.0)
+        # Payment details from transactions
+        txs = o.get("payment_transactions") or []
+        successful_tx = next((t for t in txs if t.get("status") == "successful"), None)
+        active_tx = successful_tx or (txs[0] if txs else {})
+        payment_status = active_tx.get("status") or ("successful" if o.get("status") in ["processing", "packed", "shipped", "delivered"] else "pending")
+        payment_tx_id = active_tx.get("razorpay_payment_id") or active_tx.get("id") or ""
+
+        # Courier & tracking
+        courier_name = o.get("courier_name") or ""
+        awb_code = o.get("awb_code") or o.get("tracking_number") or ""
+        tracking_status = o.get("tracking_status") or o.get("status") or ""
 
         reports.append({
-            "orderId": o["id"],
+            "orderId": readable_order_id,
+            "rawOrderId": o["id"],
+            "orderNumber": order_num,
+            "displayId": readable_order_id,
             "date": o["created_at"],
+            "createdAt": o["created_at"],
+            "updatedAt": o.get("updated_at") or o["created_at"],
             "customerName": customer_name,
             "customerEmail": customer_email,
             "customerPhone": customer_phone,
+            "customerId": str(o.get("user_id") or ""),
+            "customerAddress": customer_address,
             "city": customer_city,
             "state": customer_state,
+            "pincode": customer_zip,
+            "country": customer_country,
             "status": o.get("status", "pending"),
             "paymentMethod": o.get("payment_method", "cod"),
+            "paymentStatus": payment_status,
+            "paymentTransactionId": payment_tx_id,
             "subtotal": float(o.get("subtotal") or 0.0),
             "taxableAmount": float(o.get("taxable_amount") or 0.0),
             "gstPercentage": order_gst_pct,
@@ -385,7 +434,10 @@ def get_dashboard_report(
             "discountAmount": float(o.get("discount_amount") or 0.0),
             "couponCode": o.get("coupon_code") or "",
             "total": float(o.get("total_amount") or 0.0),
-            "items": " | ".join(items_summary),
+            "courierName": courier_name,
+            "awbCode": awb_code,
+            "trackingStatus": tracking_status,
+            "items": ", ".join(items_summary) if items_summary else "No Items",
             "orderItems": order_items_data
         })
         

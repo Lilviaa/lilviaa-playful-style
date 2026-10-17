@@ -88,3 +88,6 @@ Desktop.ini
 # ──────────────────────────────────────────
 supabase/.branches/
 supabase/.temp/
+
+# Vercel
+.vercel

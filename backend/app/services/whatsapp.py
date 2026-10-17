@@ -186,15 +186,19 @@ def _build_item_summary(order_data: dict) -> str:
 
 
 def format_order_id(order_id: str, order: dict = None) -> str:
-    """Format UUID to a short readable order ID, preferring display_id if available."""
-    if order and order.get("display_id"):
-        return order["display_id"]
+    """Format UUID to a short readable order ID, preferring order_number or display_id if available."""
+    if order:
+        order_num = order.get("order_number")
+        if order_num:
+            return f"ORD-LIL-{int(order_num):04d}"
+        if order.get("display_id"):
+            did = str(order["display_id"])
+            return did.replace("ORD-LV-", "ORD-LIL-") if did.startswith("ORD-LV-") else did
     try:
-        # Fallback for old orders if needed
         numeric_hash = str(int(order_id.replace('-', '')[:6], 16)).zfill(6)
-        return f"ORD-LV-{numeric_hash}"
+        return f"ORD-LIL-{numeric_hash}"
     except:
-        return f"ORD-LV-{order_id[:6].upper()}"
+        return f"ORD-LIL-{order_id[:6].upper()}"
 
 
 def _get_order_short_id(order_data: dict) -> str:

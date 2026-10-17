@@ -99,18 +99,32 @@ export interface ReportOrderItem {
   quantity: number;
   unitPrice: number;
   totalPrice: number;
+  gstRate?: string;
+  gstAmount?: number;
+  totalWithGst?: number;
 }
 
 export interface ReportItem {
   orderId: string;
+  rawOrderId?: string;
+  orderNumber?: number;
+  displayId?: string;
   date: string;
+  createdAt?: string;
+  updatedAt?: string;
   customerName: string;
   customerEmail: string;
   customerPhone?: string;
+  customerId?: string;
+  customerAddress?: string;
   city?: string;
   state?: string;
+  pincode?: string;
+  country?: string;
   status: string;
   paymentMethod: string;
+  paymentStatus?: string;
+  paymentTransactionId?: string;
   subtotal?: number;
   taxableAmount?: number;
   gstPercentage?: number;
@@ -119,6 +133,10 @@ export interface ReportItem {
   discountAmount?: number;
   couponCode?: string;
   total: number;
+  courierName?: string;
+  awbCode?: string;
+  trackingStatus?: string;
+  trackingNumber?: string;
   items: string;
   orderItems?: ReportOrderItem[];
 }
