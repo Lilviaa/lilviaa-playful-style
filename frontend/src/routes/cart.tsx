@@ -73,6 +73,12 @@ function CartPage() {
                 src={it.image ? getOptimizedImageUrl(it.image, 200, 75) : "/fallback-image.jpg"}
                 alt={it.name}
                 className="h-28 w-28 shrink-0 rounded-2xl object-cover"
+                onError={(e) => {
+                  const img = e.currentTarget;
+                  if (it.image && img.src !== it.image) {
+                    img.src = it.image;
+                  }
+                }}
               />
               <div className="flex flex-1 flex-col">
                 <div className="flex items-start justify-between gap-2">

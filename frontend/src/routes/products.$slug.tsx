@@ -228,7 +228,7 @@ function ProductPage() {
                   activeImg === g ? "ring-2 ring-cocoa" : "opacity-60 hover:opacity-100"
                 }`}
               >
-                <img src={g ? getOptimizedImageUrl(g, 150, 75) : "/fallback-image.jpg"} alt={`${product.name} thumbnail ${i + 1}`} className="h-full w-full object-cover" />
+                <img src={g ? getOptimizedImageUrl(g, 150, 75) : "/fallback-image.jpg"} alt={`${product.name} thumbnail ${i + 1}`} className="h-full w-full object-cover" onError={(e) => { const img = e.currentTarget; if (g && img.src !== g) { img.src = g; } }} />
               </button>
             ))}
           </div>
@@ -255,7 +255,7 @@ function ProductPage() {
               }
             }}
           >
-            <img id="base-img" src={activeImg ? getOptimizedImageUrl(activeImg, 800, 85) : "/fallback-image.jpg"} alt={product.name} className="h-full w-full object-cover transition-opacity duration-200" />
+            <img id="base-img" src={activeImg ? getOptimizedImageUrl(activeImg, 800, 85) : "/fallback-image.jpg"} alt={product.name} className="h-full w-full object-cover transition-opacity duration-200" onError={(e) => { const img = e.currentTarget; if (activeImg && img.src !== activeImg) { img.src = activeImg; } }} />
             <div 
               id="zoom-layer"
               className="pointer-events-none absolute inset-0 z-10 opacity-0 transition-opacity duration-200"

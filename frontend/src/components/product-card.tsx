@@ -118,6 +118,12 @@ export function ProductCard({ product }: { product: Product }) {
             alt={product.name}
             loading="lazy"
             className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+            onError={(e) => {
+              const img = e.currentTarget;
+              if (product.image && img.src !== product.image) {
+                img.src = product.image;
+              }
+            }}
           />
           {(product.tag || displayCompareAt) && (
             <span

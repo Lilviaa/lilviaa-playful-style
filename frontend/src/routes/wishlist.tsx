@@ -55,6 +55,12 @@ function WishlistPage() {
                   src={item.image ? getOptimizedImageUrl(item.image, 300, 75) : "/fallback-image.jpg"}
                   alt={item.name}
                   className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                  onError={(e) => {
+                    const img = e.currentTarget;
+                    if (item.image && img.src !== item.image) {
+                      img.src = item.image;
+                    }
+                  }}
                 />
               </Link>
               <button

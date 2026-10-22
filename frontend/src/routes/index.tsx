@@ -141,6 +141,10 @@ function HomePage() {
                         loading={index === 0 ? "eager" : "lazy"}
                         fetchPriority={index === 0 ? "high" : "auto"}
                         decoding={index === 0 ? "sync" : "async"}
+                        onError={(e) => {
+                          const img = e.currentTarget;
+                          if (src && img.src !== src) { img.src = src; }
+                        }}
                       />
                     ))
                   )}
@@ -298,6 +302,10 @@ function HomePage() {
                       src={getOptimizedImageUrl(imageUrl, 600, 75)}
                       alt={name}
                       className="h-full w-full object-cover transition-transform duration-1000 ease-out group-hover:scale-110"
+                      onError={(e) => {
+                        const img = e.currentTarget;
+                        if (imageUrl && img.src !== imageUrl) { img.src = imageUrl; }
+                      }}
                     />
                   </div>
                   {/* Gradient Overlay for Text Readability */}
@@ -385,12 +393,20 @@ function HomePage() {
                 src={getOptimizedImageUrl(featuredSection.image_url, 600, 75)}
                 alt="Editorial 1"
                 className="aspect-[3/4] w-full rounded-3xl object-cover shadow-cute rotate-[-3deg]"
+                onError={(e) => {
+                  const img = e.currentTarget;
+                  if (featuredSection.image_url && img.src !== featuredSection.image_url) { img.src = featuredSection.image_url; }
+                }}
               />
             ) : featured.length > 2 && featured[2] ? (
               <img
                 src={getOptimizedImageUrl(featured[2].image, 600, 75)}
                 alt=""
                 className="aspect-[3/4] w-full rounded-3xl object-cover shadow-cute rotate-[-3deg]"
+                onError={(e) => {
+                  const img = e.currentTarget;
+                  if (featured[2].image && img.src !== featured[2].image) { img.src = featured[2].image; }
+                }}
               />
             ) : null}
 
@@ -399,12 +415,20 @@ function HomePage() {
                 src={getOptimizedImageUrl(featuredSection.secondary_image_url, 600, 75)}
                 alt="Editorial 2"
                 className="mt-10 aspect-[3/4] w-full rounded-3xl object-cover shadow-cute rotate-[3deg]"
+                onError={(e) => {
+                  const img = e.currentTarget;
+                  if (featuredSection.secondary_image_url && img.src !== featuredSection.secondary_image_url) { img.src = featuredSection.secondary_image_url; }
+                }}
               />
             ) : featured.length > 5 && featured[5] ? (
               <img
                 src={getOptimizedImageUrl(featured[5].image, 600, 75)}
                 alt=""
                 className="mt-10 aspect-[3/4] w-full rounded-3xl object-cover shadow-cute rotate-[3deg]"
+                onError={(e) => {
+                  const img = e.currentTarget;
+                  if (featured[5].image && img.src !== featured[5].image) { img.src = featured[5].image; }
+                }}
               />
             ) : null}
           </div>
