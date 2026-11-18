@@ -24,7 +24,7 @@ export async function apiFetch(endpoint: string, options: FetchOptions = {}): Pr
   // In SSR (Server-Side Rendering), fetch requires an absolute URL.
   // If API_BASE_URL is a relative path (e.g., /api/v1), we must prepend the host.
   if (typeof window === "undefined" && url.startsWith("/")) {
-    url = `https://lilviaa-playful-style.vercel.app${url}`;
+    url = `https://lilviaa.com${url}`;
   }
 
   const headers = new Headers(options.headers || {});
