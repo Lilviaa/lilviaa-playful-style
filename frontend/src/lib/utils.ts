@@ -48,9 +48,17 @@ export function getOptimizedImageUrl(url: string, width: number = 400, quality: 
   if (url.startsWith("/") && !url.startsWith("http")) return url;
   
   if (typeof window !== "undefined" && window.location.hostname === "localhost") {
-    // Vercel image optimization only works when deployed
     return url;
   }
   
-  return `/_vercel/image?url=${encodeURIComponent(url)}&w=${width}&q=${quality}`;
+  // Use Supabase's native image transform for Supabase-hosted images
+  if (url.includes("supabase.co/storage/v1/object/public/")) {
+    return (
+      url.replace("/storage/v1/object/public/", "/storage/v1/render/image/public/") +
+      `?width=${width}&quality=${quality}&format=webp`
+    );
+  }
+  
+  // For non-Supabase URLs (external images like Unsplash), return as-is
+  return url;
 }
